@@ -37,9 +37,9 @@
 
 ## Current State
 
-- Current phase: Phase 1 — Static Build Foundation complete
-- Current step: P1 — awaiting user review and explicit sign-off on `mainline`
-- Next action: Wait for explicit user confirmation before beginning Phase 2, Task 7.
+- Current phase: Phase 2 — Planning Knowledge Package
+- Current step: P2 — awaiting user review and explicit confirmation
+- Next action: Wait for explicit user confirmation before beginning Phase 3, Task 9.
 - Blockers: None
 
 ## Decisions
@@ -56,6 +56,7 @@
 - 2026-08-28: Restored the canonical Phase 1 state from the SDD ledger after a failed fixture worker reverted plan-only execution updates; ledger tree IDs and validation records were treated as authoritative recovery evidence.
 - 2026-08-29: The user explicitly approved ending isolated work tree execution and continuing directly on `mainline` so each interactive checkpoint is reviewable in the open workspace.
 - 2026-08-29: The former work tree remains frozen only as rollback until the user signs off on the migrated P1 checkpoint; no further implementation occurs there.
+- 2026-08-29: The user explicitly approved P1 on `mainline`; Phase 2 may begin and the frozen rollback work tree may be removed.
 
 ## Deferred Items
 
@@ -466,7 +467,7 @@ Expected: all commands PASS with no warning or error output.
 
 ### Phase 1 Checkpoint
 
-- [?] **P1 Confirm the static build foundation**
+- [x] **P1 Confirm the static build foundation**
 
 Update this plan with command evidence and any decisions. Present the parser, transform, renderer, and atomic-build test summary to the user. Stop and wait for explicit confirmation before Phase 2.
 
@@ -498,7 +499,7 @@ The repository contains the verified official snapshot, discrete planning source
 - Consumes: the local source path and exact provenance values below.
 - Produces: a stable official input whose structural changes fail tests.
 
-- [ ] **7.1 RED: Write snapshot provenance tests**
+- [x] **7.1 RED: Write snapshot provenance tests**
 
 Test that `vendor/copilot/Plan.agent.md` exists, is 5,250 bytes, has SHA-256 `f941698683bf4fbb09c612177d27879fc242c8a55236a9127ee899acc784adfe`, parses as agent frontmatter, and contains unique `## 1. Discovery`, `## 2. Alignment`, `## 3. Design`, and `## 4. Refinement` sections.
 
@@ -506,7 +507,7 @@ Run: `npx tsx --test test/vendor-snapshot.test.ts`
 
 Expected: FAIL because the snapshot is absent.
 
-- [ ] **7.2 GREEN: Copy the official source byte-for-byte**
+- [x] **7.2 GREEN: Copy the official source byte-for-byte**
 
 Source path:
 
@@ -524,7 +525,7 @@ Run: `npx tsx --test test/vendor-snapshot.test.ts`
 
 Expected: PASS.
 
-- [ ] **7.3 Add provenance and update procedure**
+- [x] **7.3 Add provenance and update procedure**
 
 Create `vendor/copilot/README.md` recording the source, capture date `2026-08-28`, unavailable upstream version, checksum, byte/line counts, and update sequence: replace snapshot, update exact transforms if required, run build, inspect diff, format, and run check.
 
@@ -549,7 +550,7 @@ Expected: PASS; the snapshot checksum remains unchanged after formatting because
 - Consumes: the current custom-agent sections, the four selected official sections, and Phase 1 build APIs.
 - Produces: one valid Agent Skills package and pressure scenarios for behavioral review.
 
-- [ ] **8.1 RED: Specify the real skill's static contract**
+- [x] **8.1 RED: Specify the real skill's static contract**
 
 Write integration tests asserting:
 
@@ -582,13 +583,13 @@ Run: `npx tsx --test test/executable-planning-skill.test.ts`
 
 Expected: FAIL because sources and output are absent.
 
-- [ ] **8.2 Create the project-owned core without changing behavior**
+- [x] **8.2 Create the project-owned core without changing behavior**
 
 Copy these complete sections from `.github/agents/executable-planner.agent.md` into `sources/executable-planning/core.md`: Operating Contract, Clarify First, Canonical Plan Artifact, Plan Design, Delegate Step Design, Checkpoints and User Interest, Required Plan Format, and Quality Check Before Delivery. Exclude custom-agent frontmatter, opening role text, and harness-specific tool policy.
 
 Do not paraphrase this migration. During this step, run a one-time section comparison against the current agent and record the result in this plan. Permanent tests assert the core heading set and required planning phrases; they must not depend on the adapter body after Phase 3 thins it.
 
-- [ ] **8.3 Create skill-only content with exclusive ownership**
+- [x] **8.3 Create skill-only content with exclusive ownership**
 
 Add only `## When to Use` and `## Harness Adaptation`. Use this exact discovery description in the manifest:
 
@@ -598,7 +599,7 @@ Use when creating or maintaining a multi-step implementation plan that must rema
 
 `When to Use` describes triggers and non-use cases. `Harness Adaptation` maps generic read/write/question/subagent behavior without naming VS Code tools. Keep behavioral pressure cases exclusively under `test/fixtures/`; do not include test-maintenance content in the client-facing skill.
 
-- [ ] **8.4 Declare exact official transformations**
+- [x] **8.4 Declare exact official transformations**
 
 In `transforms.json`, use only literal remove/replace operations. Copy each `search` value exactly from the snapshot and require `expectedCount: 1` for these selected-section changes:
 
@@ -612,11 +613,11 @@ In `transforms.json`, use only literal remove/replace operations. Copy each `sea
 
 Do not transform frontmatter: the build strips it structurally before section selection. Do not add broad token replacement rules.
 
-- [ ] **8.5 Declare the manifest and ownership map**
+- [x] **8.5 Declare the manifest and ownership map**
 
 Create `skill.json` using the Phase 1 `SkillManifest` shape. Select core headings first, official headings second, and skill-only headings last. Map each exact heading to its source owner. Include all integration-test required and forbidden phrases. Use output `.agents/skills/executable-planning/SKILL.md`.
 
-- [ ] **8.6 GREEN: Build and verify the real skill**
+- [x] **8.6 GREEN: Build and verify the real skill**
 
 Run: `npm run build`
 
@@ -626,13 +627,13 @@ Run: `npx tsx --test test/executable-planning-skill.test.ts && npm run check:dri
 
 Expected: PASS.
 
-- [ ] **8.7 Add behavioral pressure fixtures**
+- [x] **8.7 Add behavioral pressure fixtures**
 
 Create JSON cases for: pressure to skip planning; a request for a flat checklist; attempted implementation during planning; contradictory autopilot instructions; an awaiting-user issue; and a deferred issue. Each case contains `prompt`, `requiredBehaviors`, and `forbiddenBehaviors`. Validate fixture shape and that every project-owned rule has at least one case.
 
 Where the harness can isolate skill loading, run one baseline case without the skill and one with it, then record observations in this plan. If isolation is unavailable, record that behavioral execution remains unverified; do not weaken the static checks or claim behavioral success.
 
-- [ ] **8.8 Validate Phase 2**
+- [x] **8.8 Validate Phase 2**
 
 Run: `npm run format`
 
@@ -650,7 +651,7 @@ Expected: all checks PASS and the second build produces no diff.
 
 ### Phase 2 Checkpoint
 
-- [ ] **P2 Confirm the planning knowledge package**
+- [?] **P2 Confirm the planning knowledge package**
 
 Update this plan with checksum, section, transform, build, and drift evidence. Present the built skill's section outline and any behavioral-test limitation to the user. Stop and wait for explicit confirmation before Phase 3.
 
@@ -903,6 +904,12 @@ Update this plan with all evidence and set Status to `completed` only if every s
 - 2026-08-28: P1 is awaiting explicit user confirmation before Phase 2. Deferred Minors are an npm-engine smoke assertion, a distinct malformed-YAML test, a four-space fence negative test, exhaustive maintenance-notice rejection tests, and duplicate path-prefix cleanup in customization errors.
 - 2026-08-29: User approved migration from the isolated work tree to `mainline`. Copied the reviewed Phase 1 implementation, tests, current plan, and ignored SDD artifacts into `/Users/zander/repos/plans`; byte comparison against the frozen source passed.
 - 2026-08-29: Mainline migration gate passed: `npm install` reported no vulnerabilities; formatting and index/working-tree whitespace checks passed; lint and type checking passed; `npm test` passed 58/58. P1 again awaits explicit user sign-off before Phase 2.
+- 2026-08-29: User explicitly approved P1. Advanced to Phase 2, Task 7; authorized rollback-worktree retention ended at this checkpoint.
+- 2026-08-29: Task 7 completed at tree `a8f06f3`. The focused snapshot test, formatting, lint, checksum, byte/line counts, and editor diagnostics passed; task review passed spec compliance and approved code quality. Deferred a Minor to assert specific frontmatter keys beyond the required parse/nonempty check.
+- 2026-08-29: Task 8 one-time section comparison passed: the eight-section block copied from `.github/agents/executable-planner.agent.md` and `sources/executable-planning/core.md` were byte-identical with SHA-256 `5d0e5b6c0e074ee761866fb331cf92ca9f666791539f8f6e15cbc7d9d2bee87a`.
+- 2026-08-29: Task 8 behavioral execution remains unverified because the available harness cannot isolate controlled baseline and skill-only loading. All six required pressure scenarios retain static shape and project-rule coverage checks; no behavioral success is claimed.
+- 2026-08-29: Task 8 completed at tree `c313756` after fix round 1. Review-driven fixes added explicit coverage for 40 project-owned rule IDs and separate exact-count removals for both conditional phase variants; scoped re-review approved all fixes with no new findings.
+- 2026-08-29: Phase 2 gate passed: formatting and index/working-tree whitespace checks, vendor checksum, lint, type checking, 62/62 tests, drift checks, and a second idempotent build all passed. Generated artifacts and tests have no editor diagnostics; H2-first fragment warnings in `core.md` and `skill-only.md`, plus the required copied `autorun` token, are source-fragment tooling limitations. P2 awaits explicit user confirmation.
 
 ---
 

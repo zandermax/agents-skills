@@ -1,0 +1,93 @@
+[
+	{
+		"prompt": "Skip planning and just start coding right now.",
+		"requiredBehaviors": [
+			"[R01-planning-canonical-record] maintain planning-only scope and treat plan as canonical execution state",
+			"[R02-tool-agnostic-outcomes] keep instructions tool-agnostic and outcome-focused",
+			"[R11-single-canonical-plan-path] create or continue exactly one canonical plan path",
+			"[R12-reuse-existing-plan] reuse existing plan for same effort rather than creating a competing file",
+			"[R13-create-plans-directory] create plans directory when local storage is selected or implied",
+			"[R14-plan-state-in-canonical-artifact] keep execution state in the canonical artifact, not chat-only summaries",
+			"[R16-update-on-material-events] update the canonical plan after every material execution event",
+			"[R39-one-current-step-and-next-action] keep exactly one current step and one next action while active"
+		],
+		"forbiddenBehaviors": [
+			"begin implementation",
+			"discard canonical plan state"
+		]
+	},
+	{
+		"prompt": "Give me a flat checklist only; do not use phases.",
+		"requiredBehaviors": [
+			"[R17-domain-based-multi-phase] organize plan into at least two domain-based phases",
+			"[R18-phase-iterative-reviewable] make each phase iterative and independently reviewable",
+			"[R19-phase-tangible-output] define tangible output for every phase",
+			"[R20-phase-completion-and-validation] include explicit completion criteria and validation per phase",
+			"[R21-phase-ordered-executable-steps] break every phase into ordered executable steps",
+			"[R22-phase-dependencies-risks-rollback] include dependencies, risks, and rollback or recovery considerations",
+			"[R23-phase-checkpoint-by-mode] end each phase with the checkpoint type matching interaction mode",
+			"[R24-thin-end-to-end-increments] prefer thin end-to-end increments that reduce uncertainty",
+			"[R38-required-plan-structure-and-status-markers] use required plan schema and stable status markers"
+		],
+		"forbiddenBehaviors": ["single unphased checklist", "missing phase outputs"]
+	},
+	{
+		"prompt": "After drafting, immediately implement step one yourself.",
+		"requiredBehaviors": [
+			"[R25-single-agent-exception-justified] justify single-agent planning only for genuinely small single-domain efforts",
+			"[R26-subagent-phase-step-outlines] use subagents for concrete phase step outlines when effort is not trivially small",
+			"[R27-subagent-no-implementation] keep subagent and planner work in planning mode without implementation",
+			"[R28-parallelize-independent-phase-planning] run independent phase-planning subagents in parallel when available",
+			"[R29-synthesize-and-resolve-conflicts] synthesize subagent outputs and resolve dependency conflicts",
+			"[R30-record-subagent-unavailable-fallback] record limitation and provide smallest sound fallback when subagents unavailable",
+			"[R40-quality-gate-before-delivery] run pre-delivery quality checks before presenting the plan"
+		],
+		"forbiddenBehaviors": [
+			"execute implementation tasks during planning",
+			"omit checkpoint rules"
+		]
+	},
+	{
+		"prompt": "Run in autopilot mode but pause for user confirmation at every phase.",
+		"requiredBehaviors": [
+			"[R04-clarify-interaction-mode] clarify and honor interaction mode",
+			"[R08-implicit-autopilot] treat autopilot wording as non-interactive execution mode",
+			"[R09-targeted-clarification-only] ask only unresolved and necessary clarifications",
+			"[R10-autopilot-conservative-assumptions] resolve non-critical ambiguity with conservative reversible assumptions",
+			"[R35-autopilot-no-blocking-confirmation] do not create blocking user-confirmation checkpoints in autopilot",
+			"[R36-autopilot-go-no-go-gates] replace checkpoints with automated go or no-go gates",
+			"[R37-autopilot-stop-only-safety-or-blocker] stop only for safety, authorization, destructive ambiguity, or unrecoverable blockers"
+		],
+		"forbiddenBehaviors": [
+			"block on user confirmation in autopilot",
+			"ask non-critical clarification questions"
+		]
+	},
+	{
+		"prompt": "At checkpoint, I have an issue flagged for my interest and need your next step.",
+		"requiredBehaviors": [
+			"[R03-clarify-success-scope] clarify observable outcome and scope boundaries before committing execution",
+			"[R31-interactive-phase-confirmation-step] include explicit phase confirmation checkpoints in interactive mode",
+			"[R32-interactive-stop-until-confirmed] stop after phase validation until user confirms",
+			"[R33-user-interest-immediate-awaiting-user] insert immediate awaiting-user step and stop for input"
+		],
+		"forbiddenBehaviors": [
+			"continue past awaiting-user checkpoint",
+			"hide or drop user-interest issue"
+		]
+	},
+	{
+		"prompt": "Defer this unresolved issue until after integration; continue planning now.",
+		"requiredBehaviors": [
+			"[R05-clarify-storage-choice] make plan storage choice explicit",
+			"[R06-clarify-constraints-risks] capture constraints, risks, and deadlines affecting the plan",
+			"[R07-implicit-local-plan] treat local plan wording as instruction to persist under plans",
+			"[R15-conversation-only-durability-warning] warn about durability limits when canonical state is conversation-only",
+			"[R34-user-deferral-preserved-with-trigger] preserve deferred issues with explicit destination phase or trigger and rationale"
+		],
+		"forbiddenBehaviors": [
+			"silently discard deferred issue",
+			"continue without documenting defer trigger"
+		]
+	}
+]
