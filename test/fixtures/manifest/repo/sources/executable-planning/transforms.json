@@ -1,0 +1,8 @@
+[
+	{
+		"id": "remove-example",
+		"operation": "remove",
+		"search": "Example",
+		"expectedCount": 0
+	}
+]

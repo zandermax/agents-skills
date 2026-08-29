@@ -1,0 +1,30 @@
+{
+	"name": "executable-planning",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"engines": {
+		"node": "24.15.0",
+		"npm": "11.12.1"
+	},
+	"scripts": {
+		"build": "tsx src/build-skills.ts --write",
+		"check": "npm run lint && npm run typecheck && npm test && npm run check:customizations && npm run check:drift",
+		"check:customizations": "tsx src/check-customizations.ts",
+		"check:drift": "tsx src/build-skills.ts --check",
+		"format": "biome check --write .",
+		"install:clients": "tsx scripts/install-clients.ts",
+		"lint": "biome check .",
+		"test": "tsx --test test/*.test.ts",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"yaml": "2.9.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.11",
+		"@types/node": "24.13.3",
+		"tsx": "4.23.12",
+		"typescript": "7.0.2"
+	}
+}
