@@ -9,12 +9,13 @@
 	},
 	"scripts": {
 		"build": "tsx src/build-skills.ts --write",
-		"check": "npm run lint && npm run typecheck && npm test && npm run check:customizations && npm run check:drift",
+		"check": "npm run lint && npm run lint:markdown && npm run typecheck && npm test && npm run check:customizations && npm run check:drift",
 		"check:customizations": "tsx src/check-customizations.ts",
 		"check:drift": "tsx src/build-skills.ts --check",
 		"format": "biome check --write .",
 		"install:clients": "tsx scripts/install-clients.ts",
 		"lint": "biome check .",
+		"lint:markdown": "markdownlint-cli2",
 		"test": "tsx --test test/*.test.ts",
 		"typecheck": "tsc --noEmit"
 	},
@@ -24,6 +25,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "2.5.11",
 		"@types/node": "24.13.3",
+		"markdownlint-cli2": "0.23.2",
 		"tsx": "4.23.12",
 		"typescript": "7.0.2"
 	}

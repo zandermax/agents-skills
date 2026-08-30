@@ -10,6 +10,7 @@
 ```sh
 npm install
 npm run format
+npm run lint:markdown
 npm run build
 npm run check
 ```
