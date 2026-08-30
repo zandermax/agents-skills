@@ -318,7 +318,7 @@ The intended layout after generalization is:
 .
 ├── .agents/skills/<skill>/SKILL.md
 ├── .github/agents/<agent>.agent.md
-├── docs/superpowers/{plans,specs}/
+├── docs/{plans,specs}/
 ├── install-catalog.json
 ├── scripts/install-artifacts.ts
 ├── sources/<skill>/{skill.json,...}

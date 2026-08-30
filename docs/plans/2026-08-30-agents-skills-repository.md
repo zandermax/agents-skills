@@ -1,6 +1,6 @@
 # Agents and Skills Repository Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SKILL: Use `executable-planning` to maintain this plan while implementing it task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Generalize the repository into a catalog-driven collection of selectable skills and client-ready agent formats, then rename it locally and remotely to `agents-skills` without losing installed links.
 
@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node.js 24.15.0, npm 11.12.1, strict TypeScript 7, ECMAScript modules, Node's built-in test runner, YAML 2.9.0, and Biome 2.5.11.
 
-**Spec:** `docs/superpowers/specs/2026-08-30-agents-skills-repository-design.md`
+**Spec:** `docs/specs/2026-08-30-agents-skills-repository-design.md`
 
 ## Global Constraints
 
@@ -20,6 +20,14 @@
 - Do not rewrite historical executable-planning records or rename its skill and agent.
 - Do not rename the local directory until the final migration task because the active workspace depends on the current path.
 - Never remove a regular file, directory, or unrelated symlink during link migration.
+- Never run `git add`, `git commit`, or `git push`; the user owns all staging,
+	commits, and pushes.
+- At the end of every numbered implementation task, report changed files and
+	validation evidence, then suggest the task's documented commit message. Do
+	not execute the suggested Git commands.
+- When a later migration gate requires committed or pushed state, stop and wait
+	for the user to perform those operations, then verify the resulting state
+	before continuing.
 
 ---
 
@@ -27,7 +35,7 @@
 
 - Status: ready
 - Mode: interactive
-- Canonical location: `docs/superpowers/plans/2026-08-30-agents-skills-repository.md`
+- Canonical location: `docs/plans/2026-08-30-agents-skills-repository.md`
 - Last updated: 2026-08-30
 - Goal: A validated `agents-skills` repository can list and selectively install multiple skills and named agent formats into built-in and arbitrary destinations, with known links intact after local and remote rename.
 - Success criteria: Generic skill titles; validated catalog and multi-format discovery; collection-aware agent validation; list and selective install commands; all repository checks pass; GitHub, package, remote, README, and local path renamed; known links resolve after migration.
@@ -37,7 +45,7 @@
 
 - Current phase: Phase 1 - Generic Knowledge Artifacts
 - Current step: Not started
-- Next action: Start Task 1.1 using the superpowers:executing-plans workflow.
+- Next action: Start Task 1.1 using the `executable-planning` workflow.
 - Blockers: None
 
 ## Decisions
@@ -48,6 +56,11 @@
 - 2026-08-30: Add repeatable skill and agent selectors plus read-only artifact listing.
 - 2026-08-30: Keep `.github/agents` as the initial Copilot collection source.
 - 2026-08-30: User approved this plan and selected inline execution with phase checkpoints.
+- 2026-08-30: The user exclusively owns `git add`, `git commit`, and
+	`git push`; agents only suggest a commit message after each task.
+- 2026-08-30: Store active repository-wide plans and specs under neutral
+	`docs/plans` and `docs/specs` paths; retain historical Superpowers documents
+	unchanged as provenance.
 
 ## Deferred Items
 
@@ -69,8 +82,8 @@ validation. No installer or repository identity behavior changes in this phase.
 - Catalog parsing must reject invalid paths and references before discovery.
 - Artifact discovery reads committed client artifacts, not source manifests
 	beneath `.agents/skills`.
-- Recovery: each task is independently committed and can be reverted without
-	changing user links or repository identity.
+- Recovery: each task remains a focused diff that the user can commit or revert
+	without changing user links or repository identity.
 
 ### Task 1: Generic Skill Titles
 
@@ -121,8 +134,9 @@ assert.match(beta.content, /^---[\s\S]*\n# Beta Skill\n/m);
 	`npm run build`, and
 	`git diff --exit-code -- .agents/skills/executable-planning/SKILL.md`.
 	Expected: tests pass and the generated planning skill is unchanged.
-- [ ] **1.6 Commit the title slice.** Commit only these files with
-	`feat: support generic skill titles`.
+- [ ] **1.6 Report the title slice and suggest a commit.** Report changed files
+	and validation evidence, then suggest `feat: support generic skill titles`.
+	Do not stage, commit, or push.
 
 ### Task 2: Installation Catalog Schema
 
@@ -196,8 +210,9 @@ export async function loadInstallCatalog(
 - [ ] **2.5 Verify parser and real catalog.** Run the focused catalog test and
 	add one repository integration assertion that `loadInstallCatalog(REPO_ROOT)`
 	succeeds with two collections and three clients.
-- [ ] **2.6 Commit the catalog slice.** Commit with
-	`feat: add artifact installation catalog`.
+- [ ] **2.6 Report the catalog slice and suggest a commit.** Report changed
+	files and validation evidence, then suggest
+	`feat: add artifact installation catalog`. Do not stage, commit, or push.
 
 ### Task 3: Catalog-Driven Artifact Discovery
 
@@ -245,8 +260,9 @@ export async function discoverArtifacts(
 - [ ] **3.5 Verify GREEN and integration.** Run catalog and artifact tests,
 	then assert the real catalog discovers `executable-planning` and
 	`copilot:executable-planner`.
-- [ ] **3.6 Commit discovery.** Commit with
-	`feat: discover catalog artifacts`.
+- [ ] **3.6 Report discovery and suggest a commit.** Report changed files and
+	validation evidence, then suggest `feat: discover catalog artifacts`. Do not
+	stage, commit, or push.
 
 ### Task 4: Collection-Aware Customization Validation
 
@@ -291,8 +307,10 @@ test("agent dependencies are validated independently", async () => {
 	skill IDs.
 - [ ] **4.5 Verify the phase.** Run catalog, artifact, manifest, renderer, and
 	customization tests followed by `npm run check`.
-- [ ] **4.6 Commit validation.** Commit with
-	`feat: validate artifact collections independently`.
+- [ ] **4.6 Report validation and suggest a commit.** Report changed files and
+	validation evidence, then suggest
+	`feat: validate artifact collections independently`. Do not stage, commit, or
+	push.
 
 ### Phase 1 Validation
 
@@ -309,7 +327,8 @@ git status --short
 
 Completion criteria: all focused and repository tests pass; the real planning
 skill has no generated diff; catalog/discovery fixtures contain two skills and
-two agent formats; the worktree is clean after four reviewed commits.
+two agent formats; worktree state is reported with four suggested commit
+messages and no agent-created commits.
 
 ### Phase 1 Checkpoint
 
@@ -374,8 +393,9 @@ export function parseArtifactArguments(
 	`hasDestinationArguments` only for client and custom destination flags.
 - [ ] **5.4 Run and verify GREEN.** All parser cases pass with stable usage
 	errors naming `npm run install:artifacts`.
-- [ ] **5.5 Commit argument parsing.** Commit with
-	`feat: parse artifact installation arguments`.
+- [ ] **5.5 Report argument parsing and suggest a commit.** Report changed files
+	and validation evidence, then suggest
+	`feat: parse artifact installation arguments`. Do not stage, commit, or push.
 
 ### Task 6: Selection, Targets, and Listing
 
@@ -433,8 +453,9 @@ export function formatArtifactListing(
 	then reject selected agent formats lacking an exact selected target.
 - [ ] **6.5 Implement pure listing.** Derive compatible clients by catalog
 	destination membership. Return text only; do not inspect destinations.
-- [ ] **6.6 Verify GREEN and commit.** Run argument and selection tests, then
-	commit with `feat: resolve and list artifact selections`.
+- [ ] **6.6 Verify GREEN and suggest a commit.** Run argument and selection
+	tests, report changed files and evidence, then suggest
+	`feat: resolve and list artifact selections`. Do not stage, commit, or push.
 
 ### Task 7: Generic Symlink Installation Engine
 
@@ -484,8 +505,9 @@ export async function installArtifacts(
 	removing the legacy script or tests.
 - [ ] **7.5 Mutation-check all-before-write.** Temporarily bypass the error gate,
 	confirm the partial-batch test fails, restore the gate, and rerun GREEN.
-- [ ] **7.6 Commit the engine.** Commit with
-	`feat: install resolved artifacts safely`.
+- [ ] **7.6 Report the engine and suggest a commit.** Report changed files and
+	validation evidence, then suggest `feat: install resolved artifacts safely`.
+	Do not stage, commit, or push.
 
 ### Task 8: CLI and Compatibility Migration
 
@@ -525,8 +547,9 @@ export async function installArtifacts(
 	`npm run install:artifacts -- --list` and
 	`npm run install:clients -- --list`; outputs must match and `git status` must
 	show no destination artifacts.
-- [ ] **8.7 Verify the phase and commit.** Run `npm run check`, then commit with
-	`feat: install selectable agents and skills`.
+- [ ] **8.7 Verify the phase and suggest a commit.** Run `npm run check`, report
+	changed files and evidence, then suggest
+	`feat: install selectable agents and skills`. Do not stage, commit, or push.
 
 ### Phase 2 Validation
 
@@ -544,7 +567,8 @@ git status --short
 
 Completion criteria: listing is read-only and stable; selectors and format
 compatibility work; generic installer safety equals or exceeds the legacy
-suite; both package command names work; the worktree is clean.
+suite; both package command names work; worktree status is reported for the
+user's manual commit decision.
 
 ### Phase 2 Checkpoint
 
@@ -556,8 +580,8 @@ suite; both package command names work; the worktree is clean.
 
 ### Phase 3 Output
 
-The collection is documented and packaged as `agents-skills`, committed and
-pushed, renamed to `zandermax/agents-skills`, moved to
+The collection is documented and packaged as `agents-skills`, manually
+committed and pushed by the user, renamed to `zandermax/agents-skills`, moved to
 `/Users/zander/repos/agents-skills`, and known client links resolve into the
 new path.
 
@@ -606,9 +630,10 @@ new path.
 - [ ] **9.5 Generalize remaining repository markers.** Remove repository-level
 	wording that implies one planning artifact while retaining planning-specific
 	tests, source names, generated output, vendor provenance, and historical docs.
-- [ ] **9.6 Verify and commit.** Run focused tests and `npm run check`; search
-	shared code/package/README for unjustified planning identity references; commit
-	with `chore: rename package to agents-skills`.
+- [ ] **9.6 Verify and suggest a commit.** Run focused tests and
+	`npm run check`; search shared code/package/README for unjustified planning
+	identity references; report changed files and evidence, then suggest
+	`chore: rename package to agents-skills`. Do not stage, commit, or push.
 
 ### Task 10: Pre-Rename Gate and Link Inventory
 
@@ -617,31 +642,39 @@ new path.
 - Update continuously: this canonical plan's Current State and Progress Log.
 - Create outside repository: `/tmp/agents-skills-link-inventory.json`.
 
-- [ ] **10.1 Record a clean release candidate.** Run `npm run check`, require
-	`git status --short` to be empty, record `git rev-parse HEAD`, and push
-	`mainline` to the existing `origin` so the generalized code is recoverable
-	before identity mutation.
-- [ ] **10.2 Reconfirm GitHub preconditions.** Verify authenticated login is
+- [ ] **10.1 Prepare the manual release-candidate gate.** Run `npm run check`,
+	report `git status --short` and the suggested message
+	`chore: prepare agents-skills migration`, then stop so the user can stage,
+	commit, and push all intended changes to the existing `origin`. Do not run
+	any staging, commit, or push command.
+- [ ] **10.2 Verify the user's release candidate.** After the user confirms,
+	require `git status --short` to be empty, record `git rev-parse HEAD`, run
+	`git fetch origin`, and verify `origin/mainline` contains that HEAD. Stop if
+	the local commit is not present remotely.
+- [ ] **10.3 Reconfirm GitHub preconditions.** Verify authenticated login is
 	`zandermax`, `zandermax/plans` exists with admin permission, and
 	`gh repo view zandermax/agents-skills` exits nonzero because the target does
 	not exist. Stop on any different result.
-- [ ] **10.3 Inventory known links without mutation.** Derive expected artifact
+- [ ] **10.4 Inventory known links without mutation.** Derive expected artifact
 	paths from the real catalog and discovered artifacts. For each expected path,
 	require `lstat` symlink type, resolve `readlink` lexically against its parent,
 	and classify as old-root, absent, unrelated, or collision. Write only the
 	inventory JSON under `/tmp`.
-- [ ] **10.4 Validate inventory safety.** Proceed only when every existing known
+- [ ] **10.5 Validate inventory safety.** Proceed only when every existing known
 	destination is a symlink whose normalized target is inside
 	`/Users/zander/repos/plans`; absent destinations are allowed. Report unrelated
 	links/files/directories and stop without removing anything.
-- [ ] **10.5 Mark symlink removal awaiting user.** Update this plan with the
+- [ ] **10.6 Mark symlink removal awaiting user.** Update this plan with the
 	exact verified destination list as the immediate `[?]` step and ask the user
 	to authorize removing only those symlinks.
-- [ ] **10.6 After approval, unlink verified paths only.** Recheck each path
+- [ ] **10.7 After approval, unlink verified paths only.** Recheck each path
 	immediately before `unlink`; never recursively remove parents. Verify each
 	recorded path is absent and retain the inventory for recreation.
-- [ ] **10.7 Commit the updated migration state.** Commit the plan progress log
-	before remote rename with `docs: record agents-skills migration state`.
+- [ ] **10.8 Report migration state and suggest a commit.** Report the plan and
+	inventory evidence, then suggest `docs: record agents-skills migration state`.
+	Do not stage, commit, or push. Stop so the user can commit and push the plan,
+	then verify clean and remote-contained HEAD before Task 11. Treat that
+	verified commit as the Task 10 migration baseline.
 
 ### Task 11: Remote Repository Rename
 
@@ -651,7 +684,8 @@ new path.
 - Modify GitHub repository metadata for `zandermax/plans`.
 
 - [ ] **11.1 Mark remote rename awaiting user.** Record current remote, HEAD,
-	successful push, target absence, and rollback limitation in this plan; insert
+	user-confirmed remote-contained HEAD, target absence, and rollback limitation
+	in this plan; insert
 	the rename as immediate `[?]` action and ask explicit confirmation.
 - [ ] **11.2 Rename GitHub after approval.** Run
 	`gh repo rename agents-skills --repo zandermax/plans --yes`, then
@@ -662,9 +696,14 @@ new path.
 - [ ] **11.4 Update and verify origin.** Run
 	`git remote set-url origin https://github.com/zandermax/agents-skills.git`,
 	verify fetch and push URLs exactly, and run `git fetch origin --dry-run`.
-- [ ] **11.5 Update plan state.** Record remote evidence and set the exact next
-	action to the local move confirmation. If verification fails, restore origin
-	to the reachable repository URL; do not move the local directory.
+- [ ] **11.5 Update plan state and suggest a commit.** Record remote evidence
+	and set the exact next action to the local move confirmation. If verification
+	fails, restore origin to the reachable repository URL; do not move the local
+	directory. Report changed files and evidence, then suggest
+	`docs: record agents-skills remote rename`. Do not stage, commit, or push.
+	Stop so the user can commit and push to the renamed origin, then verify clean
+	and remote-contained HEAD. Treat that verified commit as the Task 11 migration
+	baseline.
 
 ### Task 12: Local Move, Link Recreation, and Smoke Gate
 
@@ -673,10 +712,11 @@ new path.
 - Move directory: `/Users/zander/repos/plans` to
 	`/Users/zander/repos/agents-skills`.
 - Continue canonical plan at:
-	`/Users/zander/repos/agents-skills/docs/superpowers/plans/2026-08-30-agents-skills-repository.md`.
+	`/Users/zander/repos/agents-skills/docs/plans/2026-08-30-agents-skills-repository.md`.
 
 - [ ] **12.1 Mark local move awaiting user.** Confirm the target directory does
-	not exist, worktree is clean, HEAD matches Task 10, origin is renamed, and
+	not exist, worktree is clean, HEAD matches the Task 11 migration baseline,
+	origin is renamed, and
 	verified old-root symlinks are absent. Record rollback command
 	`mv /Users/zander/repos/agents-skills /Users/zander/repos/plans` and ask
 	explicit approval.
@@ -701,6 +741,9 @@ new path.
 - [ ] **12.7 Reopen VS Code.** Open `/Users/zander/repos/agents-skills`, verify
 	terminal cwd, TypeScript diagnostics, branch, and Git remote, then close the
 	obsolete workspace window.
+- [ ] **12.8 Report completion and suggest a commit.** Report final migration
+	evidence and suggest `docs: complete agents-skills migration`. Do not stage,
+	commit, or push.
 
 ### Phase 3 Validation
 
@@ -738,3 +781,8 @@ are explicitly reported.
 	mutation has started.
 - 2026-08-30: User approved the plan for inline execution. Per the planning
 	workflow, implementation remains stopped at the handoff boundary.
+- 2026-08-30: User revised Git policy: agents must never stage, commit, or push;
+	every task ends with a suggested commit message for the user to apply.
+- 2026-08-30: Moved the active generic design and plan into `docs/specs` and
+	`docs/plans`; replaced the harness-specific execution directive with
+	`executable-planning`.
