@@ -31,6 +31,27 @@ npm run install:clients -- --client claude
 npm run install:clients -- --client agents
 ```
 
+Install every built skill into an arbitrary skill root for a custom harness:
+
+```sh
+npm run install:clients -- --skills-dir /path/to/harness/skills
+```
+
+`--skills-dir` is repeatable and can be combined with built-in clients:
+
+```sh
+npm run install:clients -- \
+	--skills-dir /path/to/first-harness/skills \
+	--skills-dir ./relative/path/to/second-harness/skills
+npm run install:clients -- --client copilot --skills-dir /path/to/harness/skills
+```
+
+Each directory under `.agents/skills` containing a `SKILL.md` is symlinked as
+`<skills-dir>/<skill-name>`. Relative paths resolve from the directory where the
+command is invoked. When `--skills-dir` is used without `--client`, only custom
+roots are installed; invoking the command without arguments still installs all
+built-in clients. Run `npm run build` first so generated skills are current.
+
 Source and destination mappings used by scripts/install-clients.ts:
 
 - Copilot file: `.github/agents/executable-planner.agent.md` -> `~/.copilot/agents/executable-planner.agent.md`
