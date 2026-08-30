@@ -20,8 +20,14 @@
 - Do not rewrite historical executable-planning records or rename its skill and agent.
 - Do not rename the local directory until the final migration task because the active workspace depends on the current path.
 - Never remove a regular file, directory, or unrelated symlink during link migration.
-- Never run `git add`, `git commit`, or `git push`; the user owns all staging,
-	commits, and pushes.
+- Never mutate the Git index or staging area. Do not run `git add`, `git mv`,
+	`git rm --cached`, `git restore --staged`, `git reset`, or any command or tool
+	that changes staging state as a side effect.
+- Capture the staged state before the first write and verify it is identical
+	after every numbered implementation task. Report any unexpected index change
+	immediately; do not continue with a changed index.
+- Never run `git commit` or `git push`; the user exclusively owns staging,
+	removing staged changes, commits, and pushes.
 - At the end of every numbered implementation task, report changed files and
 	validation evidence, then suggest the task's documented commit message. Do
 	not execute the suggested Git commands.
@@ -56,8 +62,9 @@
 - 2026-08-30: Add repeatable skill and agent selectors plus read-only artifact listing.
 - 2026-08-30: Keep `.github/agents` as the initial Copilot collection source.
 - 2026-08-30: User approved this plan and selected inline execution with phase checkpoints.
-- 2026-08-30: The user exclusively owns `git add`, `git commit`, and
-	`git push`; agents only suggest a commit message after each task.
+- 2026-08-30: The user exclusively owns every Git index mutation, including
+	staging and removing staged changes, plus commits and pushes. Agents preserve
+	the initial staged state and only suggest a commit message after each task.
 - 2026-08-30: Store active repository-wide plans and specs under neutral
 	`docs/plans` and `docs/specs` paths; retain historical Superpowers documents
 	unchanged as provenance.
@@ -350,7 +357,7 @@ destinations. The old package command remains an exact compatibility alias.
 	installer instead of adding more responsibilities to one script.
 - Listing must not call destination classification or create directories.
 - Recovery: retain existing installer tests until equivalent generic tests pass;
-	use `git mv` only in the final Phase 2 task.
+	rename files with filesystem operations that leave the Git index unchanged.
 
 ### Task 5: Artifact Argument Grammar
 
@@ -537,10 +544,11 @@ export async function installArtifacts(
 	load catalog, discover artifacts, parse arguments, print listing or resolve
 	and execute links, and preserve `EXECUTABLE_PLANNING_HOME` only as the current
 	test-home compatibility variable until Phase 3 renames it.
-- [ ] **8.4 Rename files and scripts.** Use `git mv`; set
-	`install:artifacts` to `tsx scripts/install-artifacts.ts` and
-	`install:clients` to `npm run install:artifacts --` so forwarded arguments
-	remain intact.
+- [ ] **8.4 Rename files and scripts without staging.** Use a filesystem rename
+	operation such as `/bin/mv`, never `git mv`; set `install:artifacts` to
+	`tsx scripts/install-artifacts.ts` and `install:clients` to
+	`npm run install:artifacts --` so forwarded arguments remain intact. Verify
+	the staged state is identical to its pre-task snapshot.
 - [ ] **8.5 Remove duplicate legacy implementation only after GREEN.** All
 	behavior must live in focused `src/lib` modules or the thin new CLI.
 - [ ] **8.6 Verify real read-only listing.** Run both
@@ -786,3 +794,7 @@ are explicitly reported.
 - 2026-08-30: Moved the active generic design and plan into `docs/specs` and
 	`docs/plans`; replaced the harness-specific execution directive with
 	`executable-planning`.
+- 2026-08-30: Strengthened Git ownership: agents must neither stage changes nor
+	remove staged changes by any direct or indirect mechanism, must preserve the
+	pre-task index state, and must use filesystem-only rename operations instead
+	of `git mv`.
