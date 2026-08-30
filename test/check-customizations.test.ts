@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { checkCustomizations } from "../src/check-customizations.js";
+import { parseFrontmatter } from "../src/lib/frontmatter.js";
+import { listSections } from "../src/lib/markdown-sections.js";
 
 const testFilePath = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(testFilePath), "..");
@@ -18,6 +20,42 @@ const tsxCliPath = path.join(
 	"cli.mjs",
 );
 const checkerCliPath = path.join(projectRoot, "src", "check-customizations.ts");
+const executablePlannerPath = path.join(
+	projectRoot,
+	".github",
+	"agents",
+	"executable-planner.agent.md",
+);
+const executablePlanningCorePath = path.join(
+	projectRoot,
+	"sources",
+	"executable-planning",
+	"core.md",
+);
+
+const EXECUTABLE_PLANNER_FRONTMATTER_BLOCK = [
+	"---",
+	"name: Executable Planner",
+	"description: Create and maintain an iterative, executable plan for IDE or autonomous harness use",
+	"argument-hint: Describe the goal, constraints, and whether this is an auto-run or local plan",
+	"tools: ['search', 'read', 'edit', 'agent', 'todo']",
+	"agents: ['*']",
+	"user-invocable: true",
+	"disable-model-invocation: false",
+	"---",
+	"",
+].join("\n");
+const EXECUTABLE_PLANNER_BODY = [
+	"",
+	"You create implementation plans for IDE and autonomous harness execution. Planning is your sole responsibility; do not implement project work.",
+	"",
+	"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+	"",
+	"Load every additional skill named by this agent before planning. If a required skill cannot be loaded, report that failure and stop rather than reconstructing its workflow from memory.",
+	"",
+	"Use the available read, search, question, persistence, and subagent tools to carry out the loaded skills. Keep harness-specific tool choices in this adapter; keep planning behavior in the skill.",
+	"",
+].join("\n");
 
 type FixtureOptions = {
 	skillFolderName?: string;
@@ -339,6 +377,31 @@ test("checkCustomizations rejects duplicated canonical headings in thin agent", 
 	}
 });
 
+test("checkCustomizations rejects canonical headings at any agent heading level", async () => {
+	const repoRoot = await createFixtureRepo({
+		agentBodyOverride: [
+			"# Scope",
+			"",
+			"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+			"",
+			"A level-one heading must not bypass canonical ownership.",
+		].join("\n"),
+	});
+
+	try {
+		await assert.rejects(
+			async () => checkCustomizations(repoRoot),
+			(error: unknown) => {
+				assert.match(String(error), /duplicate canonical heading/i);
+				assert.match(String(error), /Scope/);
+				return true;
+			},
+		);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
 test("checkCustomizations rejects missing README command and client instructions", async () => {
 	const repoRoot = await createFixtureRepo({
 		readmeOverride:
@@ -403,5 +466,50 @@ test("checkCustomizations CLI exits nonzero with stable path-prefixed errors", a
 		assert.match(result.stderr, /sources\/executable-planning\/skill\.json:/);
 	} finally {
 		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
+test("executable planner agent is a thin adapter with byte-stable frontmatter", async () => {
+	const [agentContent, coreContent] = await Promise.all([
+		readFile(executablePlannerPath, "utf8"),
+		readFile(executablePlanningCorePath, "utf8"),
+	]);
+
+	assert.ok(
+		agentContent.startsWith(EXECUTABLE_PLANNER_FRONTMATTER_BLOCK),
+		"agent frontmatter block must remain byte-identical",
+	);
+
+	const parsedAgent = parseFrontmatter(
+		agentContent,
+		".github/agents/executable-planner.agent.md",
+	);
+
+	assert.deepEqual(parsedAgent.attributes, {
+		name: "Executable Planner",
+		description:
+			"Create and maintain an iterative, executable plan for IDE or autonomous harness use",
+		"argument-hint":
+			"Describe the goal, constraints, and whether this is an auto-run or local plan",
+		tools: ["search", "read", "edit", "agent", "todo"],
+		agents: ["*"],
+		"user-invocable": true,
+		"disable-model-invocation": false,
+	});
+
+	assert.equal(parsedAgent.body, EXECUTABLE_PLANNER_BODY);
+
+	const coreHeadings = new Set(
+		listSections(coreContent)
+			.filter((section) => section.level >= 2)
+			.map((section) => section.heading),
+	);
+	for (const section of listSections(parsedAgent.body)) {
+		if (section.level >= 2) {
+			assert.ok(
+				!coreHeadings.has(section.heading),
+				`agent body duplicates canonical core heading: ${section.heading}`,
+			);
+		}
 	}
 });

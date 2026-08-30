@@ -274,10 +274,6 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 
 			const agentSections = listSections(parsed.body);
 			for (const section of agentSections) {
-				if (section.level < 2) {
-					continue;
-				}
-
 				if (canonicalHeadings.has(section.heading)) {
 					errors.push(
 						`${relativePath}: duplicate canonical heading in thin agent: ${section.heading}`,

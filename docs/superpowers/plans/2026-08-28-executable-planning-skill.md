@@ -37,9 +37,10 @@
 
 ## Current State
 
-- Current phase: Phase 2 — Planning Knowledge Package
-- Current step: P2 — awaiting user review and explicit confirmation
-- Next action: Wait for explicit user confirmation before beginning Phase 3, Task 9.
+- Status: completed
+- Current phase: Phase 3 — Client Integration and Maintainability
+- Current step: P3 — Awaiting user confirmation and real-home installation decision
+- Next action: Present the validated implementation and client boundaries; do not run real-home installation unless the user explicitly approves it.
 - Blockers: None
 
 ## Decisions
@@ -57,6 +58,7 @@
 - 2026-08-29: The user explicitly approved ending isolated work tree execution and continuing directly on `mainline` so each interactive checkpoint is reviewable in the open workspace.
 - 2026-08-29: The former work tree remains frozen only as rollback until the user signs off on the migrated P1 checkpoint; no further implementation occurs there.
 - 2026-08-29: The user explicitly approved P1 on `mainline`; Phase 2 may begin and the frozen rollback work tree may be removed.
+- 2026-08-29: The user explicitly approved P2 on `mainline`; Phase 3 may begin.
 
 ## Deferred Items
 
@@ -651,7 +653,7 @@ Expected: all checks PASS and the second build produces no diff.
 
 ### Phase 2 Checkpoint
 
-- [?] **P2 Confirm the planning knowledge package**
+- [x] **P2 Confirm the planning knowledge package**
 
 Update this plan with checksum, section, transform, build, and drift evidence. Present the built skill's section outline and any behavioral-test limitation to the user. Stop and wait for explicit confirmation before Phase 3.
 
@@ -682,7 +684,7 @@ The Copilot custom agent is a thin consumer of the skill, supported clients can 
 - Consumes: installed `executable-planning` skill and future named skills.
 - Produces: unchanged agent frontmatter plus a concise planning-only adapter body.
 
-- [ ] **9.1 RED: Require the thin-agent contract**
+- [x] **9.1 RED: Require the thin-agent contract**
 
 Extend tests to require unchanged frontmatter values, `**REQUIRED SKILL:** Use executable-planning`, planning-only behavior, loading additional required skills, and explicit failure when the required skill cannot load. Forbid duplicated headings from `core.md` in the agent body.
 
@@ -690,7 +692,7 @@ Run: `npx tsx --test test/check-customizations.test.ts`
 
 Expected: FAIL because the current body duplicates canonical behavior.
 
-- [ ] **9.2 GREEN: Replace only the agent body**
+- [x] **9.2 GREEN: Replace only the agent body**
 
 Preserve existing frontmatter exactly. Replace the body with concise instructions that:
 
@@ -708,7 +710,7 @@ Run: `npx tsx --test test/check-customizations.test.ts && npm run check:customiz
 
 Expected: PASS.
 
-- [ ] **9.3 Rebuild to prove adapter independence**
+- [x] **9.3 Rebuild to prove adapter independence**
 
 Run: `npm run build && npm run check:drift`
 
@@ -749,7 +751,7 @@ export async function installClients(options: InstallOptions): Promise<InstallRe
 export function parseClientArguments(arguments_: readonly string[]): readonly ClientName[];
 ```
 
-- [ ] **10.1 RED: Specify argument and mapping behavior**
+- [x] **10.1 RED: Specify argument and mapping behavior**
 
 Test default/all expansion, each single client, duplicate arguments, unknown clients, repeated `--client`, missing values, and these exact static mappings:
 
@@ -764,7 +766,7 @@ Run: `npx tsx --test test/install-clients.test.ts`
 
 Expected: FAIL because the installer is absent.
 
-- [ ] **10.2 GREEN: Implement pure argument parsing and static mappings**
+- [x] **10.2 GREEN: Implement pure argument parsing and static mappings**
 
 Accept `--client all|copilot|claude|agents`, default to all, deduplicate while preserving the mapping order, and reject all other arguments with usage text. Resolve source and destination paths from injected roots; do not read environment variables in exported core functions.
 
@@ -772,7 +774,7 @@ Run: `npx tsx --test test/install-clients.test.ts`
 
 Expected: argument/mapping tests PASS; filesystem tests remain pending.
 
-- [ ] **10.3 RED: Specify collision-safe filesystem behavior**
+- [x] **10.3 RED: Specify collision-safe filesystem behavior**
 
 Using `mkdtemp`, test missing parent creation, absolute file and directory links, paths containing spaces, a second identical run, a regular-file destination, directory destination, unrelated relative symlink, unrelated absolute symlink, missing source, and partial-batch safety.
 
@@ -782,7 +784,7 @@ Run: `npx tsx --test test/install-clients.test.ts`
 
 Expected: FAIL on unimplemented filesystem behavior.
 
-- [ ] **10.4 GREEN: Implement all-before-write installation**
+- [x] **10.4 GREEN: Implement all-before-write installation**
 
 Use `lstat`, `readlink`, `realpath`-equivalent normalization, `mkdir({ recursive: true })`, and `symlink` with explicit file/directory type. Treat an existing link resolving to the exact source as success. Aggregate validation errors and throw before creating parents or links. On Windows `EPERM`, report that Developer Mode or symlink permission is required.
 
@@ -790,7 +792,7 @@ Run: `npx tsx --test test/install-clients.test.ts`
 
 Expected: PASS without touching the real home directory.
 
-- [ ] **10.5 Verify CLI behavior against a temporary home**
+- [x] **10.5 Verify CLI behavior against a temporary home**
 
 Run the CLI with an injected test-home mechanism documented only for tests, for example `EXECUTABLE_PLANNING_HOME=$(mktemp -d) npm run install:clients -- --client all`. Inspect all four links with `readlink`, rerun the command, and verify it reports them as existing.
 
@@ -808,7 +810,7 @@ Expected: both runs succeed; no path under the real `$HOME` changes.
 - Consumes: package commands and exact client mappings.
 - Produces: statically verifiable instructions sufficient for agents to maintain and install the artifacts.
 
-- [ ] **11.1 RED: Specify required documentation markers**
+- [x] **11.1 RED: Specify required documentation markers**
 
 Test that README contains prerequisites, `npm install`, `npm run format`, `npm run check`, `npm run build`, all four `install:clients` selectors, every source and destination path, client reload/discovery/use instructions, repository-move recovery, collision behavior, official snapshot update, and steps to add another manifest-driven skill without changing `src/build-skills.ts`.
 
@@ -816,7 +818,7 @@ Run: `npx tsx --test test/documentation.test.ts`
 
 Expected: FAIL because README is absent.
 
-- [ ] **11.2 GREEN: Write concise agent-facing instructions**
+- [x] **11.2 GREEN: Write concise agent-facing instructions**
 
 Document:
 
@@ -837,7 +839,7 @@ Expected: PASS.
 
 - Modify: this plan's Current State, checkboxes, decisions, blockers, and Progress Log only.
 
-- [ ] **12.1 Run Biome and inspect every resulting edit**
+- [x] **12.1 Run Biome and inspect every resulting edit**
 
 Run: `npm run format`
 
@@ -847,19 +849,19 @@ Inspect: `git diff -- . ':(exclude)vendor/copilot/Plan.agent.md'`
 
 Expected: no whitespace errors, no unexplained changes, and no formatting mutation of the official snapshot.
 
-- [ ] **12.2 Run the complete static gate**
+- [x] **12.2 Run the complete static gate**
 
 Run: `npm run check`
 
 Expected: Biome, strict TypeScript, all tests, customization lint, and drift checks PASS with no warnings.
 
-- [ ] **12.3 Prove deterministic idempotence**
+- [x] **12.3 Prove deterministic idempotence**
 
 Run: `npm run build && shasum -a 256 .agents/skills/executable-planning/SKILL.md > /tmp/skill-before.sha && npm run build && shasum -a 256 .agents/skills/executable-planning/SKILL.md > /tmp/skill-after.sha && diff /tmp/skill-before.sha /tmp/skill-after.sha && npm run check:drift`
 
 Expected: PASS and no repository diff from the second build.
 
-- [ ] **12.4 Recheck snapshot and installer isolation**
+- [x] **12.4 Recheck snapshot and installer isolation**
 
 Run: `shasum -a 256 vendor/copilot/Plan.agent.md`
 
@@ -867,7 +869,7 @@ Expected: `f941698683bf4fbb09c612177d27879fc242c8a55236a9127ee899acc784adfe`.
 
 Run all installer tests and inspect the real destinations with `lstat` only; do not create real-home links.
 
-- [ ] **12.5 Review behavioral pressure evidence**
+- [x] **12.5 Review behavioral pressure evidence**
 
 Verify static coverage for every pressure fixture. Report separately whether isolated agent trials were available and passed; do not substitute static fixture validation for runtime behavioral evidence.
 
@@ -910,6 +912,13 @@ Update this plan with all evidence and set Status to `completed` only if every s
 - 2026-08-29: Task 8 behavioral execution remains unverified because the available harness cannot isolate controlled baseline and skill-only loading. All six required pressure scenarios retain static shape and project-rule coverage checks; no behavioral success is claimed.
 - 2026-08-29: Task 8 completed at tree `c313756` after fix round 1. Review-driven fixes added explicit coverage for 40 project-owned rule IDs and separate exact-count removals for both conditional phase variants; scoped re-review approved all fixes with no new findings.
 - 2026-08-29: Phase 2 gate passed: formatting and index/working-tree whitespace checks, vendor checksum, lint, type checking, 62/62 tests, drift checks, and a second idempotent build all passed. Generated artifacts and tests have no editor diagnostics; H2-first fragment warnings in `core.md` and `skill-only.md`, plus the required copied `autorun` token, are source-fragment tooling limitations. P2 awaits explicit user confirmation.
+- 2026-08-29: User explicitly approved P2. Advanced to Phase 3, Task 9; two intervening test quote-style edits retained all four focused P2 behaviors and zero drift before Biome normalization.
+- 2026-08-29: Task 9 completed at tree `44109f8` after fix round 1. The thin agent preserves frontmatter byte-for-byte and delegates all behavior to required skills; 12/12 focused tests, build independence, drift, lint, and typecheck passed. Review-driven enforcement now rejects canonical headings at every adapter heading level and tests exact adapter-body bytes.
+- 2026-08-29: Task 10 completed at tree `2f96ed3` after fix round 1. All 19 installer tests pass, including exact mappings, argument parsing, preflight atomicity, collisions, idempotence, canonical symlink identity, broken links, and temporary-home CLI behavior. Real-home destinations remained absent; Windows `EPERM` runtime coverage remains deferred on macOS.
+- 2026-08-29: Task 11 completed at tree `4c79426` after fix round 1. Documentation tests now require all four intact source-to-destination mappings, each client section gives its exact install command, and scoped re-review approved all fixes; focused docs, customization, formatting, lint, typecheck, and diagnostics passed.
+- 2026-08-29: Task 12 static verification passed: Biome made no changes; staged and unstaged whitespace checks passed; `npm run check` passed 84/84 tests plus customization and drift checks; two builds produced skill SHA-256 `298c88a3688b3e35cc404212091afbac46b32f08054af2bc190f4be545e93732` with no second-build repository delta; the vendor snapshot retained pinned SHA-256 `f941698683bf4fbb09c612177d27879fc242c8a55236a9127ee899acc784adfe`; all 19 installer tests passed; and read-only before/after `lstat` checks found all four real-home destinations absent.
+- 2026-08-29: All six behavioral pressure fixtures pass static shape and exact `R01`–`R40` project-rule coverage checks. Controlled baseline-versus-skill runtime trials remain unavailable because the active harness cannot isolate skill loading; no runtime behavioral success is claimed.
+- 2026-08-29: Final broad review found no Critical or Important issues, passed specification compliance, approved code quality, and identified no P3 blocker. Recorded non-blocking residuals remain isolated runtime behavioral trials, Windows `EPERM` execution on macOS, and deferred minor test enhancements.
 
 ---
 
