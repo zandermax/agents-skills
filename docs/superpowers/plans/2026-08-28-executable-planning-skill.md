@@ -39,8 +39,8 @@
 
 - Status: completed
 - Current phase: Phase 3 — Client Integration and Maintainability
-- Current step: P3 — Awaiting user confirmation and real-home installation decision
-- Next action: Present the validated implementation and client boundaries; do not run real-home installation unless the user explicitly approves it.
+- Current step: Completed — P3 approved and real-home clients installed
+- Next action: Reload or restart each client if skill discovery is cached.
 - Blockers: None
 
 ## Decisions
@@ -875,7 +875,7 @@ Verify static coverage for every pressure fixture. Report separately whether iso
 
 ### Phase 3 Checkpoint
 
-- [ ] **P3 Confirm completion and decide real installation**
+- [x] **P3 Confirm completion and decide real installation**
 
 Update this plan with all evidence and set Status to `completed` only if every static gate passes. Present client support boundaries and ask whether to run `npm run install:clients -- --client all` against the real home. Do not run it without explicit approval.
 
@@ -919,6 +919,7 @@ Update this plan with all evidence and set Status to `completed` only if every s
 - 2026-08-29: Task 12 static verification passed: Biome made no changes; staged and unstaged whitespace checks passed; `npm run check` passed 84/84 tests plus customization and drift checks; two builds produced skill SHA-256 `298c88a3688b3e35cc404212091afbac46b32f08054af2bc190f4be545e93732` with no second-build repository delta; the vendor snapshot retained pinned SHA-256 `f941698683bf4fbb09c612177d27879fc242c8a55236a9127ee899acc784adfe`; all 19 installer tests passed; and read-only before/after `lstat` checks found all four real-home destinations absent.
 - 2026-08-29: All six behavioral pressure fixtures pass static shape and exact `R01`–`R40` project-rule coverage checks. Controlled baseline-versus-skill runtime trials remain unavailable because the active harness cannot isolate skill loading; no runtime behavioral success is claimed.
 - 2026-08-29: Final broad review found no Critical or Important issues, passed specification compliance, approved code quality, and identified no P3 blocker. Recorded non-blocking residuals remain isolated runtime behavioral trials, Windows `EPERM` execution on macOS, and deferred minor test enhancements.
+- 2026-08-29: User approved P3 and explicitly authorized `npm run install:clients -- --client all` against the real home. The installer created all four expected symlinks to this repository; a second run reported `created=0 existing=4`, confirming idempotence.
 
 ---
 
