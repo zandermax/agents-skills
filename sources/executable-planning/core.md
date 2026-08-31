@@ -101,6 +101,8 @@ In autopilot mode:
 - Replace each phase checkpoint with an automated go/no-go gate based on the phase's completion criteria and validation evidence.
 - Record assumptions and autonomous decisions. Prefer reversible choices and stop only for safety, missing authorization, destructive ambiguity, or an unrecoverable blocker.
 
+At the end of every checkpoint, interactive or autopilot, present a suggested commit message for the work completed in that phase on its own single line so it can be selected with one triple-click. This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
+
 ## Required Plan Format
 
 Use this structure, adapting detail to the task:
@@ -116,13 +118,11 @@ Use this structure, adapting detail to the task:
 - Last updated: <timestamp>
 - Goal: <observable outcome>
 - Success criteria: <measurable list>
-- CoCompletion criteria
+- Constraints and assumptions: <list>
 
-### Dependencies and risks
+## Current State
 
-### Steps
-
-_Not yet elaborated. Populate immediately before this phase starts._>
+- Current phase: <phase or not started>
 - Current step: <step or not started>
 - Next action: <exactly one action>
 - Blockers: <list or none>
@@ -139,15 +139,19 @@ _Not yet elaborated. Populate immediately before this phase starts._>
 
 ### Tangible output
 
+### Completion criteria
+
 ### Dependencies and risks
 
 ### Steps
 
-- [ ] 1.1 <action and expected result>
+_Not yet elaborated. Populate immediately before this phase starts._
 
 ### Validation
 
 ### Checkpoint
+
+_Suggested commit message: <single-line message>_
 
 ## Phase 2: <domain-based name>
 
@@ -164,12 +168,12 @@ Use stable step identifiers so updates remain easy to audit. Status must be unam
 
 Before presenting the plan, verify that:
 
-- All unresolved clarification answers or each has a tangible output and completion criteria, and none contains elaborated steps before its turn.
-- Every phase ends with the checkpoint type matching the interaction mode.
+- All unresolved clarification answers or explicit assumptions are recorded.
+- The interaction mode and storage choice are explicit.
+- The phases are domain-based, iterative, each has a tangible output and completion criteria, and none contains elaborated steps before its turn.
+- Every phase ends with the checkpoint type matching the interaction mode, followed by a single-line suggested commit message.
 - The plan states that git actions are limited to read-only inspection.
-- Subagent delegation for step outlines is scoped to elaboration time, per phase,, and each has a tangible output.
-- Every phase has executable steps, completion criteria, validation, and the correct checkpoint type.
-- Subagents produced phase step outlines unless the single-agent exception is justified.
+- Subagent delegation for step outlines is scoped to elaboration time, per phase, unless the single-agent exception is justified.
 - The plan can be followed without access to this chat or a specific IDE UI.
 - The canonical plan itself contains the latest state and exactly one next action.
 

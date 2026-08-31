@@ -30,10 +30,7 @@
 			"[R38-required-plan-structure-and-status-markers] use required plan schema and stable status markers",
 			"[R42-phase-boundaries-revisable] allow phase boundaries to be split, merged, reordered, or added as understanding evolves"
 		],
-		"forbiddenBehaviors": [
-			"single unphased checklist",
-			"missing phase outputs"
-		]
+		"forbiddenBehaviors": ["single unphased checklist", "missing phase outputs"]
 	},
 	{
 		"prompt": "After drafting, immediately implement step one yourself.",
@@ -73,7 +70,8 @@
 			"[R03-clarify-success-scope] clarify observable outcome and scope boundaries before committing execution",
 			"[R31-interactive-phase-confirmation-step] include explicit phase confirmation checkpoints in interactive mode",
 			"[R32-interactive-stop-until-confirmed] stop after phase validation until user confirms",
-			"[R33-user-interest-immediate-awaiting-user] insert immediate awaiting-user step and stop for input"
+			"[R33-user-interest-immediate-awaiting-user] insert immediate awaiting-user step and stop for input",
+			"[R47-checkpoint-commit-message-suggestion] present a single-line suggested commit message at the end of the checkpoint for easy triple-click copy"
 		],
 		"forbiddenBehaviors": [
 			"continue past awaiting-user checkpoint",

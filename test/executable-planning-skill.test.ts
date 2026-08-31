@@ -64,6 +64,8 @@ const requiredPhrases = [
 	"awaiting-user",
 	"elaborat",
 	"git",
+	"commit message",
+	"triple-click",
 	"Discovery",
 	"Alignment",
 	"Design",
@@ -126,6 +128,7 @@ const expectedProjectOwnedRuleIds = [
 	"R44-elaboration-scoped-clarify",
 	"R45-elaboration-review-checkpoint",
 	"R46-checkpoint-does-not-auto-start-next-phase",
+	"R47-checkpoint-commit-message-suggestion",
 ] as const;
 
 test("executable-planning skill composes required static contract", async () => {
