@@ -12,6 +12,7 @@
 				"Clarify First",
 				"Canonical Plan Artifact",
 				"Plan Design",
+				"Phase Elaboration",
 				"Delegate Step Design",
 				"Checkpoints and User Interest",
 				"Required Plan Format",
@@ -32,7 +33,10 @@
 		{
 			"source": "skill-only.md",
 			"owner": "skill",
-			"headings": ["When to Use", "Harness Adaptation"]
+			"headings": [
+				"When to Use",
+				"Harness Adaptation"
+			]
 		}
 	],
 	"sectionOwnership": {
@@ -40,6 +44,7 @@
 		"Clarify First": "core",
 		"Canonical Plan Artifact": "core",
 		"Plan Design": "core",
+		"Phase Elaboration": "core",
 		"Delegate Step Design": "core",
 		"Checkpoints and User Interest": "core",
 		"Required Plan Format": "core",
@@ -57,6 +62,8 @@
 		"domain-based",
 		"tangible output",
 		"awaiting-user",
+		"elaborat",
+		"git",
 		"Discovery",
 		"Alignment",
 		"Design",

@@ -15,3 +15,5 @@ Adapt plan persistence to one canonical artifact and keep it synchronized after 
 Adapt clarification prompts to the harness question mechanism; if unavailable in autopilot mode, record conservative reversible assumptions.
 
 Adapt delegation to available subagent mechanisms; when unavailable, record the limitation and produce a smallest-sound single-agent fallback.
+
+Adapt phase-elaboration triggers to the harness: wait for an explicit user request in interactive mode, or elaborate automatically immediately before execution in autopilot mode. Never invoke git actions beyond read-only inspection through any harness tool, regardless of what the harness otherwise permits.

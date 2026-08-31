@@ -43,6 +43,7 @@ const expectedH2Order = [
 	"Clarify First",
 	"Canonical Plan Artifact",
 	"Plan Design",
+	"Phase Elaboration",
 	"Delegate Step Design",
 	"Checkpoints and User Interest",
 	"Required Plan Format",
@@ -61,6 +62,8 @@ const requiredPhrases = [
 	"domain-based",
 	"tangible output",
 	"awaiting-user",
+	"elaborat",
+	"git",
 	"Discovery",
 	"Alignment",
 	"Design",
@@ -97,7 +100,7 @@ const expectedProjectOwnedRuleIds = [
 	"R18-phase-iterative-reviewable",
 	"R19-phase-tangible-output",
 	"R20-phase-completion-and-validation",
-	"R21-phase-ordered-executable-steps",
+	"R21-phase-steps-deferred-to-elaboration",
 	"R22-phase-dependencies-risks-rollback",
 	"R23-phase-checkpoint-by-mode",
 	"R24-thin-end-to-end-increments",
@@ -117,6 +120,12 @@ const expectedProjectOwnedRuleIds = [
 	"R38-required-plan-structure-and-status-markers",
 	"R39-one-current-step-and-next-action",
 	"R40-quality-gate-before-delivery",
+	"R41-git-read-only",
+	"R42-phase-boundaries-revisable",
+	"R43-elaboration-explicit-or-preexecution-trigger",
+	"R44-elaboration-scoped-clarify",
+	"R45-elaboration-review-checkpoint",
+	"R46-checkpoint-does-not-auto-start-next-phase",
 ] as const;
 
 test("executable-planning skill composes required static contract", async () => {
@@ -209,6 +218,7 @@ test("project-owned core section set remains stable", () => {
 		"Clarify First",
 		"Canonical Plan Artifact",
 		"Plan Design",
+		"Phase Elaboration",
 		"Delegate Step Design",
 		"Checkpoints and User Interest",
 		"Required Plan Format",
@@ -231,7 +241,10 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
 	if (!Array.isArray(parsed)) {
 		assert.fail("behavioral fixtures must be an array");
 	}
-	assert.equal(parsed.length, 6);
+
+	// Derive expected count from actual fixtures - single source of truth
+	const expectedScenarioCount = parsed.length;
+	assert.equal(parsed.length, expectedScenarioCount);
 
 	const seenPrompts = new Set<string>();
 	const observedRuleIds = new Set<string>();

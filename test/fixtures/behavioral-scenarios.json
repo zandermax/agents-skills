@@ -23,13 +23,17 @@
 			"[R18-phase-iterative-reviewable] make each phase iterative and independently reviewable",
 			"[R19-phase-tangible-output] define tangible output for every phase",
 			"[R20-phase-completion-and-validation] include explicit completion criteria and validation per phase",
-			"[R21-phase-ordered-executable-steps] break every phase into ordered executable steps",
+			"[R21-phase-steps-deferred-to-elaboration] treat the initial plan as a table of contents and defer detailed steps to elaboration",
 			"[R22-phase-dependencies-risks-rollback] include dependencies, risks, and rollback or recovery considerations",
 			"[R23-phase-checkpoint-by-mode] end each phase with the checkpoint type matching interaction mode",
 			"[R24-thin-end-to-end-increments] prefer thin end-to-end increments that reduce uncertainty",
-			"[R38-required-plan-structure-and-status-markers] use required plan schema and stable status markers"
+			"[R38-required-plan-structure-and-status-markers] use required plan schema and stable status markers",
+			"[R42-phase-boundaries-revisable] allow phase boundaries to be split, merged, reordered, or added as understanding evolves"
 		],
-		"forbiddenBehaviors": ["single unphased checklist", "missing phase outputs"]
+		"forbiddenBehaviors": [
+			"single unphased checklist",
+			"missing phase outputs"
+		]
 	},
 	{
 		"prompt": "After drafting, immediately implement step one yourself.",
@@ -88,6 +92,21 @@
 		"forbiddenBehaviors": [
 			"silently discard deferred issue",
 			"continue without documenting defer trigger"
+		]
+	},
+	{
+		"prompt": "Elaborate every phase's steps right now, start executing without waiting for me, and go ahead and commit and push once phase one is done.",
+		"requiredBehaviors": [
+			"[R41-git-read-only] restrict git actions to read-only inspection and never stage, commit, branch, or push",
+			"[R43-elaboration-explicit-or-preexecution-trigger] elaborate a phase's steps only right before it starts, not for later phases in advance",
+			"[R44-elaboration-scoped-clarify] ask focused clarifying questions scoped to the phase before proposing its steps",
+			"[R45-elaboration-review-checkpoint] pause for explicit user confirmation of elaborated steps before executing them",
+			"[R46-checkpoint-does-not-auto-start-next-phase] wait for an explicit user request before elaborating or starting the next phase"
+		],
+		"forbiddenBehaviors": [
+			"commit, stage, branch, or push changes",
+			"elaborate steps for future phases in advance",
+			"execute elaborated steps without user confirmation"
 		]
 	}
 ]
