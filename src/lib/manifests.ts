@@ -1,7 +1,7 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
-export type SectionOwner = 'core' | 'official' | 'skill';
+export type SectionOwner = "core" | "official" | "skill";
 
 export interface SourceSelection {
 	readonly source: string;
@@ -22,25 +22,25 @@ export interface SkillManifest {
 }
 
 const MANIFEST_KEYS = new Set([
-	'name',
-	'title',
-	'description',
-	'output',
-	'selections',
-	'sectionOwnership',
-	'requiredPhrases',
-	'forbiddenPhrases',
+	"name",
+	"title",
+	"description",
+	"output",
+	"selections",
+	"sectionOwnership",
+	"requiredPhrases",
+	"forbiddenPhrases",
 ]);
 
-const SELECTION_KEYS = new Set(['source', 'owner', 'headings', 'transforms']);
-const OWNERS = new Set<SectionOwner>(['core', 'official', 'skill']);
+const SELECTION_KEYS = new Set(["source", "owner", "headings", "transforms"]);
+const OWNERS = new Set<SectionOwner>(["core", "official", "skill"]);
 
 function createManifestError(manifestPath: string, message: string): Error {
 	return new Error(`${manifestPath}: ${message}`);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return value !== null && !Array.isArray(value) && typeof value === 'object';
+	return value !== null && !Array.isArray(value) && typeof value === "object";
 }
 
 function assertAllowedKeys(
@@ -64,7 +64,7 @@ function assertString(
 	manifestPath: string,
 	label: string,
 ): string {
-	if (typeof value !== 'string') {
+	if (typeof value !== "string") {
 		throw createManifestError(manifestPath, `${label} must be a string`);
 	}
 
@@ -89,7 +89,7 @@ function assertStringArray(
 
 	for (let index = 0; index < value.length; index += 1) {
 		const item = value[index];
-		if (typeof item !== 'string') {
+		if (typeof item !== "string") {
 			throw createManifestError(
 				manifestPath,
 				`${label}[${index}] must be a string`,
@@ -112,8 +112,8 @@ function assertStringArray(
 function isWithinRepo(repoRoot: string, targetPath: string): boolean {
 	const relativePath = path.relative(repoRoot, targetPath);
 	return (
-		relativePath === '' ||
-		(!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+		relativePath === "" ||
+		(!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
 	);
 }
 
@@ -146,7 +146,7 @@ function parseSectionOwner(
 	manifestPath: string,
 	label: string,
 ): SectionOwner {
-	if (value !== 'core' && value !== 'official' && value !== 'skill') {
+	if (value !== "core" && value !== "official" && value !== "skill") {
 		throw createManifestError(
 			manifestPath,
 			`${label} must be one of: core, official, skill`,
@@ -162,7 +162,7 @@ export function parseSkillManifest(
 	repoRoot: string,
 ): SkillManifest {
 	if (!isPlainObject(value)) {
-		throw createManifestError(manifestPath, 'manifest must be an object');
+		throw createManifestError(manifestPath, "manifest must be an object");
 	}
 
 	const absoluteRepoRoot = path.resolve(repoRoot);
@@ -170,46 +170,41 @@ export function parseSkillManifest(
 	if (!isWithinRepo(absoluteRepoRoot, absoluteManifestPath)) {
 		throw createManifestError(
 			manifestPath,
-			'manifest path must be inside repository root',
+			"manifest path must be inside repository root",
 		);
 	}
 
-	assertAllowedKeys(value, MANIFEST_KEYS, manifestPath, 'manifest');
+	assertAllowedKeys(value, MANIFEST_KEYS, manifestPath, "manifest");
 
-	const name = assertString(value.name, manifestPath, 'name');
+	const name = assertString(value.name, manifestPath, "name");
 	if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
 		throw createManifestError(
 			manifestPath,
-			'name must match kebab-case pattern [a-z0-9-]',
+			"name must match kebab-case pattern [a-z0-9-]",
 		);
 	}
 
-	const title = assertString(value.title, manifestPath, 'title');
-	if (title.length === 0) {
-		throw createManifestError(manifestPath, 'title must be nonempty');
-	}
-
-	if (title.trim() !== title) {
-		throw createManifestError(manifestPath, 'title must be trimmed');
-	}
-
-	if (/[\r\n]/.test(title)) {
-		throw createManifestError(manifestPath, 'title must be a single line');
+	const title = assertString(value.title, manifestPath, "title");
+	if (title.length === 0 || title.trim() !== title || /[\r\n]/.test(title)) {
+		throw createManifestError(
+			manifestPath,
+			"title must be a non-empty trimmed single-line string",
+		);
 	}
 
 	const description = assertString(
 		value.description,
 		manifestPath,
-		'description',
+		"description",
 	);
-	if (!description.startsWith('Use when')) {
+	if (!description.startsWith("Use when")) {
 		throw createManifestError(
 			manifestPath,
-			'description must begin with Use when',
+			"description must begin with Use when",
 		);
 	}
 
-	const output = assertString(value.output, manifestPath, 'output');
+	const output = assertString(value.output, manifestPath, "output");
 	const expectedOutput = `.agents/skills/${name}/SKILL.md`;
 	if (output !== expectedOutput) {
 		throw createManifestError(
@@ -220,17 +215,17 @@ export function parseSkillManifest(
 
 	const selectionsValue = value.selections;
 	if (!Array.isArray(selectionsValue)) {
-		throw createManifestError(manifestPath, 'selections must be an array');
+		throw createManifestError(manifestPath, "selections must be an array");
 	}
 
 	if (selectionsValue.length === 0) {
-		throw createManifestError(manifestPath, 'selections must be nonempty');
+		throw createManifestError(manifestPath, "selections must be nonempty");
 	}
 
 	const requiredPhrases = assertStringArray(
 		value.requiredPhrases,
 		manifestPath,
-		'requiredPhrases',
+		"requiredPhrases",
 		{
 			nonEmpty: false,
 		},
@@ -238,7 +233,7 @@ export function parseSkillManifest(
 	const forbiddenPhrases = assertStringArray(
 		value.forbiddenPhrases,
 		manifestPath,
-		'forbiddenPhrases',
+		"forbiddenPhrases",
 		{
 			nonEmpty: false,
 		},
@@ -248,7 +243,7 @@ export function parseSkillManifest(
 	if (!isPlainObject(ownershipValue)) {
 		throw createManifestError(
 			manifestPath,
-			'sectionOwnership must be an object',
+			"sectionOwnership must be an object",
 		);
 	}
 
@@ -314,14 +309,14 @@ export function parseSkillManifest(
 
 		const transformsValue = selectionValue.transforms;
 		if (transformsValue !== undefined) {
-			if (owner !== 'official') {
+			if (owner !== "official") {
 				throw createManifestError(
 					manifestPath,
 					`selections[${index}].transforms is only allowed for official selections`,
 				);
 			}
 
-			if (typeof transformsValue !== 'string') {
+			if (typeof transformsValue !== "string") {
 				throw createManifestError(
 					manifestPath,
 					`selections[${index}].transforms must be a string`,

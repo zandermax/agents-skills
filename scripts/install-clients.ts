@@ -9,15 +9,11 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Artifact } from "../src/lib/artifacts.js";
+import { discoverArtifacts } from "../src/lib/artifacts.js";
+import { loadInstallCatalog } from "../src/lib/catalog.js";
 
 export type ClientName = "copilot" | "claude" | "agents";
-
-export interface ClientLink {
-	readonly client: ClientName;
-	readonly source: string;
-	readonly destination: string;
-	readonly kind: "file" | "directory";
-}
 
 export interface InstallOptions {
 	readonly clients: readonly ClientName[];
@@ -40,33 +36,6 @@ const CLIENT_ORDER: readonly ClientName[] = ["copilot", "claude", "agents"];
 const CLIENT_VALUES = new Set<ClientName>(CLIENT_ORDER);
 const USAGE =
 	"Usage: npm run install:clients -- [--client all|copilot|claude|agents] [--skills-dir <path>]";
-
-export const CLIENT_LINKS: readonly ClientLink[] = [
-	{
-		client: "copilot",
-		source: ".github/agents/executable-planner.agent.md",
-		destination: "~/.copilot/agents/executable-planner.agent.md",
-		kind: "file",
-	},
-	{
-		client: "copilot",
-		source: ".agents/skills/executable-planning",
-		destination: "~/.copilot/skills/executable-planning",
-		kind: "directory",
-	},
-	{
-		client: "claude",
-		source: ".agents/skills/executable-planning",
-		destination: "~/.claude/skills/executable-planning",
-		kind: "directory",
-	},
-	{
-		client: "agents",
-		source: ".agents/skills/executable-planning",
-		destination: "~/.agents/skills/executable-planning",
-		kind: "directory",
-	},
-];
 
 function normalizeClientSelection(
 	clients: readonly ClientName[],
@@ -159,7 +128,7 @@ export function parseInstallArguments(
 }
 
 type ResolvedLink = {
-	readonly kind: ClientLink["kind"];
+	readonly kind: "file" | "directory";
 	readonly sourcePath: string;
 	readonly destinationPath: string;
 };
@@ -194,7 +163,7 @@ function deduplicateResolvedLinks(
 		if (
 			existing.kind !== link.kind ||
 			normalizeForComparison(existing.sourcePath) !==
-				normalizeForComparison(link.sourcePath)
+			normalizeForComparison(link.sourcePath)
 		) {
 			throw new Error(`Conflicting destination mappings: ${destination}`);
 		}
@@ -212,8 +181,53 @@ function formatWindowsEperm(error: unknown): string {
 	return `${message}. On Windows, enable Developer Mode or grant symlink permission.`;
 }
 
-function nodeSymlinkType(kind: ClientLink["kind"]): "file" | "dir" {
+function nodeSymlinkType(kind: ResolvedLink["kind"]): "file" | "dir" {
 	return kind === "directory" ? "dir" : "file";
+}
+
+async function resolveCatalogClientLinks(
+	repoRoot: string,
+	homeDirectory: string,
+	selectedClients: ReadonlySet<ClientName>,
+): Promise<readonly ResolvedLink[]> {
+	if (selectedClients.size === 0) {
+		return [];
+	}
+
+	const catalog = await loadInstallCatalog(repoRoot);
+	const artifacts = await discoverArtifacts(catalog, repoRoot);
+	const artifactsByCollection = new Map<string, Artifact[]>();
+	for (const artifact of artifacts) {
+		const existing = artifactsByCollection.get(artifact.collection);
+		if (existing === undefined) {
+			artifactsByCollection.set(artifact.collection, [artifact]);
+		} else {
+			existing.push(artifact);
+		}
+	}
+
+	const links: ResolvedLink[] = [];
+	for (const client of catalog.clients) {
+		if (!selectedClients.has(client.name as ClientName)) {
+			continue;
+		}
+		for (const destination of client.destinations) {
+			const collectionArtifacts =
+				artifactsByCollection.get(destination.collection) ?? [];
+			for (const artifact of collectionArtifacts) {
+				links.push({
+					kind: artifact.entryKind,
+					sourcePath: artifact.sourcePath,
+					destinationPath: resolveHomeRelativePath(
+						homeDirectory,
+						`${destination.path}/${artifact.destinationName}`,
+					),
+				});
+			}
+		}
+	}
+
+	return links;
 }
 
 async function resolveCustomSkillLinks(
@@ -370,18 +384,11 @@ export async function installClients(
 ): Promise<InstallResult> {
 	const selectedClients = normalizeClientSelection(options.clients);
 	const selectedClientSet = new Set<ClientName>(selectedClients);
-	const selectedLinks = CLIENT_LINKS.filter((link) =>
-		selectedClientSet.has(link.client),
+	const clientLinks = await resolveCatalogClientLinks(
+		options.repoRoot,
+		options.homeDirectory,
+		selectedClientSet,
 	);
-
-	const clientLinks: readonly ResolvedLink[] = selectedLinks.map((spec) => ({
-		kind: spec.kind,
-		sourcePath: path.resolve(options.repoRoot, spec.source),
-		destinationPath: resolveHomeRelativePath(
-			options.homeDirectory,
-			spec.destination,
-		),
-	}));
 	const customSkillLinks = await resolveCustomSkillLinks(
 		options.repoRoot,
 		options.skillDirectories ?? [],

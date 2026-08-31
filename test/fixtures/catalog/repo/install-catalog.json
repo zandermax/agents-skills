@@ -16,7 +16,7 @@
 		{
 			"name": "custom-directory",
 			"artifactKind": "agent",
-			"source": ".custom-directory",
+			"source": ".custom/agents",
 			"entry": { "kind": "directory", "marker": "AGENT.md" }
 		}
 	],
@@ -29,13 +29,8 @@
 			]
 		},
 		{
-			"name": "custom-directory",
-			"destinations": [
-				{
-					"collection": "custom-directory",
-					"path": "~/.directory-client/agents"
-				}
-			]
+			"name": "claude",
+			"destinations": [{ "collection": "skills", "path": "~/.claude/skills" }]
 		}
 	]
 }

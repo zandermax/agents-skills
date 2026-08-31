@@ -1,33 +1,32 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readdir, readFile, stat } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { type Artifact, discoverArtifacts } from './lib/artifacts.js';
-import { type ArtifactCollection, loadInstallCatalog } from './lib/catalog.js';
-import { parseFrontmatter } from './lib/frontmatter.js';
-import { parseSkillManifest } from './lib/manifests.js';
-import { listSections } from './lib/markdown-sections.js';
+import { discoverArtifacts } from "./lib/artifacts.js";
+import type { InstallCatalog } from "./lib/catalog.js";
+import { loadInstallCatalog } from "./lib/catalog.js";
+import { parseFrontmatter } from "./lib/frontmatter.js";
+import { parseSkillManifest } from "./lib/manifests.js";
+import { listSections } from "./lib/markdown-sections.js";
 
 const AGENT_ONLY_FRONTMATTER_KEYS = new Set([
-	'target',
-	'tools',
-	'agents',
-	'handoffs',
-	'model',
+	"target",
+	"tools",
+	"agents",
+	"handoffs",
+	"model",
 ]);
 
 const FORBIDDEN_SKILL_TOKENS = [
-	'/memories/session/plan.md',
-	'run_in_terminal',
-	'vscode_askQuestions',
-	'read_file',
-	'apply_patch',
+	"/memories/session/plan.md",
+	"run_in_terminal",
+	"vscode_askQuestions",
+	"read_file",
+	"apply_patch",
 ];
-const REQUIRED_SKILL_PATTERN =
-	/\*\*REQUIRED SKILL:\*\*\s+Use\s+([a-z0-9]+(?:-[a-z0-9]+)*)/g;
 
 function toPosixPath(filePath: string): string {
-	return filePath.split(path.sep).join('/');
+	return filePath.split(path.sep).join("/");
 }
 
 function toRelativePath(repoRoot: string, filePath: string): string {
@@ -35,7 +34,7 @@ function toRelativePath(repoRoot: string, filePath: string): string {
 }
 
 function formatErrorList(errors: readonly string[]): Error {
-	const lines = errors.map((message) => `- ${message}`).join('\n');
+	const lines = errors.map((message) => `- ${message}`).join("\n");
 	return new Error(`checkCustomizations: validation failed\n${lines}`);
 }
 
@@ -45,7 +44,7 @@ function compareByCodePoint(left: string, right: string): number {
 
 function relativizeMessage(repoRoot: string, message: string): string {
 	const rootPrefix = `${toPosixPath(repoRoot)}/`;
-	return toPosixPath(message).split(rootPrefix).join('');
+	return toPosixPath(message).split(rootPrefix).join("");
 }
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -54,7 +53,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 		return fileStat.isFile();
 	} catch (error) {
 		const code = (error as NodeJS.ErrnoException).code;
-		if (code === 'ENOENT') {
+		if (code === "ENOENT") {
 			return false;
 		}
 
@@ -65,14 +64,14 @@ async function fileExists(filePath: string): Promise<boolean> {
 async function discoverManifestPaths(
 	repoRoot: string,
 ): Promise<readonly string[]> {
-	const sourcesRoot = path.join(repoRoot, 'sources');
-	let entries: readonly import('node:fs').Dirent[];
+	const sourcesRoot = path.join(repoRoot, "sources");
+	let entries: readonly import("node:fs").Dirent[];
 
 	try {
 		entries = await readdir(sourcesRoot, { withFileTypes: true });
 	} catch (error) {
 		const code = (error as NodeJS.ErrnoException).code;
-		if (code === 'ENOENT') {
+		if (code === "ENOENT") {
 			return [];
 		}
 
@@ -85,7 +84,7 @@ async function discoverManifestPaths(
 			continue;
 		}
 
-		const manifestPath = path.join(sourcesRoot, entry.name, 'skill.json');
+		const manifestPath = path.join(sourcesRoot, entry.name, "skill.json");
 		if (await fileExists(manifestPath)) {
 			manifests.push(manifestPath);
 		}
@@ -95,34 +94,15 @@ async function discoverManifestPaths(
 	return manifests;
 }
 
-function artifactContentPath(
-	artifact: Artifact,
-	collection: ArtifactCollection,
-): string {
-	return artifact.entryKind === 'file'
-		? artifact.sourcePath
-		: path.join(
-				artifact.sourcePath,
-				collection.entry.kind === 'directory' ? collection.entry.marker : '',
-			);
-}
-
 export async function checkCustomizations(repoRoot: string): Promise<void> {
 	const absoluteRepoRoot = path.resolve(repoRoot);
 	const errors: string[] = [];
-	const catalog = await loadInstallCatalog(absoluteRepoRoot);
-	const artifacts = await discoverArtifacts(catalog, absoluteRepoRoot);
-	const collectionsByName = new Map(
-		catalog.collections.map(
-			(collection) => [collection.name, collection] as const,
-		),
-	);
 
 	const manifests = await discoverManifestPaths(absoluteRepoRoot);
 
 	for (const manifestPath of manifests) {
 		try {
-			const raw = await readFile(manifestPath, 'utf8');
+			const raw = await readFile(manifestPath, "utf8");
 			let manifestValue: unknown;
 			try {
 				manifestValue = JSON.parse(raw) as unknown;
@@ -153,23 +133,45 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		}
 	}
 
-	const skillHeadings = new Map<string, ReadonlySet<string>>();
+	let catalog: InstallCatalog | undefined;
+	let artifacts: Awaited<ReturnType<typeof discoverArtifacts>> = [];
+	try {
+		catalog = await loadInstallCatalog(absoluteRepoRoot);
+		artifacts = await discoverArtifacts(catalog, absoluteRepoRoot);
+	} catch (error) {
+		errors.push(
+			relativizeMessage(
+				absoluteRepoRoot,
+				error instanceof Error ? error.message : String(error),
+			),
+		);
+	}
 
-	for (const artifact of artifacts.filter(
-		(candidate) => candidate.kind === 'skill',
-	)) {
-		const collection = collectionsByName.get(artifact.collection);
-		if (collection === undefined) {
+	const skillHeadings = new Map<string, Set<string>>();
+
+	for (const artifact of artifacts) {
+		if (artifact.kind !== "skill") {
 			continue;
 		}
-		const skillFile = artifactContentPath(artifact, collection);
+
+		const collection = catalog?.collections.find(
+			(candidate) => candidate.name === artifact.collection,
+		);
+		if (collection?.entry.kind !== "directory") {
+			errors.push(
+				`${artifact.id}: skill artifact collection must use a directory entry`,
+			);
+			continue;
+		}
+
+		const skillFile = path.join(artifact.sourcePath, collection.entry.marker);
 		const relativePath = toRelativePath(absoluteRepoRoot, skillFile);
 		try {
-			const content = await readFile(skillFile, 'utf8');
+			const content = await readFile(skillFile, "utf8");
 			const parsed = parseFrontmatter(content, relativePath);
 			const name = parsed.attributes.name;
 
-			if (typeof name !== 'string' || name.length === 0) {
+			if (typeof name !== "string" || name.length === 0) {
 				errors.push(
 					`${relativePath}: frontmatter name must be a non-empty string`,
 				);
@@ -183,7 +185,7 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 			}
 
 			for (const key of Object.keys(parsed.attributes)) {
-				if (key !== 'name' && key !== 'description') {
+				if (key !== "name" && key !== "description") {
 					errors.push(
 						`${relativePath}: skill frontmatter has forbidden key ${key}`,
 					);
@@ -204,13 +206,11 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 				}
 			}
 
-			const headings = new Set<string>();
-			const sections = listSections(parsed.body);
-			for (const section of sections) {
-				if (section.level >= 2) {
-					headings.add(section.heading);
-				}
-			}
+			const headings = new Set(
+				listSections(parsed.body)
+					.filter((section) => section.level >= 2)
+					.map((section) => section.heading),
+			);
 			skillHeadings.set(artifact.id, headings);
 		} catch (error) {
 			errors.push(
@@ -221,37 +221,43 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		}
 	}
 
-	for (const artifact of artifacts.filter(
-		(candidate) => candidate.kind === 'agent',
-	)) {
-		const collection = collectionsByName.get(artifact.collection);
-		if (collection?.validation !== 'copilot-agent') {
+	const validationByCollection = new Map(
+		catalog?.collections.map((collection) => [
+			collection.name,
+			collection.validation,
+		]),
+	);
+	for (const artifact of artifacts) {
+		if (
+			artifact.kind !== "agent" ||
+			validationByCollection.get(artifact.collection) !== "copilot-agent"
+		) {
 			continue;
 		}
-		const agentFile = artifactContentPath(artifact, collection);
+
+		const agentFile = artifact.sourcePath;
 		const relativePath = toRelativePath(absoluteRepoRoot, agentFile);
 		try {
-			const content = await readFile(agentFile, 'utf8');
+			const content = await readFile(agentFile, "utf8");
 			const parsed = parseFrontmatter(content, relativePath);
-
 			const declaredSkills = new Set<string>();
-			for (const match of parsed.body.matchAll(REQUIRED_SKILL_PATTERN)) {
-				const skillId = match[1];
-				if (skillId !== undefined) {
-					declaredSkills.add(skillId);
+			const declarationPattern =
+				/\*\*REQUIRED SKILL:\*\*\s+Use\s+([a-z0-9]+(?:-[a-z0-9]+)*)/g;
+			for (const match of parsed.body.matchAll(declarationPattern)) {
+				if (match[1] !== undefined) {
+					declaredSkills.add(match[1]);
 				}
 			}
 
 			const declaredHeadings = new Set<string>();
-			for (const skillId of declaredSkills) {
-				const headings = skillHeadings.get(skillId);
+			for (const skillName of declaredSkills) {
+				const headings = skillHeadings.get(skillName);
 				if (headings === undefined) {
 					errors.push(
-						`${relativePath} (${artifact.id}): declared skill does not exist: ${skillId}`,
+						`${relativePath}: declared REQUIRED SKILL does not exist: ${skillName}`,
 					);
 					continue;
 				}
-
 				for (const heading of headings) {
 					declaredHeadings.add(heading);
 				}
@@ -274,20 +280,20 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		}
 	}
 
-	const readmePath = path.join(absoluteRepoRoot, 'README.md');
+	const readmePath = path.join(absoluteRepoRoot, "README.md");
 	const relativeReadmePath = toRelativePath(absoluteRepoRoot, readmePath);
-	let readme = '';
+	let readme = "";
 	try {
-		readme = await readFile(readmePath, 'utf8');
+		readme = await readFile(readmePath, "utf8");
 	} catch {
 		errors.push(`${relativeReadmePath}: file is missing`);
 	}
 
 	if (readme.length > 0) {
 		const requiredReadmeMarkers = [
-			'npm run build',
-			'npm run check',
-			'npm run install:clients',
+			"npm run build",
+			"npm run check",
+			"npm run install:clients",
 		];
 
 		for (const marker of requiredReadmeMarkers) {
@@ -299,7 +305,7 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		}
 
 		const lowerReadme = readme.toLowerCase();
-		const requiredClientMarkers = ['copilot', 'claude', '.agents/skills'];
+		const requiredClientMarkers = ["copilot", "claude", ".agents/skills"];
 		for (const marker of requiredClientMarkers) {
 			if (!lowerReadme.includes(marker.toLowerCase())) {
 				errors.push(

@@ -41,6 +41,22 @@ test('discoverArtifacts finds structural entries in stable catalog order', async
 				entryKind: 'directory',
 			},
 			{
+				kind: "skill",
+				id: "fixture-skill",
+				name: "fixture-skill",
+				collection: "skills",
+				destinationName: "fixture-skill",
+				entryKind: "directory",
+			},
+			{
+				kind: "skill",
+				id: "review-skill",
+				name: "review-skill",
+				collection: "skills",
+				destinationName: "review-skill",
+				entryKind: "directory",
+			},
+			{
 				kind: 'skill',
 				id: 'zeta',
 				name: 'zeta',
@@ -63,6 +79,14 @@ test('discoverArtifacts finds structural entries in stable catalog order', async
 				collection: 'copilot',
 				destinationName: 'fixture-planner.agent.md',
 				entryKind: 'file',
+			},
+			{
+				kind: "agent",
+				id: "copilot:fixture",
+				name: "fixture",
+				collection: "copilot",
+				destinationName: "fixture.agent.md",
+				entryKind: "file",
 			},
 			{
 				kind: 'agent',

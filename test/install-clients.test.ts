@@ -4,6 +4,7 @@ import {
 	lstat,
 	mkdir,
 	mkdtemp,
+	readFile,
 	readlink,
 	rm,
 	symlink,
@@ -15,7 +16,6 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
-	CLIENT_LINKS,
 	type ClientName,
 	installClients,
 	parseClientArguments,
@@ -40,6 +40,22 @@ const installerCliPath = path.join(
 const AGENT_SOURCE = ".github/agents/executable-planner.agent.md";
 const SKILL_SOURCE = ".agents/skills/executable-planning";
 
+const EXPECTED_BUILTIN_LINKS: readonly {
+	readonly source: string;
+	readonly destination: string;
+}[] = [
+		{
+			source: AGENT_SOURCE,
+			destination: "~/.copilot/agents/executable-planner.agent.md",
+		},
+		{
+			source: SKILL_SOURCE,
+			destination: "~/.copilot/skills/executable-planning",
+		},
+		{ source: SKILL_SOURCE, destination: "~/.claude/skills/executable-planning" },
+		{ source: SKILL_SOURCE, destination: "~/.agents/skills/executable-planning" },
+	];
+
 async function createInstallFixture(label: string): Promise<{
 	repoRoot: string;
 	homeDirectory: string;
@@ -57,6 +73,15 @@ async function createInstallFixture(label: string): Promise<{
 	await writeFile(
 		path.join(repoRoot, SKILL_SOURCE, "SKILL.md"),
 		"# skill\n",
+		"utf8",
+	);
+	const catalogSource = await readFile(
+		path.join(projectRoot, "install-catalog.json"),
+		"utf8",
+	);
+	await writeFile(
+		path.join(repoRoot, "install-catalog.json"),
+		catalogSource,
 		"utf8",
 	);
 
@@ -191,35 +216,6 @@ test("parseInstallArguments rejects a missing custom root", () => {
 	);
 });
 
-test("CLIENT_LINKS publishes the exact static mapping contract", () => {
-	assert.deepEqual(CLIENT_LINKS, [
-		{
-			client: "copilot",
-			source: ".github/agents/executable-planner.agent.md",
-			destination: "~/.copilot/agents/executable-planner.agent.md",
-			kind: "file",
-		},
-		{
-			client: "copilot",
-			source: ".agents/skills/executable-planning",
-			destination: "~/.copilot/skills/executable-planning",
-			kind: "directory",
-		},
-		{
-			client: "claude",
-			source: ".agents/skills/executable-planning",
-			destination: "~/.claude/skills/executable-planning",
-			kind: "directory",
-		},
-		{
-			client: "agents",
-			source: ".agents/skills/executable-planning",
-			destination: "~/.agents/skills/executable-planning",
-			kind: "directory",
-		},
-	]);
-});
-
 test("installClients creates all missing parent directories and links", async () => {
 	const fixture = await createInstallFixture("install-clients-create");
 
@@ -233,7 +229,7 @@ test("installClients creates all missing parent directories and links", async ()
 		assert.equal(result.created.length, 4);
 		assert.equal(result.existing.length, 0);
 
-		for (const link of CLIENT_LINKS) {
+		for (const link of EXPECTED_BUILTIN_LINKS) {
 			const destinationPath = destinationFor(
 				fixture.homeDirectory,
 				link.destination,
@@ -578,11 +574,16 @@ test("installClients rejects an existing broken destination symlink and performs
 	}
 });
 
-test("installClients aggregates missing source with other validation conflicts", async () => {
+test("installClients aggregates multiple destination conflicts before writing any link", async () => {
 	const fixture = await createInstallFixture("install-clients-aggregate");
 
 	try {
-		await rm(path.join(fixture.repoRoot, AGENT_SOURCE), { force: true });
+		const copilotDestination = destinationFor(
+			fixture.homeDirectory,
+			"~/.copilot/agents/executable-planner.agent.md",
+		);
+		await mkdir(path.dirname(copilotDestination), { recursive: true });
+		await writeFile(copilotDestination, "not a symlink\n", "utf8");
 
 		const claudeDestination = destinationFor(
 			fixture.homeDirectory,
@@ -598,8 +599,11 @@ test("installClients aggregates missing source with other validation conflicts",
 			}),
 			(error: unknown) => {
 				const message = String(error);
-				assert.match(message, /Source is missing:/);
-				assert.match(message, /Destination exists and is not a symlink:/);
+				assert.ok(message.includes(copilotDestination));
+				assert.ok(message.includes(claudeDestination));
+				const occurrences =
+					message.split("Destination exists and is not a symlink:").length - 1;
+				assert.equal(occurrences, 2);
 				return true;
 			},
 		);
@@ -660,7 +664,7 @@ test("CLI supports injected temporary home and reports existing links on rerun",
 		assert.equal(first.status, 0, first.stderr);
 		assert.match(first.stdout, /summary created=4 existing=0/);
 
-		for (const link of CLIENT_LINKS) {
+		for (const link of EXPECTED_BUILTIN_LINKS) {
 			const destinationPath = destinationFor(
 				fixture.homeDirectory,
 				link.destination,
