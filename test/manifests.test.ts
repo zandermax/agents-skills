@@ -1,66 +1,68 @@
-import assert from "node:assert/strict";
-import path from "node:path";
-import test from "node:test";
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import test from 'node:test';
 
-import { parseSkillManifest } from "../src/lib/manifests.js";
+import { parseSkillManifest } from '../src/lib/manifests.js';
 
-const fixtureRepoRoot = path.resolve("test/fixtures/manifest/repo");
+const fixtureRepoRoot = path.resolve('test/fixtures/manifest/repo');
 const fixtureManifestPath = path.join(
 	fixtureRepoRoot,
-	"sources/executable-planning/skill.json",
+	'sources/executable-planning/skill.json',
 );
 
 function createValidManifest(): Record<string, unknown> {
 	return {
-		name: "executable-planning",
-		description: "Use when planning work requires deterministic checkpoints.",
-		output: ".agents/skills/executable-planning/SKILL.md",
+		name: 'executable-planning',
+		title: 'Executable Planning',
+		description: 'Use when planning work requires deterministic checkpoints.',
+		output: '.agents/skills/executable-planning/SKILL.md',
 		selections: [
 			{
-				source: "core.md",
-				owner: "core",
-				headings: ["Scope", "Phases"],
+				source: 'core.md',
+				owner: 'core',
+				headings: ['Scope', 'Phases'],
 			},
 			{
-				source: "official.md",
-				owner: "official",
-				headings: ["Discovery"],
-				transforms: "transforms.json",
+				source: 'official.md',
+				owner: 'official',
+				headings: ['Discovery'],
+				transforms: 'transforms.json',
 			},
 			{
-				source: "skill-only.md",
-				owner: "skill",
-				headings: ["Usage"],
+				source: 'skill-only.md',
+				owner: 'skill',
+				headings: ['Usage'],
 			},
 		],
 		sectionOwnership: {
-			Scope: "core",
-			Phases: "core",
-			Discovery: "official",
-			Usage: "skill",
+			Scope: 'core',
+			Phases: 'core',
+			Discovery: 'official',
+			Usage: 'skill',
 		},
-		requiredPhrases: ["canonical state record"],
-		forbiddenPhrases: ["/memories/session/plan.md"],
+		requiredPhrases: ['canonical state record'],
+		forbiddenPhrases: ['/memories/session/plan.md'],
 	};
 }
 
-test("parseSkillManifest parses a valid closed manifest", () => {
+test('parseSkillManifest parses a valid closed manifest', () => {
 	const parsed = parseSkillManifest(
 		createValidManifest(),
 		fixtureManifestPath,
 		fixtureRepoRoot,
 	);
 
-	assert.equal(parsed.name, "executable-planning");
-	assert.equal(parsed.output, ".agents/skills/executable-planning/SKILL.md");
+	assert.equal(parsed.name, 'executable-planning');
+	assert.equal(parsed.title, 'Executable Planning');
+	assert.equal(parsed.output, '.agents/skills/executable-planning/SKILL.md');
 	assert.equal(parsed.selections.length, 3);
-	assert.equal(parsed.selections[1]?.owner, "official");
-	assert.equal(parsed.selections[1]?.transforms, "transforms.json");
+	assert.equal(parsed.selections[1]?.owner, 'official');
+	assert.equal(parsed.selections[1]?.transforms, 'transforms.json');
 	assert.deepEqual(parsed.sectionOwnership, {
-		Scope: "core",
-		Phases: "core",
-		Discovery: "official",
-		Usage: "skill",
+		Scope: 'core',
+		Phases: 'core',
+		Discovery: 'official',
+		Usage: 'skill',
 	});
 	assert.ok(parsed.selections[0]);
 	assert.ok(Object.isFrozen(parsed));
@@ -69,7 +71,7 @@ test("parseSkillManifest parses a valid closed manifest", () => {
 	assert.ok(Object.isFrozen(parsed.sectionOwnership));
 });
 
-test("parseSkillManifest rejects unknown keys and wrong primitive types", () => {
+test('parseSkillManifest rejects unknown keys and wrong primitive types', () => {
 	const withUnknown = {
 		...createValidManifest(),
 		unexpected: true,
@@ -103,13 +105,48 @@ test("parseSkillManifest rejects unknown keys and wrong primitive types", () => 
 	);
 });
 
-test("parseSkillManifest validates name, description prefix, and output path", () => {
+test('parseSkillManifest requires a nonempty single-line title', () => {
+	const cases: readonly {
+		readonly label: string;
+		readonly title: unknown;
+		readonly expected: RegExp;
+	}[] = [
+		{ label: 'missing', title: undefined, expected: /string/i },
+		{ label: 'non-string', title: 123, expected: /string/i },
+		{ label: 'empty', title: '', expected: /nonempty|non-empty/i },
+		{ label: 'leading whitespace', title: ' Executable', expected: /trim/i },
+		{ label: 'trailing whitespace', title: 'Executable ', expected: /trim/i },
+		{ label: 'multiline', title: 'Executable\nPlanning', expected: /line/i },
+	];
+
+	for (const { label, title, expected } of cases) {
+		const manifest = createValidManifest();
+		if (title === undefined) {
+			delete manifest.title;
+		} else {
+			manifest.title = title;
+		}
+
+		assert.throws(
+			() => {
+				parseSkillManifest(manifest, fixtureManifestPath, fixtureRepoRoot);
+			},
+			(error: unknown) => {
+				assert.match(String(error), /title/i, label);
+				assert.match(String(error), expected, label);
+				return true;
+			},
+		);
+	}
+});
+
+test('parseSkillManifest validates name, description prefix, and output path', () => {
 	assert.throws(
 		() => {
 			parseSkillManifest(
 				{
 					...createValidManifest(),
-					name: "Executable Planning",
+					name: 'Executable Planning',
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
@@ -126,7 +163,7 @@ test("parseSkillManifest validates name, description prefix, and output path", (
 			parseSkillManifest(
 				{
 					...createValidManifest(),
-					description: "Used for planning.",
+					description: 'Used for planning.',
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
@@ -143,7 +180,7 @@ test("parseSkillManifest validates name, description prefix, and output path", (
 			parseSkillManifest(
 				{
 					...createValidManifest(),
-					output: ".agents/skills/other/SKILL.md",
+					output: '.agents/skills/other/SKILL.md',
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
@@ -157,7 +194,7 @@ test("parseSkillManifest validates name, description prefix, and output path", (
 	);
 });
 
-test("parseSkillManifest enforces source and transform path existence and repository confinement", () => {
+test('parseSkillManifest enforces source and transform path existence and repository confinement', () => {
 	assert.throws(
 		() => {
 			parseSkillManifest(
@@ -165,12 +202,12 @@ test("parseSkillManifest enforces source and transform path existence and reposi
 					...createValidManifest(),
 					selections: [
 						{
-							source: "/tmp/outside.md",
-							owner: "core",
-							headings: ["Scope"],
+							source: '/tmp/outside.md',
+							owner: 'core',
+							headings: ['Scope'],
 						},
 					],
-					sectionOwnership: { Scope: "core" },
+					sectionOwnership: { Scope: 'core' },
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
@@ -190,12 +227,12 @@ test("parseSkillManifest enforces source and transform path existence and reposi
 					...createValidManifest(),
 					selections: [
 						{
-							source: "missing.md",
-							owner: "core",
-							headings: ["Scope"],
+							source: 'missing.md',
+							owner: 'core',
+							headings: ['Scope'],
 						},
 					],
-					sectionOwnership: { Scope: "core" },
+					sectionOwnership: { Scope: 'core' },
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
@@ -216,7 +253,7 @@ test("parseSkillManifest enforces source and transform path existence and reposi
 			).map((selection) => ({ ...selection }));
 			selections[1] = {
 				...selections[1],
-				transforms: "/tmp/transforms.json",
+				transforms: '/tmp/transforms.json',
 			};
 			invalid.selections = selections;
 			parseSkillManifest(invalid, fixtureManifestPath, fixtureRepoRoot);
@@ -229,7 +266,7 @@ test("parseSkillManifest enforces source and transform path existence and reposi
 	);
 });
 
-test("parseSkillManifest requires nonempty selections and unique selected headings", () => {
+test('parseSkillManifest requires nonempty selections and unique selected headings', () => {
 	assert.throws(
 		() => {
 			parseSkillManifest(
@@ -256,18 +293,18 @@ test("parseSkillManifest requires nonempty selections and unique selected headin
 					...createValidManifest(),
 					selections: [
 						{
-							source: "core.md",
-							owner: "core",
-							headings: ["Scope"],
+							source: 'core.md',
+							owner: 'core',
+							headings: ['Scope'],
 						},
 						{
-							source: "official.md",
-							owner: "official",
-							headings: ["Scope"],
-							transforms: "transforms.json",
+							source: 'official.md',
+							owner: 'official',
+							headings: ['Scope'],
+							transforms: 'transforms.json',
 						},
 					],
-					sectionOwnership: { Scope: "core" },
+					sectionOwnership: { Scope: 'core' },
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
@@ -281,17 +318,17 @@ test("parseSkillManifest requires nonempty selections and unique selected headin
 	);
 });
 
-test("parseSkillManifest validates ownership agreement and official-only transforms", () => {
+test('parseSkillManifest validates ownership agreement and official-only transforms', () => {
 	assert.throws(
 		() => {
 			parseSkillManifest(
 				{
 					...createValidManifest(),
 					sectionOwnership: {
-						Scope: "official",
-						Phases: "core",
-						Discovery: "official",
-						Usage: "skill",
+						Scope: 'official',
+						Phases: 'core',
+						Discovery: 'official',
+						Usage: 'skill',
 					},
 				},
 				fixtureManifestPath,
@@ -312,13 +349,13 @@ test("parseSkillManifest validates ownership agreement and official-only transfo
 					...createValidManifest(),
 					selections: [
 						{
-							source: "core.md",
-							owner: "core",
-							headings: ["Scope"],
-							transforms: "transforms.json",
+							source: 'core.md',
+							owner: 'core',
+							headings: ['Scope'],
+							transforms: 'transforms.json',
 						},
 					],
-					sectionOwnership: { Scope: "core" },
+					sectionOwnership: { Scope: 'core' },
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
@@ -337,11 +374,11 @@ test("parseSkillManifest validates ownership agreement and official-only transfo
 				{
 					...createValidManifest(),
 					sectionOwnership: {
-						Scope: "core",
-						Phases: "core",
-						Discovery: "official",
-						Usage: "skill",
-						Extra: "skill",
+						Scope: 'core',
+						Phases: 'core',
+						Discovery: 'official',
+						Usage: 'skill',
+						Extra: 'skill',
 					},
 				},
 				fixtureManifestPath,

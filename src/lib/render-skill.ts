@@ -1,6 +1,6 @@
-import { renderFrontmatter } from "./frontmatter.js";
-import type { SectionOwner, SkillManifest } from "./manifests.js";
-import { listSections } from "./markdown-sections.js";
+import { renderFrontmatter } from './frontmatter.js';
+import type { SectionOwner, SkillManifest } from './manifests.js';
+import { listSections } from './markdown-sections.js';
 
 export interface OwnedSection {
 	readonly owner: SectionOwner;
@@ -16,10 +16,10 @@ export interface RenderedSkill {
 
 const MAX_DESCRIPTION_LENGTH = 1024;
 const MAINTENANCE_NOTICE_PHRASES = [
-	"maintenance notice",
-	"do not edit",
-	"generated file",
-	"auto-generated",
+	'maintenance notice',
+	'do not edit',
+	'generated file',
+	'auto-generated',
 ];
 
 function createRenderError(message: string): Error {
@@ -113,7 +113,7 @@ export function renderSkill(
 		description: manifest.description,
 	});
 
-	const renderedContent = `${frontmatter}# Executable Planning\n\n${orderedSectionContent.join("\n\n")}`;
+	const renderedContent = `${frontmatter}# ${manifest.title}\n\n${orderedSectionContent.join('\n\n')}`;
 
 	const h1Count = listSections(renderedContent).filter(
 		(section) => section.level === 1,

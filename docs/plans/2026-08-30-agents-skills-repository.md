@@ -39,20 +39,27 @@
 
 ## Plan Metadata
 
-- Status: ready
+- Status: in-progress
 - Mode: interactive
 - Canonical location: `docs/plans/2026-08-30-agents-skills-repository.md`
-- Last updated: 2026-08-30
+- Last updated: 2026-08-31
 - Goal: A validated `agents-skills` repository can list and selectively install multiple skills and named agent formats into built-in and arbitrary destinations, with known links intact after local and remote rename.
 - Success criteria: Generic skill titles; validated catalog and multi-format discovery; collection-aware agent validation; list and selective install commands; all repository checks pass; GitHub, package, remote, README, and local path renamed; known links resolve after migration.
-- Constraints and assumptions: The worktree starts from committed design `ca423b3`; `zandermax/agents-skills` was available during design; remote mutation requires authenticated admin access; unknown custom symlink destinations cannot be migrated automatically.
+- Constraints and assumptions: The worktree starts from committed design `ca423b3`; local path and origin already use `agents-skills`; package and README identity remain planning-specific; unknown custom symlink destinations cannot be migrated automatically.
 
 ## Current State
 
 - Current phase: Phase 1 - Generic Knowledge Artifacts
-- Current step: Not started
-- Next action: Start Task 1.1 using the `executable-planning` workflow.
+- Current step: `[?]` 1.C - Awaiting user confirmation
+- Next action: Present Phase 1 output and validation evidence, then wait for the
+	user to confirm whether Phase 2 may begin.
+- Blockers: Awaiting the interactive Phase 1 checkpoint decision.
 - Blockers: None
+- Observed out-of-sequence state: the repository is already located at
+	`/Users/zander/repos/agents-skills`, and `origin` is already
+	`https://github.com/zandermax/agents-skills.git`. Phase 3 must reconcile and
+	verify these completed identity changes rather than replay their destructive
+	rename steps.
 
 ## Decisions
 
@@ -68,11 +75,25 @@
 - 2026-08-30: Store active repository-wide plans and specs under neutral
 	`docs/plans` and `docs/specs` paths; retain historical Superpowers documents
 	unchanged as provenance.
+- 2026-08-31: Treat the existing local-directory and origin renames as
+	out-of-sequence completed state. Before Phase 3 execution, replace obsolete
+	rename mutations with verification steps; do not move the repository or
+	rename the remote again.
+- 2026-08-31: Normalize the four-file Biome formatting drift and establish a
+  passing full-check baseline before writing Task 1.1's failing feature tests.
+- 2026-08-31: Ruling: client destination paths are unique across the complete
+	catalog, not merely within one client, because two clients writing the same
+	root would collide. Ruling: an agent collection's format is its collection
+	name and may be mapped only by the same-named client; path-name heuristics are
+	not part of the schema. Skill collections remain shareable across clients.
 
 ## Deferred Items
 
 - Portable cross-harness agent generation is excluded; reconsider only when two concrete formats share enough semantics to justify translation.
 - Unknown arbitrary symlink destinations are not discoverable safely; users must reinstall those destinations after the local move.
+- Historical documents under `docs/superpowers` are not runtime or build
+	dependencies. Retain them as provenance unless the user separately chooses
+	deletion or archival; their disposition does not block Phase 1.
 
 ## Phase 1: Generic Knowledge Artifacts
 
@@ -101,7 +122,8 @@ validation. No installer or repository identity behavior changes in this phase.
 - Modify: `sources/executable-planning/skill.json`
 - Modify: `test/manifests.test.ts`
 - Modify: `test/render-skill.test.ts`
-- Modify: `test/fixtures/manifest/repo/sources/executable-planning/skill.json`
+- Reuse: the in-memory `createValidManifest()` fixture in
+	`test/manifests.test.ts`; no fixture manifest JSON exists on disk.
 
 **Interfaces:**
 
@@ -110,7 +132,15 @@ validation. No installer or repository identity behavior changes in this phase.
 - Preserves: `parseSkillManifest(value, manifestPath, repoRoot)` and
 	`renderSkill(manifest, sections)` signatures.
 
-- [ ] **1.1 Write failing manifest and renderer tests.** Add `title` to the
+- [x] **1.0 Normalize and verify the formatting baseline.** Run
+	`npm run format`, inspect the diff, and require formatter changes to be
+	limited to `scripts/install-clients.ts`, `test/documentation.test.ts`,
+	`test/install-clients.test.ts`, and `test/toolchain.test.ts`; this plan may
+	also differ because it records the audit. Run `npm run check` and require an
+	explicit zero exit before starting Task 1.1. If any other file changes or any
+	gate fails, stop and record the result instead of beginning feature work.
+
+- [x] **1.1 Write failing manifest and renderer tests.** Add `title` to the
 	valid manifest fixture, reject missing, non-string, empty, and multiline
 	titles, and prove two manifests render distinct H1s.
 
@@ -127,21 +157,21 @@ assert.match(alpha.content, /^---[\s\S]*\n# Alpha Skill\n/m);
 assert.match(beta.content, /^---[\s\S]*\n# Beta Skill\n/m);
 ```
 
-- [ ] **1.2 Run the focused tests and verify RED.** Run
+- [x] **1.2 Run the focused tests and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/manifests.test.ts test/render-skill.test.ts`.
 	Expected: failures report unknown or missing `title`, and rendered output
 	still contains `# Executable Planning` for the beta fixture.
-- [ ] **1.3 Implement the minimal title contract.** Add `title` to
+- [x] **1.3 Implement the minimal title contract.** Add `title` to
 	`MANIFEST_KEYS` and `SkillManifest`, validate `title.trim() === title`,
 	`title.length > 0`, and no CR/LF, then render ``# ${manifest.title}``.
-- [ ] **1.4 Update the real and fixture manifests.** Set the existing title to
+- [x] **1.4 Update the real and fixture manifests.** Set the existing title to
 	`Executable Planning`; do not alter its frontmatter name, description,
 	selected sections, or output path.
-- [ ] **1.5 Verify GREEN and byte stability.** Run the focused tests,
+- [x] **1.5 Verify GREEN and byte stability.** Run the focused tests,
 	`npm run build`, and
 	`git diff --exit-code -- .agents/skills/executable-planning/SKILL.md`.
 	Expected: tests pass and the generated planning skill is unchanged.
-- [ ] **1.6 Report the title slice and suggest a commit.** Report changed files
+- [x] **1.6 Report the title slice and suggest a commit.** Report changed files
 	and validation evidence, then suggest `feat: support generic skill titles`.
 	Do not stage, commit, or push.
 
@@ -199,25 +229,25 @@ export async function loadInstallCatalog(
 ): Promise<InstallCatalog>;
 ```
 
-- [ ] **2.1 Create catalog fixtures and failing parser tests.** Cover a valid
+- [x] **2.1 Create catalog fixtures and failing parser tests.** Cover a valid
 	skills collection, file and directory agent collections, multiple clients,
 	closed keys, kebab-case uniqueness, discriminated entry rules, validation
 	strategy closure, source existence and repository confinement, `~/`
 	destinations, duplicate destinations, and unknown collection references.
-- [ ] **2.2 Run catalog tests and verify RED.** Run
+- [x] **2.2 Run catalog tests and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/catalog.test.ts`. Expected: import fails
 	because `src/lib/catalog.ts` does not exist.
-- [ ] **2.3 Implement schema parsing.** Follow `src/lib/manifests.ts` patterns:
+- [x] **2.3 Implement schema parsing.** Follow `src/lib/manifests.ts` patterns:
 	parse JSON as `unknown`, aggregate stable path-prefixed errors, freeze arrays
 	and records, preserve catalog order, and allow only `copilot-agent` as the
 	initial content validation strategy.
-- [ ] **2.4 Add the real catalog.** Declare `skills` from `.agents/skills`,
+- [x] **2.4 Add the real catalog.** Declare `skills` from `.agents/skills`,
 	`copilot` from `.github/agents`, and clients `copilot`, `claude`, and `agents`
 	with the exact destinations approved in the spec.
-- [ ] **2.5 Verify parser and real catalog.** Run the focused catalog test and
+- [x] **2.5 Verify parser and real catalog.** Run the focused catalog test and
 	add one repository integration assertion that `loadInstallCatalog(REPO_ROOT)`
 	succeeds with two collections and three clients.
-- [ ] **2.6 Report the catalog slice and suggest a commit.** Report changed
+- [x] **2.6 Report the catalog slice and suggest a commit.** Report changed
 	files and validation evidence, then suggest
 	`feat: add artifact installation catalog`. Do not stage, commit, or push.
 
@@ -249,25 +279,25 @@ export async function discoverArtifacts(
 ): Promise<readonly Artifact[]>;
 ```
 
-- [ ] **3.1 Write failing discovery tests.** Assert skills require a directory
+- [x] **3.1 Write failing discovery tests.** Assert skills require a directory
 	marker, file agents require the suffix, directory agents require their
 	marker, invalid neighbors are ignored, paths stay inside collection roots,
 	IDs are unique, skill IDs are bare names, agent IDs are `format:name`, file
 	destination names preserve suffixes, and output order is catalog then
 	code-point lexical order.
-- [ ] **3.2 Run discovery tests and verify RED.** Run
+- [x] **3.2 Run discovery tests and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/artifacts.test.ts`. Expected: missing
 	`discoverArtifacts` import.
-- [ ] **3.3 Implement structural discovery.** Use `readdir` directory entries,
+- [x] **3.3 Implement structural discovery.** Use `readdir` directory entries,
 	`lstat`, marker checks, literal suffix removal, normalized containment checks,
 	and stable errors. Do not parse skill source manifests or agent content here.
-- [ ] **3.4 Prove two formats.** The fixture must return two skills plus
+- [x] **3.4 Prove two formats.** The fixture must return two skills plus
 	`copilot:fixture-planner` from a file and
 	`custom-directory:fixture-reviewer` from a marked directory.
-- [ ] **3.5 Verify GREEN and integration.** Run catalog and artifact tests,
+- [x] **3.5 Verify GREEN and integration.** Run catalog and artifact tests,
 	then assert the real catalog discovers `executable-planning` and
 	`copilot:executable-planner`.
-- [ ] **3.6 Report discovery and suggest a commit.** Report changed files and
+- [x] **3.6 Report discovery and suggest a commit.** Report changed files and
 	validation evidence, then suggest `feat: discover catalog artifacts`. Do not
 	stage, commit, or push.
 
@@ -286,7 +316,7 @@ export async function discoverArtifacts(
 - Produces: unchanged `checkCustomizations(repoRoot): Promise<void>` with
 	catalog-aware behavior.
 
-- [ ] **4.1 Write failing dependency-scope tests.** Create two skills and two
+- [x] **4.1 Write failing dependency-scope tests.** Create two skills and two
 	Copilot agents. Prove an agent may declare no skill, may declare one existing
 	skill without declaring the other, fails for a missing declared skill, and
 	checks duplicate headings only against the declared skill.
@@ -301,20 +331,20 @@ test("agent dependencies are validated independently", async () => {
 });
 ```
 
-- [ ] **4.2 Run focused validation tests and verify RED.** Run
+- [x] **4.2 Run focused validation tests and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/check-customizations.test.ts`. Expected:
 	the current validator reports a missing declaration for the unrelated skill.
-- [ ] **4.3 Implement collection-aware validation.** Load the catalog, build a
+- [x] **4.3 Implement collection-aware validation.** Load the catalog, build a
 	map of skill ID to headings, validate structural-only collections through
 	discovery, and apply Copilot frontmatter plus REQUIRED SKILL checks only to
 	collections declaring `copilot-agent`.
-- [ ] **4.4 Extract declarations deterministically.** Match complete markers
+- [x] **4.4 Extract declarations deterministically.** Match complete markers
 	with `/\*\*REQUIRED SKILL:\*\*\s+Use\s+([a-z0-9]+(?:-[a-z0-9]+)*)/g`,
 	deduplicate IDs, and produce stable missing-skill errors containing agent and
 	skill IDs.
-- [ ] **4.5 Verify the phase.** Run catalog, artifact, manifest, renderer, and
+- [x] **4.5 Verify the phase.** Run catalog, artifact, manifest, renderer, and
 	customization tests followed by `npm run check`.
-- [ ] **4.6 Report validation and suggest a commit.** Report changed files and
+- [x] **4.6 Report validation and suggest a commit.** Report changed files and
 	validation evidence, then suggest
 	`feat: validate artifact collections independently`. Do not stage, commit, or
 	push.
@@ -339,7 +369,7 @@ messages and no agent-created commits.
 
 ### Phase 1 Checkpoint
 
-- [ ] **1.C Present the tangible output and validation evidence to the user,
+- [?] **1.C Present the tangible output and validation evidence to the user,
 	update this plan, and stop until the user confirms Phase 2 may begin.**
 
 ## Phase 2: Selection and Installation
@@ -798,3 +828,119 @@ are explicitly reported.
 	remove staged changes by any direct or indirect mechanism, must preserve the
 	pre-task index state, and must use filesystem-only rename operations instead
 	of `git mv`.
+- 2026-08-31: Audited implementation against this plan. Tasks 1-9 remain
+	unimplemented: no manifest title contract, installation catalog, generic
+	artifact discovery/selection/installer modules, generic CLI, package rename,
+	or generic README exists. The local repository path and origin URL already
+	use `agents-skills`, so the later migration procedure is stale and must be
+	reconciled before Phase 3 rather than replayed.
+- 2026-08-31: Fresh validation found a clean worktree. TypeScript, 94 tests,
+	Markdown lint, customization validation, and generated-output drift checks
+	passed when run independently. `npm run check` failed at its first Biome stage
+	because four existing TypeScript files require formatting; no files were
+	changed by the check.
+- 2026-08-31: User selected baseline normalization before Task 1.1. Added Task
+  1.0 with a four-file formatting boundary and a required passing `npm run
+  check`; no feature implementation has started.
+- 2026-08-31: Task 1.0 completed. `npm run format` changed only the four
+	approved TypeScript files, and `npm run check` passed with 94/94 tests plus
+	Biome, Markdown lint, TypeScript, customization validation, and drift checks.
+	Advanced to Task 1.1; no title-contract production code has been changed.
+- 2026-08-31: Tasks 1.1 and 1.2 completed. The focused run reported 19 tests,
+	11 passing and 8 failing. The valid manifest failed because `title` is an
+	unknown closed-schema key, the missing-title case did not throw, and the
+	renderer emitted `# Executable Planning` instead of `# Alpha Skill`; these
+	are the expected feature-missing RED reasons. The plan's referenced fixture
+	manifest JSON does not exist; tests use the in-memory `createValidManifest()`
+	fixture, which now includes `title`.
+- 2026-08-31: Tasks 1.3 and 1.4 completed. The parser now accepts and validates
+	a trimmed, nonempty, single-line `title`; the renderer uses it for the sole
+	H1; and the real manifest sets `Executable Planning`. The focused suite
+	passed 19/19.
+- 2026-08-31: Tasks 1.5 and 1.6 completed. Focused tests passed 19/19, the real
+	skill rebuilt with no generated diff, and the final full gate passed 96/96
+	tests plus all static, customization, and drift checks. The first full-gate
+	attempt exposed title-less manifests in build and customization fixtures;
+	adding titles to those fixture constructors repaired the same slice. Suggested
+	commit: `feat: support generic skill titles`. No staging, commit, or push was
+	performed. Advanced to Task 2.1.
+- 2026-08-31: Tasks 2.1 and 2.2 completed. Added a valid catalog fixture with
+	skill, file-agent, and directory-agent collections plus two clients, and
+	parser tests for closure, names, entry rules, source safety, destinations,
+	references, order, and immutability. The focused run failed at module
+	resolution because `src/lib/catalog.ts` does not exist, exactly the planned
+	RED reason.
+- 2026-08-31: Task 2.3 completed. The catalog parser aggregates stable
+	path-prefixed errors, preserves order, validates confined source directories
+	and closed entry/validation strategies, and freezes nested results. The
+	focused catalog suite passed 8/8 after correcting one test regex to match the
+	parser's `directory, file` option order.
+- 2026-08-31: Tasks 2.4 and 2.5 completed with a second RED/GREEN cycle. The
+	repository integration assertion first failed with `ENOENT` for the root
+	catalog, then passed after adding the approved `skills` and `copilot`
+	collections plus `copilot`, `claude`, and `agents` clients. The focused suite
+	passed 9/9.
+- 2026-08-31: Task 2.6 completed. Formatting normalized the new catalog files,
+	and the full gate passed 105/105 tests plus all static, customization, and
+	drift checks. Suggested commit: `feat: add artifact installation catalog`.
+	No staging, commit, or push was performed. Advanced to Task 3.1.
+- 2026-08-31: Tasks 3.1 and 3.2 completed. Expanded the catalog fixture with
+	two skills, file and directory agents, and wrong-type/unmarked neighbors;
+	added tests for structural membership, identifiers, destinations, ordering,
+	containment, uniqueness, immutability, and real artifacts. The focused run
+	failed at module resolution because `src/lib/artifacts.ts` does not exist,
+	exactly the planned RED reason.
+- 2026-08-31: Tasks 3.3 through 3.5 completed. Structural discovery uses
+	code-point-sorted directory entries, regular file/directory checks, literal
+	suffix removal, marker files, normalized containment, immutable artifacts,
+	and duplicate-ID rejection. Artifact tests passed 3/3; catalog plus artifact
+	integration passed 12/12 and found the real `executable-planning` and
+	`copilot:executable-planner` artifacts.
+- 2026-08-31: Task 3.6 completed. The first full gate exposed a TypeScript
+	`readdir` overload inference issue; pinning UTF-8 and `Dirent<string>[]`
+	repaired the same slice. The rerun passed 108/108 tests plus all static,
+	customization, and drift checks. Suggested commit:
+	`feat: discover catalog artifacts`. No staging, commit, or push was
+	performed. A batched foundation review is next before Task 4.1.
+- 2026-08-31: Foundation review found catalog destination uniqueness was scoped
+	per client instead of globally and format agreement lacked an implementation.
+	Accepted both findings with the rulings above. The review's note about agents
+	requiring every skill is the existing behavior Task 4 explicitly replaces,
+	so it does not reopen Tasks 1-3.
+- 2026-08-31: Foundation fix round 1 added RED/GREEN regressions for global
+	destination uniqueness and agent collection/client format agreement. The
+	full gate passed 110/110; scoped re-review found no Critical, Important, or
+	Minor issues and approved both specification compliance and code quality.
+	Advanced to Task 4.1.
+- 2026-08-31: Tasks 4.1 and 4.2 completed. Added catalog-backed multi-skill
+	fixtures and four dependency-scope tests. The focused run passed 11 and
+	failed the four new cases for the expected reasons: no-skill and one-of-two
+	agents were rejected, a missing declared skill was ignored, and an undeclared
+	skill's heading collided globally.
+- 2026-08-31: Tasks 4.3 and 4.4 completed. Customization validation now loads
+	the catalog and discovered artifacts, maps each skill ID to its own headings,
+	applies Copilot checks only to `copilot-agent` collections, extracts and
+	deduplicates complete REQUIRED SKILL declarations, rejects missing declared
+	IDs, and checks headings only against declared skills. The expanded focused
+	suite passed 17/17, including two-agent independence and structural-only
+	collection coverage.
+- 2026-08-31: Task 4.5 completed. The exact Phase 1 focused suite passed 50/50;
+	after formatting, the full repository gate passed 115/115 tests plus Biome,
+	Markdown lint, TypeScript, customization validation, and generated-output
+	drift checks. Task 4 review is next.
+- 2026-08-31: Task 4.6 completed. Task review found no Critical, Important, or
+	Minor issues and approved specification compliance and code quality.
+	Suggested commit: `feat: validate artifact collections independently`. No
+	staging, commit, or push was performed. Broad Phase 1 review is next.
+- 2026-08-31: Broad Phase 1 review found no Critical, Important, or Minor
+	defects and approved specification compliance and code quality across titles,
+	catalog parsing, artifact discovery, and collection-aware validation. Moved
+	to interactive checkpoint 1.C; Phase 2 remains blocked pending user
+	confirmation.
+- 2026-08-31: Final checkpoint verification passed: `npm run check` completed
+	with 115/115 tests plus all static, customization, and drift checks;
+	`git diff --check` produced no errors; and the generated executable-planning
+	skill has no diff. Worktree status was reported without modifying the index:
+	Phase 1 source/tests/catalog/fixtures and the approved four-file baseline
+	formatting are modified or untracked, while this plan retains its pre-existing
+	staged state plus current unstaged ledger updates.

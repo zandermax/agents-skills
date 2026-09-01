@@ -1,130 +1,145 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import assert from 'node:assert/strict';
+import test from 'node:test';
 
-import { parseFrontmatter } from "../src/lib/frontmatter.js";
-import type { SkillManifest } from "../src/lib/manifests.js";
-import { listSections } from "../src/lib/markdown-sections.js";
-import { type OwnedSection, renderSkill } from "../src/lib/render-skill.js";
+import { parseFrontmatter } from '../src/lib/frontmatter.js';
+import type { SkillManifest } from '../src/lib/manifests.js';
+import { listSections } from '../src/lib/markdown-sections.js';
+import { type OwnedSection, renderSkill } from '../src/lib/render-skill.js';
 
 function createManifest(): SkillManifest {
 	return {
-		name: "executable-planning",
-		description: "Use when planning work requires deterministic checkpoints.",
-		output: ".agents/skills/executable-planning/SKILL.md",
+		name: 'executable-planning',
+		title: 'Executable Planning',
+		description: 'Use when planning work requires deterministic checkpoints.',
+		output: '.agents/skills/executable-planning/SKILL.md',
 		selections: [
 			{
-				source: "core.md",
-				owner: "core",
-				headings: ["Scope", "Phases"],
+				source: 'core.md',
+				owner: 'core',
+				headings: ['Scope', 'Phases'],
 			},
 			{
-				source: "official.md",
-				owner: "official",
-				headings: ["Discovery"],
+				source: 'official.md',
+				owner: 'official',
+				headings: ['Discovery'],
 			},
 			{
-				source: "skill-only.md",
-				owner: "skill",
-				headings: ["Usage"],
+				source: 'skill-only.md',
+				owner: 'skill',
+				headings: ['Usage'],
 			},
 		],
 		sectionOwnership: {
-			Scope: "core",
-			Phases: "core",
-			Discovery: "official",
-			Usage: "skill",
+			Scope: 'core',
+			Phases: 'core',
+			Discovery: 'official',
+			Usage: 'skill',
 		},
-		requiredPhrases: ["canonical state record"],
-		forbiddenPhrases: ["/memories/session/plan.md"],
+		requiredPhrases: ['canonical state record'],
+		forbiddenPhrases: ['/memories/session/plan.md'],
 	};
 }
 
 function createSections(): readonly OwnedSection[] {
 	return [
 		{
-			owner: "skill",
-			heading: "Usage",
+			owner: 'skill',
+			heading: 'Usage',
 			content: [
-				"## Usage",
-				"Use at the start of planning and preserve deferred items.",
-			].join("\n"),
-			sourceName: "skill-only.md",
+				'## Usage',
+				'Use at the start of planning and preserve deferred items.',
+			].join('\n'),
+			sourceName: 'skill-only.md',
 		},
 		{
-			owner: "core",
-			heading: "Phases",
+			owner: 'core',
+			heading: 'Phases',
 			content: [
-				"## Phases",
-				"Every plan has at least two domain phases and a canonical state record.",
-			].join("\n"),
-			sourceName: "core.md",
+				'## Phases',
+				'Every plan has at least two domain phases and a canonical state record.',
+			].join('\n'),
+			sourceName: 'core.md',
 		},
 		{
-			owner: "official",
-			heading: "Discovery",
+			owner: 'official',
+			heading: 'Discovery',
 			content: [
-				"## Discovery",
-				"Research the repository and iterate until explicit approval.",
-			].join("\n"),
-			sourceName: "official.md",
+				'## Discovery',
+				'Research the repository and iterate until explicit approval.',
+			].join('\n'),
+			sourceName: 'official.md',
 		},
 		{
-			owner: "core",
-			heading: "Scope",
+			owner: 'core',
+			heading: 'Scope',
 			content: [
-				"## Scope",
-				"Clarify outcomes, constraints, and success criteria first.",
-			].join("\n"),
-			sourceName: "core.md",
+				'## Scope',
+				'Clarify outcomes, constraints, and success criteria first.',
+			].join('\n'),
+			sourceName: 'core.md',
 		},
 	];
 }
 
-test("renderSkill composes deterministic output in manifest heading order", () => {
+test('renderSkill composes deterministic output in manifest heading order', () => {
 	const rendered = renderSkill(createManifest(), createSections());
 
 	const expected = [
-		"---",
-		"name: executable-planning",
-		"description: Use when planning work requires deterministic checkpoints.",
-		"---",
-		"# Executable Planning",
-		"",
-		"## Scope",
-		"Clarify outcomes, constraints, and success criteria first.",
-		"",
-		"## Phases",
-		"Every plan has at least two domain phases and a canonical state record.",
-		"",
-		"## Discovery",
-		"Research the repository and iterate until explicit approval.",
-		"",
-		"## Usage",
-		"Use at the start of planning and preserve deferred items.",
-	].join("\n");
+		'---',
+		'name: executable-planning',
+		'description: Use when planning work requires deterministic checkpoints.',
+		'---',
+		'# Executable Planning',
+		'',
+		'## Scope',
+		'Clarify outcomes, constraints, and success criteria first.',
+		'',
+		'## Phases',
+		'Every plan has at least two domain phases and a canonical state record.',
+		'',
+		'## Discovery',
+		'Research the repository and iterate until explicit approval.',
+		'',
+		'## Usage',
+		'Use at the start of planning and preserve deferred items.',
+	].join('\n');
 
-	assert.equal(rendered.path, ".agents/skills/executable-planning/SKILL.md");
+	assert.equal(rendered.path, '.agents/skills/executable-planning/SKILL.md');
 	assert.equal(rendered.content, expected);
 
 	const h1Count = rendered.content
-		.split("\n")
-		.filter((line) => line.startsWith("# ")).length;
+		.split('\n')
+		.filter((line) => line.startsWith('# ')).length;
 	assert.equal(h1Count, 1);
-	assert.equal(rendered.content.includes("Maintenance notice"), false);
+	assert.equal(rendered.content.includes('Maintenance notice'), false);
 });
 
-test("renderSkill frontmatter contains only name and description", () => {
+test('renderSkill uses each manifest title as its H1', () => {
+	const alpha = renderSkill(
+		{ ...createManifest(), name: 'alpha', title: 'Alpha Skill' },
+		createSections(),
+	);
+	const beta = renderSkill(
+		{ ...createManifest(), name: 'beta', title: 'Beta Skill' },
+		createSections(),
+	);
+
+	assert.match(alpha.content, /^---[\s\S]*\n# Alpha Skill\n/m);
+	assert.match(beta.content, /^---[\s\S]*\n# Beta Skill\n/m);
+});
+
+test('renderSkill frontmatter contains only name and description', () => {
 	const rendered = renderSkill(createManifest(), createSections());
 	const parsed = parseFrontmatter(rendered.content, rendered.path);
 
-	assert.deepEqual(Object.keys(parsed.attributes), ["name", "description"]);
+	assert.deepEqual(Object.keys(parsed.attributes), ['name', 'description']);
 	assert.deepEqual(parsed.attributes, {
-		name: "executable-planning",
-		description: "Use when planning work requires deterministic checkpoints.",
+		name: 'executable-planning',
+		description: 'Use when planning work requires deterministic checkpoints.',
 	});
 });
 
-test("renderSkill is deterministic across repeated renders", () => {
+test('renderSkill is deterministic across repeated renders', () => {
 	const manifest = createManifest();
 	const sections = createSections();
 
@@ -134,14 +149,14 @@ test("renderSkill is deterministic across repeated renders", () => {
 	assert.deepEqual(second, first);
 });
 
-test("renderSkill rejects duplicate headings in provided sections", () => {
+test('renderSkill rejects duplicate headings in provided sections', () => {
 	const sections: readonly OwnedSection[] = [
 		...createSections(),
 		{
-			owner: "core",
-			heading: "Scope",
-			content: "## Scope\nDuplicate scope section.",
-			sourceName: "duplicate-core.md",
+			owner: 'core',
+			heading: 'Scope',
+			content: '## Scope\nDuplicate scope section.',
+			sourceName: 'duplicate-core.md',
 		},
 	];
 
@@ -157,13 +172,13 @@ test("renderSkill rejects duplicate headings in provided sections", () => {
 	);
 });
 
-test("renderSkill rejects missing section ownership entries", () => {
+test('renderSkill rejects missing section ownership entries', () => {
 	const manifest: SkillManifest = {
 		...createManifest(),
 		sectionOwnership: {
-			Scope: "core",
-			Phases: "core",
-			Discovery: "official",
+			Scope: 'core',
+			Phases: 'core',
+			Discovery: 'official',
 		},
 	};
 
@@ -179,13 +194,13 @@ test("renderSkill rejects missing section ownership entries", () => {
 	);
 });
 
-test("renderSkill rejects owner mismatches", () => {
+test('renderSkill rejects owner mismatches', () => {
 	const sections: readonly OwnedSection[] = createSections().map(
 		(section): OwnedSection =>
-			section.heading === "Discovery"
+			section.heading === 'Discovery'
 				? {
 						...section,
-						owner: "skill",
+						owner: 'skill',
 					}
 				: section,
 	);
@@ -202,12 +217,12 @@ test("renderSkill rejects owner mismatches", () => {
 	);
 });
 
-test("renderSkill rejects when required phrase is missing", () => {
+test('renderSkill rejects when required phrase is missing', () => {
 	const sections = createSections().map((section) =>
-		section.heading === "Phases"
+		section.heading === 'Phases'
 			? {
 					...section,
-					content: "## Phases\nEvery plan has at least two domain phases.",
+					content: '## Phases\nEvery plan has at least two domain phases.',
 				}
 			: section,
 	);
@@ -224,9 +239,9 @@ test("renderSkill rejects when required phrase is missing", () => {
 	);
 });
 
-test("renderSkill rejects when forbidden phrase is present", () => {
+test('renderSkill rejects when forbidden phrase is present', () => {
 	const sections = createSections().map((section) =>
-		section.heading === "Usage"
+		section.heading === 'Usage'
 			? {
 					...section,
 					content: `${section.content}\nDo not write to /memories/session/plan.md.`,
@@ -246,10 +261,10 @@ test("renderSkill rejects when forbidden phrase is present", () => {
 	);
 });
 
-test("renderSkill rejects descriptions longer than 1024 characters", () => {
+test('renderSkill rejects descriptions longer than 1024 characters', () => {
 	const manifest: SkillManifest = {
 		...createManifest(),
-		description: `Use when ${"x".repeat(1017)}`,
+		description: `Use when ${'x'.repeat(1017)}`,
 	};
 
 	assert.throws(
@@ -264,9 +279,9 @@ test("renderSkill rejects descriptions longer than 1024 characters", () => {
 	);
 });
 
-test("renderSkill ignores fenced hash-prefixed lines when enforcing single H1", () => {
+test('renderSkill ignores fenced hash-prefixed lines when enforcing single H1', () => {
 	const sections = createSections().map((section) =>
-		section.heading === "Usage"
+		section.heading === 'Usage'
 			? {
 					...section,
 					content: `${section.content}\n\n\`\`\`md\n# Example\n\`\`\``,
@@ -282,9 +297,9 @@ test("renderSkill ignores fenced hash-prefixed lines when enforcing single H1", 
 	assert.equal(parsedH1Count, 1);
 });
 
-test("renderSkill rejects actual additional parsed H1 headings", () => {
+test('renderSkill rejects actual additional parsed H1 headings', () => {
 	const sections = createSections().map((section) =>
-		section.heading === "Usage"
+		section.heading === 'Usage'
 			? {
 					...section,
 					content: `${section.content}\n# Extra H1`,

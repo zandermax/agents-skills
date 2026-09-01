@@ -1,0 +1,41 @@
+{
+	"collections": [
+		{
+			"name": "skills",
+			"artifactKind": "skill",
+			"source": ".agents/skills",
+			"entry": { "kind": "directory", "marker": "SKILL.md" }
+		},
+		{
+			"name": "copilot",
+			"artifactKind": "agent",
+			"source": ".github/agents",
+			"entry": { "kind": "file", "suffix": ".agent.md" },
+			"validation": "copilot-agent"
+		},
+		{
+			"name": "custom-directory",
+			"artifactKind": "agent",
+			"source": ".custom-directory",
+			"entry": { "kind": "directory", "marker": "AGENT.md" }
+		}
+	],
+	"clients": [
+		{
+			"name": "copilot",
+			"destinations": [
+				{ "collection": "skills", "path": "~/.copilot/skills" },
+				{ "collection": "copilot", "path": "~/.copilot/agents" }
+			]
+		},
+		{
+			"name": "custom-directory",
+			"destinations": [
+				{
+					"collection": "custom-directory",
+					"path": "~/.directory-client/agents"
+				}
+			]
+		}
+	]
+}

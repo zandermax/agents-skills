@@ -5,18 +5,18 @@ import {
 	readlink,
 	realpath,
 	symlink,
-} from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export type ClientName = 'copilot' | 'claude' | 'agents';
+export type ClientName = "copilot" | "claude" | "agents";
 
 export interface ClientLink {
 	readonly client: ClientName;
 	readonly source: string;
 	readonly destination: string;
-	readonly kind: 'file' | 'directory';
+	readonly kind: "file" | "directory";
 }
 
 export interface InstallOptions {
@@ -36,35 +36,35 @@ export interface InstallResult {
 	readonly existing: readonly string[];
 }
 
-const CLIENT_ORDER: readonly ClientName[] = ['copilot', 'claude', 'agents'];
+const CLIENT_ORDER: readonly ClientName[] = ["copilot", "claude", "agents"];
 const CLIENT_VALUES = new Set<ClientName>(CLIENT_ORDER);
 const USAGE =
-	'Usage: npm run install:clients -- [--client all|copilot|claude|agents] [--skills-dir <path>]';
+	"Usage: npm run install:clients -- [--client all|copilot|claude|agents] [--skills-dir <path>]";
 
 export const CLIENT_LINKS: readonly ClientLink[] = [
 	{
-		client: 'copilot',
-		source: '.github/agents/executable-planner.agent.md',
-		destination: '~/.copilot/agents/executable-planner.agent.md',
-		kind: 'file',
+		client: "copilot",
+		source: ".github/agents/executable-planner.agent.md",
+		destination: "~/.copilot/agents/executable-planner.agent.md",
+		kind: "file",
 	},
 	{
-		client: 'copilot',
-		source: '.agents/skills/executable-planning',
-		destination: '~/.copilot/skills/executable-planning',
-		kind: 'directory',
+		client: "copilot",
+		source: ".agents/skills/executable-planning",
+		destination: "~/.copilot/skills/executable-planning",
+		kind: "directory",
 	},
 	{
-		client: 'claude',
-		source: '.agents/skills/executable-planning',
-		destination: '~/.claude/skills/executable-planning',
-		kind: 'directory',
+		client: "claude",
+		source: ".agents/skills/executable-planning",
+		destination: "~/.claude/skills/executable-planning",
+		kind: "directory",
 	},
 	{
-		client: 'agents',
-		source: '.agents/skills/executable-planning',
-		destination: '~/.agents/skills/executable-planning',
-		kind: 'directory',
+		client: "agents",
+		source: ".agents/skills/executable-planning",
+		destination: "~/.agents/skills/executable-planning",
+		kind: "directory",
 	},
 ];
 
@@ -86,7 +86,7 @@ export function parseClientArguments(
 
 	for (let index = 0; index < arguments_.length; index += 1) {
 		const argument = arguments_[index];
-		if (argument !== '--client') {
+		if (argument !== "--client") {
 			throw new Error(USAGE);
 		}
 
@@ -95,7 +95,7 @@ export function parseClientArguments(
 			throw new Error(USAGE);
 		}
 
-		if (value === 'all') {
+		if (value === "all") {
 			for (const client of CLIENT_ORDER) {
 				selected.add(client);
 			}
@@ -130,7 +130,7 @@ export function parseInstallArguments(
 		const argument = arguments_[index];
 		const value = arguments_[index + 1];
 
-		if (argument === '--client') {
+		if (argument === "--client") {
 			if (!value) {
 				throw new Error(USAGE);
 			}
@@ -140,7 +140,7 @@ export function parseInstallArguments(
 			continue;
 		}
 
-		if (argument === '--skills-dir') {
+		if (argument === "--skills-dir") {
 			if (!value) {
 				throw new Error(USAGE);
 			}
@@ -159,7 +159,7 @@ export function parseInstallArguments(
 }
 
 type ResolvedLink = {
-	readonly kind: ClientLink['kind'];
+	readonly kind: ClientLink["kind"];
 	readonly sourcePath: string;
 	readonly destinationPath: string;
 };
@@ -168,7 +168,7 @@ function resolveHomeRelativePath(
 	homeDirectory: string,
 	destination: string,
 ): string {
-	if (!destination.startsWith('~/')) {
+	if (!destination.startsWith("~/")) {
 		throw new Error(`Invalid destination mapping: ${destination}`);
 	}
 	return path.resolve(homeDirectory, destination.slice(2));
@@ -212,8 +212,8 @@ function formatWindowsEperm(error: unknown): string {
 	return `${message}. On Windows, enable Developer Mode or grant symlink permission.`;
 }
 
-function nodeSymlinkType(kind: ClientLink['kind']): 'file' | 'dir' {
-	return kind === 'directory' ? 'dir' : 'file';
+function nodeSymlinkType(kind: ClientLink["kind"]): "file" | "dir" {
+	return kind === "directory" ? "dir" : "file";
 }
 
 async function resolveCustomSkillLinks(
@@ -224,16 +224,16 @@ async function resolveCustomSkillLinks(
 		return [];
 	}
 
-	const skillsRoot = path.join(repoRoot, '.agents', 'skills');
-	let entries: readonly import('node:fs').Dirent[];
+	const skillsRoot = path.join(repoRoot, ".agents", "skills");
+	let entries: readonly import("node:fs").Dirent[];
 	try {
 		entries = await readdir(skillsRoot, { withFileTypes: true });
 	} catch (error) {
 		if (
-			typeof error === 'object' &&
+			typeof error === "object" &&
 			error !== null &&
-			'code' in error &&
-			error.code === 'ENOENT'
+			"code" in error &&
+			error.code === "ENOENT"
 		) {
 			throw new Error(`No built skills found: ${skillsRoot}`);
 		}
@@ -248,17 +248,17 @@ async function resolveCustomSkillLinks(
 
 		try {
 			const skillFile = await lstat(
-				path.join(skillsRoot, entry.name, 'SKILL.md'),
+				path.join(skillsRoot, entry.name, "SKILL.md"),
 			);
 			if (skillFile.isFile()) {
 				skillNames.push(entry.name);
 			}
 		} catch (error) {
 			if (
-				typeof error === 'object' &&
+				typeof error === "object" &&
 				error !== null &&
-				'code' in error &&
-				error.code === 'ENOENT'
+				"code" in error &&
+				error.code === "ENOENT"
 			) {
 				continue;
 			}
@@ -276,7 +276,7 @@ async function resolveCustomSkillLinks(
 
 	return destinationRoots.flatMap((destinationRoot) =>
 		skillNames.map((skillName) => ({
-			kind: 'directory' as const,
+			kind: "directory" as const,
 			sourcePath: path.join(skillsRoot, skillName),
 			destinationPath: path.join(destinationRoot, skillName),
 		})),
@@ -285,13 +285,13 @@ async function resolveCustomSkillLinks(
 
 async function classifyDestination(
 	resolvedLink: ResolvedLink,
-): Promise<'create' | 'existing'> {
+): Promise<"create" | "existing"> {
 	const stats = await lstat(resolvedLink.destinationPath).catch((error) => {
 		if (
-			typeof error === 'object' &&
+			typeof error === "object" &&
 			error !== null &&
-			'code' in error &&
-			error.code === 'ENOENT'
+			"code" in error &&
+			error.code === "ENOENT"
 		) {
 			return null;
 		}
@@ -299,7 +299,7 @@ async function classifyDestination(
 	});
 
 	if (stats === null) {
-		return 'create';
+		return "create";
 	}
 
 	if (!stats.isSymbolicLink()) {
@@ -319,10 +319,10 @@ async function classifyDestination(
 		destinationCanonical = await canonicalizeExistingPath(absoluteTargetPath);
 	} catch (error) {
 		if (
-			typeof error === 'object' &&
+			typeof error === "object" &&
 			error !== null &&
-			'code' in error &&
-			error.code === 'ENOENT'
+			"code" in error &&
+			error.code === "ENOENT"
 		) {
 			throw new Error(
 				`Destination symlink is broken: ${resolvedLink.destinationPath} -> ${currentTarget}`,
@@ -340,24 +340,24 @@ async function classifyDestination(
 		);
 	}
 
-	return 'existing';
+	return "existing";
 }
 
 async function validateSource(link: ResolvedLink): Promise<void> {
 	try {
 		const stats = await lstat(link.sourcePath);
-		if (link.kind === 'file' && !stats.isFile()) {
+		if (link.kind === "file" && !stats.isFile()) {
 			throw new Error(`Source is not a file: ${link.sourcePath}`);
 		}
-		if (link.kind === 'directory' && !stats.isDirectory()) {
+		if (link.kind === "directory" && !stats.isDirectory()) {
 			throw new Error(`Source is not a directory: ${link.sourcePath}`);
 		}
 	} catch (error) {
 		if (
-			typeof error === 'object' &&
+			typeof error === "object" &&
 			error !== null &&
-			'code' in error &&
-			error.code === 'ENOENT'
+			"code" in error &&
+			error.code === "ENOENT"
 		) {
 			throw new Error(`Source is missing: ${link.sourcePath}`);
 		}
@@ -394,7 +394,7 @@ export async function installClients(
 	const created: string[] = [];
 	const existing: string[] = [];
 	const errors: string[] = [];
-	const actions: Array<{ link: ResolvedLink; action: 'create' | 'existing' }> =
+	const actions: Array<{ link: ResolvedLink; action: "create" | "existing" }> =
 		[];
 
 	for (const link of resolvedLinks) {
@@ -408,11 +408,11 @@ export async function installClients(
 	}
 
 	if (errors.length > 0) {
-		throw new Error(`Install validation failed:\n- ${errors.join('\n- ')}`);
+		throw new Error(`Install validation failed:\n- ${errors.join("\n- ")}`);
 	}
 
 	for (const { link, action } of actions) {
-		if (action === 'existing') {
+		if (action === "existing") {
 			existing.push(link.destinationPath);
 			continue;
 		}
@@ -426,12 +426,12 @@ export async function installClients(
 			);
 		} catch (error) {
 			if (
-				typeof process !== 'undefined' &&
-				process.platform === 'win32' &&
-				typeof error === 'object' &&
+				typeof process !== "undefined" &&
+				process.platform === "win32" &&
+				typeof error === "object" &&
 				error !== null &&
-				'code' in error &&
-				error.code === 'EPERM'
+				"code" in error &&
+				error.code === "EPERM"
 			) {
 				throw new Error(formatWindowsEperm(error));
 			}
@@ -461,7 +461,7 @@ function printResult(result: InstallResult): void {
 async function runCli(): Promise<void> {
 	const parsedArguments = parseInstallArguments(process.argv.slice(2));
 	const scriptPath = fileURLToPath(import.meta.url);
-	const repoRoot = path.resolve(path.dirname(scriptPath), '..');
+	const repoRoot = path.resolve(path.dirname(scriptPath), "..");
 	const homeDirectory = process.env.EXECUTABLE_PLANNING_HOME ?? os.homedir();
 	const skillDirectories = parsedArguments.skillDirectories.map((directory) =>
 		path.resolve(process.cwd(), directory),

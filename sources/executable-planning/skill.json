@@ -1,5 +1,6 @@
 {
 	"name": "executable-planning",
+	"title": "Executable Planning",
 	"description": "Use when creating or maintaining a multi-step implementation plan that must remain executable across agents, sessions, IDEs, or unattended harnesses.",
 	"output": ".agents/skills/executable-planning/SKILL.md",
 	"selections": [
