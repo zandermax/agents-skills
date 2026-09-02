@@ -55,9 +55,11 @@
 ## Current State
 
 - Current phase: Phase 2 - Selection and Installation
-- Current step: Starting Phase 2 after Phase 1 completion and user approval
-- Next action: Proceed with Task 5 - Artifact Argument Grammar
-- Blockers: None
+- Current step: `[?]` Phase 2 checkpoint - awaiting approval to begin identity
+	and migration work
+- Next action: Present Phase 2 listing, validation, and diff evidence, then
+	wait for the user to confirm whether Phase 3 may begin.
+- Blockers: Awaiting the interactive Phase 2 checkpoint decision.
 - Observed out-of-sequence state: the repository is already located at
 	`/Users/zander/repos/agents-skills`, and `origin` is already
 	`https://github.com/zandermax/agents-skills.git`. Phase 3 must reconcile and
@@ -571,29 +573,29 @@ export async function installArtifacts(
 - Produces: thin `runCli()` orchestration and package commands
 	`install:artifacts` plus compatibility alias `install:clients`.
 
-- [ ] **8.1 Write failing CLI and package tests.** Run the real script against a
+- [x] **8.1 Write failing CLI and package tests.** Run the real script against a
 	temporary home and custom directories. Cover no-argument defaults, selected
 	skill, selected agent, mixed targets, list output with no writes, malformed
 	input exit status, and identical behavior through both npm script names.
-- [ ] **8.2 Run and verify RED.** Run
+- [x] **8.2 Run and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/install-artifacts-cli.test.ts test/toolchain.test.ts`.
 	Expected: new script and package command are absent.
-- [ ] **8.3 Assemble the thin CLI.** Determine `repoRoot` from `import.meta.url`,
+- [x] **8.3 Assemble the thin CLI.** Determine `repoRoot` from `import.meta.url`,
 	load catalog, discover artifacts, parse arguments, print listing or resolve
 	and execute links, and preserve `EXECUTABLE_PLANNING_HOME` only as the current
 	test-home compatibility variable until Phase 3 renames it.
-- [ ] **8.4 Rename files and scripts without staging.** Use a filesystem rename
+- [x] **8.4 Rename files and scripts without staging.** Use a filesystem rename
 	operation such as `/bin/mv`, never `git mv`; set `install:artifacts` to
 	`tsx scripts/install-artifacts.ts` and `install:clients` to
 	`npm run install:artifacts --` so forwarded arguments remain intact. Verify
 	the staged state is identical to its pre-task snapshot.
-- [ ] **8.5 Remove duplicate legacy implementation only after GREEN.** All
+- [x] **8.5 Remove duplicate legacy implementation only after GREEN.** All
 	behavior must live in focused `src/lib` modules or the thin new CLI.
-- [ ] **8.6 Verify real read-only listing.** Run both
+- [x] **8.6 Verify real read-only listing.** Run both
 	`npm run install:artifacts -- --list` and
 	`npm run install:clients -- --list`; outputs must match and `git status` must
 	show no destination artifacts.
-- [ ] **8.7 Verify the phase and suggest a commit.** Run `npm run check`, report
+- [x] **8.7 Verify the phase and suggest a commit.** Run `npm run check`, report
 	changed files and evidence, then suggest
 	`feat: install selectable agents and skills`. Do not stage, commit, or push.
 
@@ -618,7 +620,7 @@ user's manual commit decision.
 
 ### Phase 2 Checkpoint
 
-- [ ] **2.C Present list output, focused/full test evidence, and a diff summary
+- [x] **2.C Present list output, focused/full test evidence, and a diff summary
 	to the user; update this plan and stop until the user confirms identity and
 	migration work may begin.**
 

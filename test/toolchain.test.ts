@@ -23,7 +23,11 @@ test("toolchain package contract is configured", async () => {
 	assert.equal(packageJson.engines?.node, "24.15.0");
 	assert.equal(packageJson.scripts?.install, undefined);
 
-	assert.equal(typeof packageJson.scripts?.["install:clients"], "string");
+	assert.equal(typeof packageJson.scripts?.["install:artifacts"], "string");
+	assert.equal(
+		packageJson.scripts?.["install:clients"],
+		"npm run install:artifacts --",
+	);
 	assert.equal(typeof packageJson.scripts?.format, "string");
 	assert.equal(typeof packageJson.scripts?.lint, "string");
 	assert.equal(packageJson.scripts?.["lint:markdown"], "markdownlint-cli2");
