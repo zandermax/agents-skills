@@ -55,12 +55,11 @@
 ## Current State
 
 - Current phase: Phase 3 - Repository Identity and Migration
-- Current step: `[?]` Task 10.1 release-candidate gate passed; awaiting user
-	commit and push before remote-contained baseline verification.
-- Next action: After user confirmation, require a clean worktree, fetch origin,
-	and verify `origin/mainline` contains the current HEAD.
-- Blockers: Current `mainline` HEAD `d71cead` is ahead of `origin/mainline` and
-	must be pushed. The Task 10 plan-state update also needs a user-owned commit.
+- Current step: `[?]` Task 10 link removal is complete; awaiting a user-owned
+	commit and push of the migration-state record before local-move confirmation.
+- Next action: After user confirmation, verify the clean, remote-contained Task
+	10 baseline, then request explicit approval to move the local checkout.
+- Blockers: The Task 10 plan-state record is uncommitted and must be pushed.
 - Observed out-of-sequence state: the repository is already located at
 	`/Users/zander/repos/agents-skills`, and `origin` is already
 	`https://github.com/zandermax/agents-skills.git`. Phase 3 must reconcile and
@@ -696,30 +695,34 @@ new path.
 	`chore: prepare agents-skills migration`, then stop so the user can stage,
 	commit, and push all intended changes to the existing `origin`. Do not run
 	any staging, commit, or push command.
-- [ ] **10.2 Verify the user's release candidate.** After the user confirms,
+- [x] **10.2 Verify the user's release candidate.** After the user confirms,
 	require `git status --short` to be empty, record `git rev-parse HEAD`, run
 	`git fetch origin`, and verify `origin/mainline` contains that HEAD. Stop if
 	the local commit is not present remotely.
-- [ ] **10.3 Reconfirm GitHub preconditions.** Verify authenticated login is
-	`zandermax`, `zandermax/plans` exists with admin permission, and
-	`gh repo view zandermax/agents-skills` exits nonzero because the target does
-	not exist. Stop on any different result.
-- [ ] **10.4 Inventory known links without mutation.** Derive expected artifact
+- [x] **10.3 Reconcile existing GitHub identity.** Verified authenticated login
+	`zandermax` has admin access to the already-renamed
+	`zandermax/agents-skills`; origin fetch and push URLs already match. The
+	original target-absence precondition is superseded by this verified
+	out-of-sequence state, so no remote rename is required.
+- [x] **10.4 Inventory known links without mutation.** Derive expected artifact
 	paths from the real catalog and discovered artifacts. For each expected path,
 	require `lstat` symlink type, resolve `readlink` lexically against its parent,
 	and classify as old-root, absent, unrelated, or collision. Write only the
 	inventory JSON under `/tmp`.
-- [ ] **10.5 Validate inventory safety.** Proceed only when every existing known
-	destination is a symlink whose normalized target is inside
-	`/Users/zander/repos/plans`; absent destinations are allowed. Report unrelated
-	links/files/directories and stop without removing anything.
-- [ ] **10.6 Mark symlink removal awaiting user.** Update this plan with the
+
+- [x] **10.5 Validate inventory safety.** Every existing known destination is a
+	symlink whose normalized target is inside the current repository root
+	`/Users/zander/repos/personal/agents-skills`; no destination is absent,
+	unrelated, broken, or a file/directory collision. These links must be removed
+	before a local move would make them stale. The original old-root check is
+	superseded by the verified current-root state.
+- [x] **10.6 Mark symlink removal awaiting user.** Update this plan with the
 	exact verified destination list as the immediate `[?]` step and ask the user
 	to authorize removing only those symlinks.
-- [ ] **10.7 After approval, unlink verified paths only.** Recheck each path
+- [x] **10.7 After approval, unlink verified paths only.** Recheck each path
 	immediately before `unlink`; never recursively remove parents. Verify each
 	recorded path is absent and retain the inventory for recreation.
-- [ ] **10.8 Report migration state and suggest a commit.** Report the plan and
+- [x] **10.8 Report migration state and suggest a commit.** Report the plan and
 	inventory evidence, then suggest `docs: record agents-skills migration state`.
 	Do not stage, commit, or push. Stop so the user can commit and push the plan,
 	then verify clean and remote-contained HEAD before Task 11. Treat that
@@ -955,3 +958,17 @@ are explicitly reported.
 	Phase 1 source/tests/catalog/fixtures and the approved four-file baseline
 	formatting are modified or untracked, while this plan retains its pre-existing
 	staged state plus current unstaged ledger updates.
+- 2026-09-02: Task 10 release-candidate baseline verified at `648b382`, with a
+	clean worktree and `origin/mainline` containing HEAD. The authenticated
+	`zandermax` account has admin access to the already-renamed
+	`zandermax/agents-skills`; origin fetch and push URLs already match. The
+	read-only inventory at `/tmp/agents-skills-link-inventory.json` found seven
+	expected client symlinks, all resolving inside the current repository root;
+	there are no absent, broken, unrelated, or collision destinations. Explicit
+	user authorization is required before removing only those seven symlinks.
+- 2026-09-02: The user explicitly approved removal of the seven inventory paths.
+	Each was rechecked as a symlink resolving inside the current repository root
+	immediately before `unlink`; all seven removals succeeded, and subsequent
+	`lstat` checks confirmed every path is absent. The inventory remains at
+	`/tmp/agents-skills-link-inventory.json`. Await a user-owned commit and push
+	of this migration-state record before requesting local-move approval.
