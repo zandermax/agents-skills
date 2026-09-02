@@ -110,17 +110,17 @@ async function createFixtureRepo(
 	await writeFile(
 		path.join(agentDir, "executable-planner.agent.md"),
 		options.agentBodyOverride ??
-		[
-			"---",
-			"name: Executable Planner",
-			"description: Planning-only orchestrator.",
-			"---",
-			"# Executable Planner",
-			"",
-			"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
-			"",
-			"Keep this agent thin and delegate planning workflow to the skill.",
-		].join("\n"),
+			[
+				"---",
+				"name: Executable Planner",
+				"description: Planning-only orchestrator.",
+				"---",
+				"# Executable Planner",
+				"",
+				"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+				"",
+				"Keep this agent thin and delegate planning workflow to the skill.",
+			].join("\n"),
 		"utf8",
 	);
 
@@ -185,12 +185,12 @@ async function createFixtureRepo(
 	await writeFile(
 		path.join(repoRoot, "README.md"),
 		options.readmeOverride ??
-		[
-			"# Executable Planning",
-			"",
-			"Run npm run build and npm run check to validate outputs.",
-			"Run npm run install:clients to install for copilot, claude, and .agents/skills consumers.",
-		].join("\n"),
+			[
+				"# Executable Planning",
+				"",
+				"Run npm run build and npm run check to validate outputs.",
+				"Run npm run install:clients to install for copilot, claude, and .agents/skills consumers.",
+			].join("\n"),
 		"utf8",
 	);
 	await writeFile(

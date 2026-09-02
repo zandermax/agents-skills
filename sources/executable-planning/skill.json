@@ -33,10 +33,7 @@
 		{
 			"source": "skill-only.md",
 			"owner": "skill",
-			"headings": [
-				"When to Use",
-				"Harness Adaptation"
-			]
+			"headings": ["When to Use", "Harness Adaptation"]
 		}
 	],
 	"sectionOwnership": {

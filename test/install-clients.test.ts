@@ -46,17 +46,17 @@ const EXPECTED_BUILTIN_LINKS: readonly {
 	readonly source: string;
 	readonly destination: string;
 }[] = [
-		{
-			source: AGENT_SOURCE,
-			destination: "~/.copilot/agents/executable-planner.agent.md",
-		},
-		{
-			source: SKILL_SOURCE,
-			destination: "~/.copilot/skills/executable-planning",
-		},
-		{ source: SKILL_SOURCE, destination: "~/.claude/skills/executable-planning" },
-		{ source: SKILL_SOURCE, destination: "~/.agents/skills/executable-planning" },
-	];
+	{
+		source: AGENT_SOURCE,
+		destination: "~/.copilot/agents/executable-planner.agent.md",
+	},
+	{
+		source: SKILL_SOURCE,
+		destination: "~/.copilot/skills/executable-planning",
+	},
+	{ source: SKILL_SOURCE, destination: "~/.claude/skills/executable-planning" },
+	{ source: SKILL_SOURCE, destination: "~/.agents/skills/executable-planning" },
+];
 
 // Derive expected real-repo link counts from the actual catalog and artifacts,
 // so adding or removing a skill, client, or destination can't silently
