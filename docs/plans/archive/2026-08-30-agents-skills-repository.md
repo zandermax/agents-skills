@@ -44,7 +44,7 @@
 
 ## Plan Metadata
 
-- Status: in-progress
+- Status: completed
 - Mode: interactive
 - Canonical location: `docs/plans/2026-08-30-agents-skills-repository.md`
 - Last updated: 2026-09-02
@@ -55,16 +55,36 @@
 ## Current State
 
 - Current phase: Phase 3 - Repository Identity and Migration
-- Current step: `[?]` Task 10 link removal is complete; awaiting a user-owned
-	commit and push of the migration-state record before local-move confirmation.
-- Next action: After user confirmation, verify the clean, remote-contained Task
-	10 baseline, then request explicit approval to move the local checkout.
-- Blockers: The Task 10 plan-state record is uncommitted and must be pushed.
-- Observed out-of-sequence state: the repository is already located at
-	`/Users/zander/repos/agents-skills`, and `origin` is already
-	`https://github.com/zandermax/agents-skills.git`. Phase 3 must reconcile and
-	verify these completed identity changes rather than replay their destructive
-	rename steps.
+- Current step: Task 12.8 report completion and archive the completed plan.
+- Next action: Move this completed plan to `docs/plans/archive/` and run the
+	required Markdown lint.
+- Blockers: none.
+- Observed out-of-sequence state: `origin` already targeted
+	`https://github.com/zandermax/agents-skills.git`, so remote rename steps were
+	reconciled through verification. The local checkout was moved from
+	`/Users/zander/repos/personal/agents-skills` to
+	`/Users/zander/repos/agents-skills` after explicit user approval.
+
+## Continuation Handoff
+
+- **Final verification:** Task 12.7 passed after the existing VS Code window
+	was reopened. `code --status` reports the `agents-skills` folder with 75
+	files. `pwd`, `git status --short`, `git branch --show-current`, and
+	`git remote get-url origin` passed from the new checkout path.
+- **Known good baseline:** HEAD is
+	`01434fe86c4ed4b1e2214f2e9e018c3c72129f6a`, on `mainline`, with origin
+	`https://github.com/zandermax/agents-skills.git`. The only expected working
+	tree modification is this plan handoff update.
+- **Validated migration facts:** `/Users/zander/repos/personal/agents-skills`
+	is absent. `/tmp/agents-skills-link-inventory.json` records the seven managed
+	client links. They were recreated and all resolve beneath
+	`/Users/zander/repos/agents-skills`. Listing returns `executable-planning`,
+	`plan-it-out`, and `copilot:executable-planner`; the second installation
+	reported `created=0 existing=7`; `npm run check` passed 135/135 tests.
+- **Completion:** Tasks 12.7, 12.8, and checkpoint 3.C are complete. The plan
+	will be moved to `docs/plans/archive/` with a filesystem move, not `git mv`.
+	Markdown lint passed; suggested commit message:
+	`docs: complete agents-skills migration`. Do not stage, commit, or push.
 
 ## Decisions
 
@@ -735,20 +755,24 @@ new path.
 - Modify local Git config: `.git/config` through `git remote set-url`.
 - Modify GitHub repository metadata for `zandermax/plans`.
 
-- [ ] **11.1 Mark remote rename awaiting user.** Record current remote, HEAD,
+- [x] **11.1 Reconcile existing remote identity.** Recorded current remote, HEAD,
 	user-confirmed remote-contained HEAD, target absence, and rollback limitation
 	in this plan; insert
 	the rename as immediate `[?]` action and ask explicit confirmation.
-- [ ] **11.2 Rename GitHub after approval.** Run
+- [x] **11.2 Reconcile existing GitHub rename.** The target repository already
+	existed with verified admin access, so no remote mutation was required.
 	`gh repo rename agents-skills --repo zandermax/plans --yes`, then
 	`gh repo edit zandermax/agents-skills --description "Build, validate, and install custom agents and skills across AI coding harnesses."`.
-- [ ] **11.3 Verify remote identity.** Require
+- [x] **11.3 Verify remote identity.** Require
 	`gh repo view zandermax/agents-skills --json nameWithOwner,description,url`
 	to report the approved values. GitHub's old-name redirect is fallback only.
-- [ ] **11.4 Update and verify origin.** Run
+- [x] **11.4 Verify origin.** Origin fetch and push URLs already matched, and
+	`git fetch origin --dry-run` succeeded; no update was required.
 	`git remote set-url origin https://github.com/zandermax/agents-skills.git`,
 	verify fetch and push URLs exactly, and run `git fetch origin --dry-run`.
-- [ ] **11.5 Update plan state and suggest a commit.** Record remote evidence
+- [x] **11.5 Update plan state and suggest a commit.** Remote evidence was
+	recorded with the Task 10 migration-state baseline; the local-move gate used
+	that verified baseline.
 	and set the exact next action to the local move confirmation. If verification
 	fails, restore origin to the reachable repository URL; do not move the local
 	directory. Report changed files and evidence, then suggest
@@ -761,48 +785,52 @@ new path.
 
 **Files:**
 
-- Move directory: `/Users/zander/repos/plans` to
+- Move directory: `/Users/zander/repos/personal/agents-skills` to
 	`/Users/zander/repos/agents-skills`.
 - Continue canonical plan at:
 	`/Users/zander/repos/agents-skills/docs/plans/2026-08-30-agents-skills-repository.md`.
 
-- [ ] **12.1 Mark local move awaiting user.** Confirm the target directory does
-	not exist, worktree is clean, HEAD matches the Task 11 migration baseline,
-	origin is renamed, and
-	verified old-root symlinks are absent. Record rollback command
-	`mv /Users/zander/repos/agents-skills /Users/zander/repos/plans` and ask
-	explicit approval.
-- [ ] **12.2 Perform the move as the final old-workspace operation.** From
-	`/Users/zander/repos`, run `mv plans agents-skills`, then immediately change
-	into the new directory. Do not issue later commands against the old path.
-- [ ] **12.3 Verify repository identity at the new path.** Require the old path
-	absent, new `.git` present, HEAD unchanged, worktree clean, origin exact, and
-	`git fetch origin --dry-run` successful. If this fails, move the directory
+- [x] **12.1 Mark local move awaiting user.** Confirmed the target directory
+	does not exist, worktree is clean, HEAD matches the Task 10 migration
+	baseline, origin already matches `zandermax/agents-skills`, and verified
+	current-root symlinks are absent. Rollback command:
+	`mv /Users/zander/repos/agents-skills /Users/zander/repos/personal/agents-skills`.
+	Await explicit approval.
+
+- [x] **12.2 Perform the move as the final old-workspace operation.** From
+	`/Users/zander/repos`, run `mv personal/agents-skills agents-skills`, then
+	immediately change into the new directory. Do not issue later commands against
+	the old path.
+- [x] **12.3 Verify repository identity at the new path.** The old path is
+	absent, the new `.git` is present, HEAD is unchanged at `01434fe`, the
+	worktree contains only this migration record, origin is exact, and
+	`git fetch origin --dry-run` succeeded. If this fails, move the directory
 	back before recreating old-path links.
-- [ ] **12.4 Recreate known links through the installer.** Run
-	`npm run install:artifacts -- --client all`, compare created/existing paths
-	with the inventory, and verify every recreated `readlink` target normalizes
-	inside `/Users/zander/repos/agents-skills` and exists.
-- [ ] **12.5 Run final smoke validation.** From the new path run
-	`npm run install:artifacts -- --list`, rerun
-	`npm run install:artifacts -- --client all` to prove idempotence, then run
-	`npm run check` with explicit zero exit.
-- [ ] **12.6 Update the moved canonical plan.** Record link results, final
+- [x] **12.4 Recreate known links through the installer.** Created all seven
+	inventory paths; every `readlink` target normalizes inside
+	`/Users/zander/repos/agents-skills` and exists.
+- [x] **12.5 Run final smoke validation.** Listing returned the expected three
+	artifacts, the second client installation reported `created=0 existing=7`,
+	and `npm run check` passed 135/135 tests with all remaining gates green.
+
+- [x] **12.6 Update the moved canonical plan.** Record link results, final
 	command evidence, new path, remote URL, and any unknown custom destinations;
 	set Status to `completed` only after all checks pass.
-- [ ] **12.7 Reopen VS Code.** Open `/Users/zander/repos/agents-skills`, verify
-	terminal cwd, TypeScript diagnostics, branch, and Git remote, then close the
-	obsolete workspace window.
-- [ ] **12.8 Report completion and suggest a commit.** Report final migration
-	evidence and suggest `docs: complete agents-skills migration`. Do not stage,
-	commit, or push.
+
+- [x] **12.7 Reopen VS Code.** The existing VS Code workspace now reports the
+	`agents-skills` folder with 75 files. Repository checks from the new path
+	confirmed `mainline` and the expected origin URL.
+
+- [x] **12.8 Report completion and suggest a commit.** Final migration evidence
+	is recorded below; suggest `docs: complete agents-skills migration`. Do not
+	stage, commit, or push.
 
 ### Phase 3 Validation
 
 From `/Users/zander/repos/agents-skills`, run:
 
 ```sh
-test ! -e /Users/zander/repos/plans
+test ! -e /Users/zander/repos/personal/agents-skills
 test -d /Users/zander/repos/agents-skills/.git
 git status --short
 git remote get-url origin
@@ -819,9 +847,9 @@ are explicitly reported.
 
 ### Phase 3 Checkpoint
 
-- [ ] **3.C Present remote metadata, local path, link verification, full test
-	evidence, and workspace reopen status to the user. Record their confirmation
-	or any follow-up item in this plan.**
+- [x] **3.C Present remote metadata, local path, link verification, full test
+	evidence, and workspace reopen status to the user.** Workspace reopen
+	verification succeeded; archive this completed plan.
 
 ## Progress Log
 
@@ -972,3 +1000,20 @@ are explicitly reported.
 	`lstat` checks confirmed every path is absent. The inventory remains at
 	`/tmp/agents-skills-link-inventory.json`. Await a user-owned commit and push
 	of this migration-state record before requesting local-move approval.
+
+- 2026-09-02: The user approved the local move. The repository was moved to
+	`/Users/zander/repos/agents-skills`; the old path is absent and immediate
+	identity checks passed. The installer recreated all seven inventoried links,
+	and every target resolves inside the new root. Listing returned the three
+	cataloged artifacts, the second installation was idempotent
+	(`created=0 existing=7`), and `npm run check` passed 135/135 tests. A
+	`code --reuse-window` invocation was not accepted as workspace-reopen proof:
+	`code --status` later showed the `agents-skills` window with zero files.
+	Task 12.7 remains pending until the user explicitly opens the new folder and
+	file-count verification succeeds; the plan remains active rather than
+	archived.
+- 2026-09-02: Task 12.7 verification passed after the workspace was reopened:
+	`code --status` reports 75 files under `agents-skills`. The new path,
+	`mainline` branch, expected origin, and documented worktree state were
+	confirmed. Tasks 12.7, 12.8, and checkpoint 3.C are complete; Markdown lint
+	passed with 0 issues, and the plan is ready for archival.
