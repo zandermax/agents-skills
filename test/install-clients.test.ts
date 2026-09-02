@@ -21,6 +21,8 @@ import {
 	parseClientArguments,
 	parseInstallArguments,
 } from "../scripts/install-clients.js";
+import { discoverArtifacts } from "../src/lib/artifacts.js";
+import { loadInstallCatalog } from "../src/lib/catalog.js";
 
 const testFilePath = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(testFilePath), "..");
@@ -55,6 +57,36 @@ const EXPECTED_BUILTIN_LINKS: readonly {
 		{ source: SKILL_SOURCE, destination: "~/.claude/skills/executable-planning" },
 		{ source: SKILL_SOURCE, destination: "~/.agents/skills/executable-planning" },
 	];
+
+// Derive expected real-repo link counts from the actual catalog and artifacts,
+// so adding or removing a skill, client, or destination can't silently
+// desync these counts from what installClients would really produce.
+const REAL_CATALOG = await loadInstallCatalog(projectRoot);
+const REAL_ARTIFACTS = await discoverArtifacts(REAL_CATALOG, projectRoot);
+const REAL_SKILL_COUNT = REAL_ARTIFACTS.filter(
+	(artifact) => artifact.kind === "skill",
+).length;
+
+function countClientDestinations(artifactKind: "agent" | "skill"): number {
+	const collectionNames = new Set(
+		REAL_CATALOG.collections
+			.filter((collection) => collection.artifactKind === artifactKind)
+			.map((collection) => collection.name),
+	);
+	let count = 0;
+	for (const client of REAL_CATALOG.clients) {
+		for (const destination of client.destinations) {
+			if (collectionNames.has(destination.collection)) {
+				count += 1;
+			}
+		}
+	}
+	return count;
+}
+
+const REAL_ALL_CLIENTS_LINK_COUNT =
+	REAL_SKILL_COUNT * countClientDestinations("skill") +
+	countClientDestinations("agent");
 
 async function createInstallFixture(label: string): Promise<{
 	repoRoot: string;
@@ -226,7 +258,7 @@ test("installClients creates all missing parent directories and links", async ()
 			homeDirectory: fixture.homeDirectory,
 		});
 
-		assert.equal(result.created.length, 4);
+		assert.equal(result.created.length, EXPECTED_BUILTIN_LINKS.length);
 		assert.equal(result.existing.length, 0);
 
 		for (const link of EXPECTED_BUILTIN_LINKS) {
@@ -394,7 +426,7 @@ test("installClients is idempotent on second identical run", async () => {
 			repoRoot: fixture.repoRoot,
 			homeDirectory: fixture.homeDirectory,
 		});
-		assert.equal(first.created.length, 4);
+		assert.equal(first.created.length, EXPECTED_BUILTIN_LINKS.length);
 
 		const second = await installClients({
 			clients: ["copilot", "claude", "agents"],
@@ -403,7 +435,7 @@ test("installClients is idempotent on second identical run", async () => {
 		});
 
 		assert.equal(second.created.length, 0);
-		assert.equal(second.existing.length, 4);
+		assert.equal(second.existing.length, EXPECTED_BUILTIN_LINKS.length);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -662,7 +694,10 @@ test("CLI supports injected temporary home and reports existing links on rerun",
 		);
 
 		assert.equal(first.status, 0, first.stderr);
-		assert.match(first.stdout, /summary created=4 existing=0/);
+		assert.match(
+			first.stdout,
+			new RegExp(`summary created=${REAL_ALL_CLIENTS_LINK_COUNT} existing=0`),
+		);
 
 		for (const link of EXPECTED_BUILTIN_LINKS) {
 			const destinationPath = destinationFor(
@@ -687,7 +722,10 @@ test("CLI supports injected temporary home and reports existing links on rerun",
 		);
 
 		assert.equal(second.status, 0, second.stderr);
-		assert.match(second.stdout, /summary created=0 existing=4/);
+		assert.match(
+			second.stdout,
+			new RegExp(`summary created=0 existing=${REAL_ALL_CLIENTS_LINK_COUNT}`),
+		);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -716,7 +754,10 @@ test("CLI installs skills into a custom root without installing built-in clients
 		);
 
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /summary created=1 existing=0/);
+		assert.match(
+			result.stdout,
+			new RegExp(`summary created=${REAL_SKILL_COUNT} existing=0`),
+		);
 
 		await assertLinkPointsTo(
 			path.join(customSkillsRoot, "executable-planning"),

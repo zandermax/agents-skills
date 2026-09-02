@@ -282,6 +282,37 @@ test("checkCustomizations rejects forbidden agent-only skill frontmatter", async
 	}
 });
 
+test("checkCustomizations accepts a manual-invocation-only skill", async () => {
+	const repoRoot = await createFixtureRepo({
+		skillExtraFrontmatter: { "disable-model-invocation": true },
+	});
+
+	try {
+		await checkCustomizations(repoRoot);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
+test("checkCustomizations rejects disable-model-invocation set to a non-true value", async () => {
+	const repoRoot = await createFixtureRepo({
+		skillExtraFrontmatter: { "disable-model-invocation": false },
+	});
+
+	try {
+		await assert.rejects(
+			async () => checkCustomizations(repoRoot),
+			(error: unknown) => {
+				assert.match(String(error), /SKILL\.md:/);
+				assert.match(String(error), /disable-model-invocation must be true/i);
+				return true;
+			},
+		);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
 test("checkCustomizations reports skill-file errors in code-point lexical order", async () => {
 	const repoRoot = await createFixtureRepo();
 

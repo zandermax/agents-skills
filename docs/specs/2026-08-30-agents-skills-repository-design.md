@@ -287,7 +287,11 @@ checks collection-aware.
 For all skills:
 
 - Frontmatter name matches the skill directory.
-- Frontmatter contains only Agent Skills-compatible fields.
+- Frontmatter contains only Agent Skills-compatible fields: `name`,
+  `description`, and optionally `disable-model-invocation`.
+- When present, `disable-model-invocation` must be exactly `true`, marking a
+  manual-trigger companion skill that is reachable only by explicit user
+  invocation, never by autonomous model judgment.
 - Generated output matches its manifest and contains one declared H1.
 - Harness-specific tokens remain forbidden where required.
 

@@ -17,6 +17,12 @@ const AGENT_ONLY_FRONTMATTER_KEYS = new Set([
 	"model",
 ]);
 
+const ALLOWED_SKILL_FRONTMATTER_KEYS = new Set([
+	"name",
+	"description",
+	"disable-model-invocation",
+]);
+
 const FORBIDDEN_SKILL_TOKENS = [
 	"/memories/session/plan.md",
 	"run_in_terminal",
@@ -184,8 +190,19 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 				}
 			}
 
+			const disableModelInvocation =
+				parsed.attributes["disable-model-invocation"];
+			if (
+				disableModelInvocation !== undefined &&
+				disableModelInvocation !== true
+			) {
+				errors.push(
+					`${relativePath}: skill frontmatter disable-model-invocation must be true when present`,
+				);
+			}
+
 			for (const key of Object.keys(parsed.attributes)) {
-				if (key !== "name" && key !== "description") {
+				if (!ALLOWED_SKILL_FRONTMATTER_KEYS.has(key)) {
 					errors.push(
 						`${relativePath}: skill frontmatter has forbidden key ${key}`,
 					);

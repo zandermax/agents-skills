@@ -115,3 +115,29 @@ Add a new skill without changing src/build-skills.ts:
 - Add owned source fragments under `sources/<name>/`.
 - Build the generated output at `.agents/skills/<name>/SKILL.md`.
 - Keep generation manifest-driven; do not add entry-point edits.
+
+## Manual-Trigger Companion Skills
+
+A rich, manifest-driven skill stays auto-invokable: its description is written
+so clients can select it from natural-language intent, and its generated
+frontmatter contains only `name` and `description`.
+
+Pair it with a thin, hand-authored companion skill that is reachable only by
+explicit user invocation, following the `grill-me` / `grilling` pattern from
+[mattpocock/skills](https://github.com/mattpocock/skills). The companion:
+
+- Lives at `.agents/skills/<trigger-name>/SKILL.md`, is not built by
+  `build-skills.ts`, and has no `sources/` manifest.
+- Sets `disable-model-invocation: true` in its frontmatter, so clients that
+  support the field (Claude Code, VS Code Copilot, Cursor, Factory Droid, pi)
+  never auto-select it; it only runs when the user explicitly invokes it by
+  name. Clients without an equivalent mechanism ignore the field and load the
+  skill normally, so this is additive, not a hard guarantee everywhere.
+- Has a one-line body that forwards to the rich skill, for example
+  `Call the Skill tool with "executable-planning".`.
+
+`executable-planning` (rich, auto-invokable) is paired with `plan-it-out`
+(manual-trigger companion) as the reference example.
+
+`checkCustomizations` allows `disable-model-invocation` on any skill and
+rejects it if present with any value other than `true`.
