@@ -1,13 +1,13 @@
-import fs from 'node:fs';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+import fs from "node:fs";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 
-export type ArtifactKind = 'skill' | 'agent';
-export type ValidationStrategy = 'copilot-agent';
+export type ArtifactKind = "skill" | "agent";
+export type ValidationStrategy = "copilot-agent";
 
 export type CollectionEntryRule =
-	| { readonly kind: 'directory'; readonly marker: string }
-	| { readonly kind: 'file'; readonly suffix: string };
+	| { readonly kind: "directory"; readonly marker: string }
+	| { readonly kind: "file"; readonly suffix: string };
 
 export interface ArtifactCollection {
 	readonly name: string;
@@ -32,30 +32,30 @@ export interface InstallCatalog {
 	readonly clients: readonly CatalogClient[];
 }
 
-const CATALOG_KEYS = new Set(['collections', 'clients']);
+const CATALOG_KEYS = new Set(["collections", "clients"]);
 const COLLECTION_KEYS = new Set([
-	'name',
-	'artifactKind',
-	'source',
-	'entry',
-	'validation',
+	"name",
+	"artifactKind",
+	"source",
+	"entry",
+	"validation",
 ]);
-const DIRECTORY_ENTRY_KEYS = new Set(['kind', 'marker']);
-const FILE_ENTRY_KEYS = new Set(['kind', 'suffix']);
-const ENTRY_KEYS = new Set(['kind', 'marker', 'suffix']);
-const CLIENT_KEYS = new Set(['name', 'destinations']);
-const DESTINATION_KEYS = new Set(['collection', 'path']);
+const DIRECTORY_ENTRY_KEYS = new Set(["kind", "marker"]);
+const FILE_ENTRY_KEYS = new Set(["kind", "suffix"]);
+const ENTRY_KEYS = new Set(["kind", "marker", "suffix"]);
+const CLIENT_KEYS = new Set(["name", "destinations"]);
+const DESTINATION_KEYS = new Set(["collection", "path"]);
 const KEBAB_CASE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return value !== null && !Array.isArray(value) && typeof value === 'object';
+	return value !== null && !Array.isArray(value) && typeof value === "object";
 }
 
 function isWithinRepo(repoRoot: string, targetPath: string): boolean {
 	const relativePath = path.relative(repoRoot, targetPath);
 	return (
-		relativePath === '' ||
-		(!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+		relativePath === "" ||
+		(!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
 	);
 }
 
@@ -78,7 +78,7 @@ function parseName(
 	seen: Set<string>,
 	errors: string[],
 ): string | undefined {
-	if (typeof value !== 'string') {
+	if (typeof value !== "string") {
 		errors.push(`${label}: must be a string`);
 		return undefined;
 	}
@@ -109,15 +109,15 @@ function parseEntryRule(
 
 	const kind = value.kind;
 	const allowed =
-		kind === 'directory'
+		kind === "directory"
 			? DIRECTORY_ENTRY_KEYS
-			: kind === 'file'
+			: kind === "file"
 				? FILE_ENTRY_KEYS
 				: ENTRY_KEYS;
 	addUnknownKeyErrors(value, allowed, label, errors);
 
-	if (kind === 'directory') {
-		if (typeof value.marker !== 'string') {
+	if (kind === "directory") {
+		if (typeof value.marker !== "string") {
 			errors.push(`${label}.marker: must be a string`);
 			return undefined;
 		}
@@ -133,8 +133,8 @@ function parseEntryRule(
 		return Object.freeze({ kind, marker: value.marker });
 	}
 
-	if (kind === 'file') {
-		if (typeof value.suffix !== 'string') {
+	if (kind === "file") {
+		if (typeof value.suffix !== "string") {
 			errors.push(`${label}.suffix: must be a string`);
 			return undefined;
 		}
@@ -167,14 +167,14 @@ function parseCollection(
 	const name = parseName(value.name, `${label}.name`, seenNames, errors);
 
 	let artifactKind: ArtifactKind | undefined;
-	if (value.artifactKind === 'skill' || value.artifactKind === 'agent') {
+	if (value.artifactKind === "skill" || value.artifactKind === "agent") {
 		artifactKind = value.artifactKind;
 	} else {
 		errors.push(`${label}.artifactKind: must be one of: skill, agent`);
 	}
 
 	let source: string | undefined;
-	if (typeof value.source !== 'string') {
+	if (typeof value.source !== "string") {
 		errors.push(`${label}.source: must be a string`);
 	} else if (value.source.length === 0) {
 		errors.push(`${label}.source: must be nonempty`);
@@ -196,8 +196,8 @@ function parseCollection(
 
 	const entry = parseEntryRule(value.entry, `${label}.entry`, errors);
 	if (
-		artifactKind === 'skill' &&
-		(entry?.kind !== 'directory' || entry.marker !== 'SKILL.md')
+		artifactKind === "skill" &&
+		(entry?.kind !== "directory" || entry.marker !== "SKILL.md")
 	) {
 		errors.push(
 			`${label}.entry: skill collections must use directory marker SKILL.md`,
@@ -206,7 +206,7 @@ function parseCollection(
 
 	let validation: ValidationStrategy | undefined;
 	if (value.validation !== undefined) {
-		if (value.validation === 'copilot-agent') {
+		if (value.validation === "copilot-agent") {
 			validation = value.validation;
 		} else {
 			errors.push(
@@ -247,7 +247,7 @@ function parseDestination(
 	addUnknownKeyErrors(value, DESTINATION_KEYS, label, errors);
 
 	let collection: string | undefined;
-	if (typeof value.collection !== 'string') {
+	if (typeof value.collection !== "string") {
 		errors.push(`${label}.collection: must be a string`);
 	} else if (!collectionsByName.has(value.collection)) {
 		errors.push(`${label}.collection: unknown collection: ${value.collection}`);
@@ -255,7 +255,7 @@ function parseDestination(
 		collection = value.collection;
 		const collectionEntry = collectionsByName.get(collection);
 		if (
-			collectionEntry?.artifactKind === 'agent' &&
+			collectionEntry?.artifactKind === "agent" &&
 			clientName !== undefined &&
 			collectionEntry.name !== clientName
 		) {
@@ -266,11 +266,11 @@ function parseDestination(
 	}
 
 	let destinationPath: string | undefined;
-	if (typeof value.path !== 'string') {
+	if (typeof value.path !== "string") {
 		errors.push(`${label}.path: must be a string`);
 	} else {
 		destinationPath = value.path;
-		if (!destinationPath.startsWith('~/') || destinationPath.length === 2) {
+		if (!destinationPath.startsWith("~/") || destinationPath.length === 2) {
 			errors.push(`${label}.path: must begin with ~/`);
 		}
 		if (seenPaths.has(destinationPath)) {
@@ -345,13 +345,13 @@ export function parseInstallCatalog(
 		throw new Error(`${sourceName}: catalog must be an object`);
 	}
 
-	addUnknownKeyErrors(value, CATALOG_KEYS, 'catalog', errors);
+	addUnknownKeyErrors(value, CATALOG_KEYS, "catalog", errors);
 	const absoluteRepoRoot = path.resolve(repoRoot);
 
 	const collections: ArtifactCollection[] = [];
 	const collectionNames = new Set<string>();
 	if (!Array.isArray(value.collections)) {
-		errors.push('catalog.collections: must be an array');
+		errors.push("catalog.collections: must be an array");
 	} else {
 		for (let index = 0; index < value.collections.length; index += 1) {
 			const collection = parseCollection(
@@ -374,7 +374,7 @@ export function parseInstallCatalog(
 		collections.map((collection) => [collection.name, collection] as const),
 	);
 	if (!Array.isArray(value.clients)) {
-		errors.push('catalog.clients: must be an array');
+		errors.push("catalog.clients: must be an array");
 	} else {
 		for (let index = 0; index < value.clients.length; index += 1) {
 			const client = parseClient(
@@ -393,7 +393,7 @@ export function parseInstallCatalog(
 
 	if (errors.length > 0) {
 		throw new Error(
-			`${sourceName}: catalog validation failed\n${errors.map((error) => `- ${error}`).join('\n')}`,
+			`${sourceName}: catalog validation failed\n${errors.map((error) => `- ${error}`).join("\n")}`,
 		);
 	}
 
@@ -406,10 +406,10 @@ export function parseInstallCatalog(
 export async function loadInstallCatalog(
 	repoRoot: string,
 ): Promise<InstallCatalog> {
-	const catalogPath = path.join(repoRoot, 'install-catalog.json');
+	const catalogPath = path.join(repoRoot, "install-catalog.json");
 	let value: unknown;
 	try {
-		value = JSON.parse(await readFile(catalogPath, 'utf8'));
+		value = JSON.parse(await readFile(catalogPath, "utf8"));
 	} catch (error) {
 		throw new Error(`${catalogPath}: unable to read catalog`, { cause: error });
 	}

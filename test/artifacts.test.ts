@@ -1,16 +1,16 @@
-import assert from 'node:assert/strict';
-import path from 'node:path';
-import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-import { discoverArtifacts } from '../src/lib/artifacts.js';
-import { loadInstallCatalog } from '../src/lib/catalog.js';
+import { discoverArtifacts } from "../src/lib/artifacts.js";
+import { loadInstallCatalog } from "../src/lib/catalog.js";
 
-const fixtureRepoRoot = path.resolve('test/fixtures/catalog/repo');
+const fixtureRepoRoot = path.resolve("test/fixtures/catalog/repo");
 const testFilePath = fileURLToPath(import.meta.url);
-const repoRoot = path.resolve(path.dirname(testFilePath), '..');
+const repoRoot = path.resolve(path.dirname(testFilePath), "..");
 
-test('discoverArtifacts finds structural entries in stable catalog order', async () => {
+test("discoverArtifacts finds structural entries in stable catalog order", async () => {
 	const catalog = await loadInstallCatalog(fixtureRepoRoot);
 	const artifacts = await discoverArtifacts(catalog, fixtureRepoRoot);
 
@@ -25,20 +25,20 @@ test('discoverArtifacts finds structural entries in stable catalog order', async
 		})),
 		[
 			{
-				kind: 'skill',
-				id: 'alpha',
-				name: 'alpha',
-				collection: 'skills',
-				destinationName: 'alpha',
-				entryKind: 'directory',
+				kind: "skill",
+				id: "alpha",
+				name: "alpha",
+				collection: "skills",
+				destinationName: "alpha",
+				entryKind: "directory",
 			},
 			{
-				kind: 'skill',
-				id: 'example',
-				name: 'example',
-				collection: 'skills',
-				destinationName: 'example',
-				entryKind: 'directory',
+				kind: "skill",
+				id: "example",
+				name: "example",
+				collection: "skills",
+				destinationName: "example",
+				entryKind: "directory",
 			},
 			{
 				kind: "skill",
@@ -57,28 +57,28 @@ test('discoverArtifacts finds structural entries in stable catalog order', async
 				entryKind: "directory",
 			},
 			{
-				kind: 'skill',
-				id: 'zeta',
-				name: 'zeta',
-				collection: 'skills',
-				destinationName: 'zeta',
-				entryKind: 'directory',
+				kind: "skill",
+				id: "zeta",
+				name: "zeta",
+				collection: "skills",
+				destinationName: "zeta",
+				entryKind: "directory",
 			},
 			{
-				kind: 'agent',
-				id: 'copilot:example',
-				name: 'example',
-				collection: 'copilot',
-				destinationName: 'example.agent.md',
-				entryKind: 'file',
+				kind: "agent",
+				id: "copilot:example",
+				name: "example",
+				collection: "copilot",
+				destinationName: "example.agent.md",
+				entryKind: "file",
 			},
 			{
-				kind: 'agent',
-				id: 'copilot:fixture-planner',
-				name: 'fixture-planner',
-				collection: 'copilot',
-				destinationName: 'fixture-planner.agent.md',
-				entryKind: 'file',
+				kind: "agent",
+				id: "copilot:fixture-planner",
+				name: "fixture-planner",
+				collection: "copilot",
+				destinationName: "fixture-planner.agent.md",
+				entryKind: "file",
 			},
 			{
 				kind: "agent",
@@ -89,18 +89,18 @@ test('discoverArtifacts finds structural entries in stable catalog order', async
 				entryKind: "file",
 			},
 			{
-				kind: 'agent',
-				id: 'custom-directory:fixture-reviewer',
-				name: 'fixture-reviewer',
-				collection: 'custom-directory',
-				destinationName: 'fixture-reviewer',
-				entryKind: 'directory',
+				kind: "agent",
+				id: "custom-directory:fixture-reviewer",
+				name: "fixture-reviewer",
+				collection: "custom-directory",
+				destinationName: "fixture-reviewer",
+				entryKind: "directory",
 			},
 		],
 	);
 });
 
-test('discoverArtifacts returns unique immutable artifacts confined to collection roots', async () => {
+test("discoverArtifacts returns unique immutable artifacts confined to collection roots", async () => {
 	const catalog = await loadInstallCatalog(fixtureRepoRoot);
 	const artifacts = await discoverArtifacts(catalog, fixtureRepoRoot);
 	const ids = artifacts.map((artifact) => artifact.id);
@@ -115,17 +115,17 @@ test('discoverArtifacts returns unique immutable artifacts confined to collectio
 		assert.ok(collection);
 		const collectionRoot = path.resolve(fixtureRepoRoot, collection.source);
 		const relativePath = path.relative(collectionRoot, artifact.sourcePath);
-		assert.equal(relativePath.startsWith('..'), false);
+		assert.equal(relativePath.startsWith(".."), false);
 		assert.equal(path.isAbsolute(relativePath), false);
 	}
 });
 
-test('discoverArtifacts finds the real planning skill and Copilot agent', async () => {
+test("discoverArtifacts finds the real planning skill, its companion, and the Copilot agent", async () => {
 	const catalog = await loadInstallCatalog(repoRoot);
 	const artifacts = await discoverArtifacts(catalog, repoRoot);
 
 	assert.deepEqual(
 		artifacts.map((artifact) => artifact.id),
-		['executable-planning', 'copilot:executable-planner'],
+		["executable-planning", "plan-it-out", "copilot:executable-planner"],
 	);
 });

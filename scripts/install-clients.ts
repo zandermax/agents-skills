@@ -163,7 +163,7 @@ function deduplicateResolvedLinks(
 		if (
 			existing.kind !== link.kind ||
 			normalizeForComparison(existing.sourcePath) !==
-			normalizeForComparison(link.sourcePath)
+				normalizeForComparison(link.sourcePath)
 		) {
 			throw new Error(`Conflicting destination mappings: ${destination}`);
 		}

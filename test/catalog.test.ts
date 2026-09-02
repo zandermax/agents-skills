@@ -1,51 +1,51 @@
-import assert from 'node:assert/strict';
-import path from 'node:path';
-import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-import { loadInstallCatalog, parseInstallCatalog } from '../src/lib/catalog.js';
+import { loadInstallCatalog, parseInstallCatalog } from "../src/lib/catalog.js";
 
-const fixtureRepoRoot = path.resolve('test/fixtures/catalog/repo');
+const fixtureRepoRoot = path.resolve("test/fixtures/catalog/repo");
 const testFilePath = fileURLToPath(import.meta.url);
-const repoRoot = path.resolve(path.dirname(testFilePath), '..');
+const repoRoot = path.resolve(path.dirname(testFilePath), "..");
 
 function createValidCatalog(): Record<string, unknown> {
 	return {
 		collections: [
 			{
-				name: 'skills',
-				artifactKind: 'skill',
-				source: '.agents/skills',
-				entry: { kind: 'directory', marker: 'SKILL.md' },
+				name: "skills",
+				artifactKind: "skill",
+				source: ".agents/skills",
+				entry: { kind: "directory", marker: "SKILL.md" },
 			},
 			{
-				name: 'copilot',
-				artifactKind: 'agent',
-				source: '.github/agents',
-				entry: { kind: 'file', suffix: '.agent.md' },
-				validation: 'copilot-agent',
+				name: "copilot",
+				artifactKind: "agent",
+				source: ".github/agents",
+				entry: { kind: "file", suffix: ".agent.md" },
+				validation: "copilot-agent",
 			},
 			{
-				name: 'custom-directory',
-				artifactKind: 'agent',
-				source: '.custom-directory',
-				entry: { kind: 'directory', marker: 'AGENT.md' },
+				name: "custom-directory",
+				artifactKind: "agent",
+				source: ".custom-directory",
+				entry: { kind: "directory", marker: "AGENT.md" },
 			},
 		],
 		clients: [
 			{
-				name: 'copilot',
+				name: "copilot",
 				destinations: [
-					{ collection: 'skills', path: '~/.copilot/skills' },
-					{ collection: 'copilot', path: '~/.copilot/agents' },
+					{ collection: "skills", path: "~/.copilot/skills" },
+					{ collection: "copilot", path: "~/.copilot/agents" },
 				],
 			},
 			{
-				name: 'custom-directory',
+				name: "custom-directory",
 				destinations: [
 					{
-						collection: 'custom-directory',
-						path: '~/.directory-client/agents',
+						collection: "custom-directory",
+						path: "~/.directory-client/agents",
 					},
 				],
 			},
@@ -59,7 +59,7 @@ function expectCatalogError(
 ): void {
 	assert.throws(
 		() => {
-			parseInstallCatalog(value, 'install-catalog.json', fixtureRepoRoot);
+			parseInstallCatalog(value, "install-catalog.json", fixtureRepoRoot);
 		},
 		(error: unknown) => {
 			const message = String(error);
@@ -71,30 +71,30 @@ function expectCatalogError(
 	);
 }
 
-test('parseInstallCatalog preserves order and returns immutable values', () => {
+test("parseInstallCatalog preserves order and returns immutable values", () => {
 	const catalog = parseInstallCatalog(
 		createValidCatalog(),
-		'install-catalog.json',
+		"install-catalog.json",
 		fixtureRepoRoot,
 	);
 
 	assert.deepEqual(
 		catalog.collections.map((collection) => collection.name),
-		['skills', 'copilot', 'custom-directory'],
+		["skills", "copilot", "custom-directory"],
 	);
 	assert.deepEqual(
 		catalog.clients.map((client) => client.name),
-		['copilot', 'custom-directory'],
+		["copilot", "custom-directory"],
 	);
 	assert.deepEqual(catalog.collections[0]?.entry, {
-		kind: 'directory',
-		marker: 'SKILL.md',
+		kind: "directory",
+		marker: "SKILL.md",
 	});
 	assert.deepEqual(catalog.collections[1]?.entry, {
-		kind: 'file',
-		suffix: '.agent.md',
+		kind: "file",
+		suffix: ".agent.md",
 	});
-	assert.equal(catalog.collections[1]?.validation, 'copilot-agent');
+	assert.equal(catalog.collections[1]?.validation, "copilot-agent");
 	assert.ok(Object.isFrozen(catalog));
 	assert.ok(Object.isFrozen(catalog.collections));
 	assert.ok(Object.isFrozen(catalog.collections[0]));
@@ -104,7 +104,7 @@ test('parseInstallCatalog preserves order and returns immutable values', () => {
 	assert.ok(Object.isFrozen(catalog.clients[0]?.destinations[0]));
 });
 
-test('parseInstallCatalog aggregates closed-schema and primitive errors', () => {
+test("parseInstallCatalog aggregates closed-schema and primitive errors", () => {
 	const catalog = createValidCatalog();
 	catalog.unexpected = true;
 	const collections = catalog.collections as Array<Record<string, unknown>>;
@@ -121,13 +121,13 @@ test('parseInstallCatalog aggregates closed-schema and primitive errors', () => 
 	);
 });
 
-test('parseInstallCatalog requires unique kebab-case collection and client names', () => {
+test("parseInstallCatalog requires unique kebab-case collection and client names", () => {
 	const catalog = createValidCatalog();
 	const collections = catalog.collections as Array<Record<string, unknown>>;
-	collections[1] = { ...collections[1], name: 'skills' };
-	collections[2] = { ...collections[2], name: 'Directory Agents' };
+	collections[1] = { ...collections[1], name: "skills" };
+	collections[2] = { ...collections[2], name: "Directory Agents" };
 	const clients = catalog.clients as Array<Record<string, unknown>>;
-	clients.push({ name: 'copilot', destinations: [] });
+	clients.push({ name: "copilot", destinations: [] });
 
 	expectCatalogError(
 		catalog,
@@ -137,18 +137,18 @@ test('parseInstallCatalog requires unique kebab-case collection and client names
 	);
 });
 
-test('parseInstallCatalog closes artifact, entry, and validation strategies', () => {
+test("parseInstallCatalog closes artifact, entry, and validation strategies", () => {
 	const catalog = createValidCatalog();
 	const collections = catalog.collections as Array<Record<string, unknown>>;
 	collections[0] = {
 		...collections[0],
-		artifactKind: 'plugin',
-		entry: { kind: 'directory', marker: 'OTHER.md', suffix: '.bad' },
+		artifactKind: "plugin",
+		entry: { kind: "directory", marker: "OTHER.md", suffix: ".bad" },
 	};
 	collections[1] = {
 		...collections[1],
-		entry: { kind: 'archive', suffix: '.agent.md' },
-		validation: 'unknown-agent',
+		entry: { kind: "archive", suffix: ".agent.md" },
+		validation: "unknown-agent",
 	};
 
 	expectCatalogError(
@@ -160,22 +160,22 @@ test('parseInstallCatalog closes artifact, entry, and validation strategies', ()
 	);
 });
 
-test('parseInstallCatalog enforces the Agent Skills collection rule', () => {
+test("parseInstallCatalog enforces the Agent Skills collection rule", () => {
 	const catalog = createValidCatalog();
 	const collections = catalog.collections as Array<Record<string, unknown>>;
 	collections[0] = {
 		...collections[0],
-		entry: { kind: 'directory', marker: 'skill.md' },
+		entry: { kind: "directory", marker: "skill.md" },
 	};
 
 	expectCatalogError(catalog, /collections\[0\]\.entry.*SKILL\.md/);
 });
 
-test('parseInstallCatalog requires confined existing collection sources', () => {
+test("parseInstallCatalog requires confined existing collection sources", () => {
 	const catalog = createValidCatalog();
 	const collections = catalog.collections as Array<Record<string, unknown>>;
-	collections[0] = { ...collections[0], source: '../outside' };
-	collections[1] = { ...collections[1], source: '.github/missing' };
+	collections[0] = { ...collections[0], source: "../outside" };
+	collections[1] = { ...collections[1], source: ".github/missing" };
 
 	expectCatalogError(
 		catalog,
@@ -184,15 +184,15 @@ test('parseInstallCatalog requires confined existing collection sources', () => 
 	);
 });
 
-test('parseInstallCatalog validates destinations and collection references', () => {
+test("parseInstallCatalog validates destinations and collection references", () => {
 	const catalog = createValidCatalog();
 	const clients = catalog.clients as Array<Record<string, unknown>>;
 	clients[0] = {
 		...clients[0],
 		destinations: [
-			{ collection: 'missing', path: '/tmp/agents' },
-			{ collection: 'skills', path: '~/.same' },
-			{ collection: 'copilot', path: '~/.same' },
+			{ collection: "missing", path: "/tmp/agents" },
+			{ collection: "skills", path: "~/.same" },
+			{ collection: "copilot", path: "~/.same" },
 		],
 	};
 
@@ -204,13 +204,13 @@ test('parseInstallCatalog validates destinations and collection references', () 
 	);
 });
 
-test('parseInstallCatalog rejects duplicate destinations across clients', () => {
+test("parseInstallCatalog rejects duplicate destinations across clients", () => {
 	const catalog = createValidCatalog();
 	const clients = catalog.clients as Array<Record<string, unknown>>;
 	clients[1] = {
 		...clients[1],
 		destinations: [
-			{ collection: 'custom-directory', path: '~/.copilot/skills' },
+			{ collection: "custom-directory", path: "~/.copilot/skills" },
 		],
 	};
 
@@ -220,7 +220,7 @@ test('parseInstallCatalog rejects duplicate destinations across clients', () => 
 	);
 });
 
-test('parseInstallCatalog rejects agent collections mapped to another client format', () => {
+test("parseInstallCatalog rejects agent collections mapped to another client format", () => {
 	const catalog = createValidCatalog();
 	const clients = catalog.clients as Array<Record<string, unknown>>;
 	const firstClient = clients[0];
@@ -230,8 +230,8 @@ test('parseInstallCatalog rejects agent collections mapped to another client for
 		destinations: [
 			...(firstClient.destinations as readonly unknown[]),
 			{
-				collection: 'custom-directory',
-				path: '~/.copilot/directory-agents',
+				collection: "custom-directory",
+				path: "~/.copilot/directory-agents",
 			},
 		],
 	};
@@ -242,22 +242,22 @@ test('parseInstallCatalog rejects agent collections mapped to another client for
 	);
 });
 
-test('loadInstallCatalog reads and validates the repository catalog', async () => {
+test("loadInstallCatalog reads and validates the repository catalog", async () => {
 	const catalog = await loadInstallCatalog(fixtureRepoRoot);
 
 	assert.equal(catalog.collections.length, 3);
 	assert.equal(catalog.clients.length, 2);
 });
 
-test('loadInstallCatalog validates the real repository catalog', async () => {
+test("loadInstallCatalog validates the real repository catalog", async () => {
 	const catalog = await loadInstallCatalog(repoRoot);
 
 	assert.deepEqual(
 		catalog.collections.map((collection) => collection.name),
-		['skills', 'copilot'],
+		["skills", "copilot"],
 	);
 	assert.deepEqual(
 		catalog.clients.map((client) => client.name),
-		['copilot', 'claude', 'agents'],
+		["copilot", "claude", "agents"],
 	);
 });
