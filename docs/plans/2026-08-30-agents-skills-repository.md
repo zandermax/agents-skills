@@ -47,19 +47,20 @@
 - Status: in-progress
 - Mode: interactive
 - Canonical location: `docs/plans/2026-08-30-agents-skills-repository.md`
-- Last updated: 2026-08-31
+- Last updated: 2026-09-02
 - Goal: A validated `agents-skills` repository can list and selectively install multiple skills and named agent formats into built-in and arbitrary destinations, with known links intact after local and remote rename.
 - Success criteria: Generic skill titles; validated catalog and multi-format discovery; collection-aware agent validation; list and selective install commands; all repository checks pass; GitHub, package, remote, README, and local path renamed; known links resolve after migration.
-- Constraints and assumptions: The worktree starts from committed design `ca423b3`; local path and origin already use `agents-skills`; package and README identity remain planning-specific; unknown custom symlink destinations cannot be migrated automatically.
+- Constraints and assumptions: The worktree starts from committed design `ca423b3`; local path and origin already use `agents-skills`; unknown custom symlink destinations cannot be migrated automatically.
 
 ## Current State
 
-- Current phase: Phase 2 - Selection and Installation
-- Current step: `[?]` Phase 2 checkpoint - awaiting approval to begin identity
-	and migration work
-- Next action: Present Phase 2 listing, validation, and diff evidence, then
-	wait for the user to confirm whether Phase 3 may begin.
-- Blockers: Awaiting the interactive Phase 2 checkpoint decision.
+- Current phase: Phase 3 - Repository Identity and Migration
+- Current step: `[?]` Task 10.1 release-candidate gate passed; awaiting user
+	commit and push before remote-contained baseline verification.
+- Next action: After user confirmation, require a clean worktree, fetch origin,
+	and verify `origin/mainline` contains the current HEAD.
+- Blockers: Current `mainline` HEAD `d71cead` is ahead of `origin/mainline` and
+	must be pushed. The Task 10 plan-state update also needs a user-owned commit.
 - Observed out-of-sequence state: the repository is already located at
 	`/Users/zander/repos/agents-skills`, and `origin` is already
 	`https://github.com/zandermax/agents-skills.git`. Phase 3 must reconcile and
@@ -690,7 +691,7 @@ new path.
 - Update continuously: this canonical plan's Current State and Progress Log.
 - Create outside repository: `/tmp/agents-skills-link-inventory.json`.
 
-- [ ] **10.1 Prepare the manual release-candidate gate.** Run `npm run check`,
+- [x] **10.1 Prepare the manual release-candidate gate.** Run `npm run check`,
 	report `git status --short` and the suggested message
 	`chore: prepare agents-skills migration`, then stop so the user can stage,
 	commit, and push all intended changes to the existing `origin`. Do not run
