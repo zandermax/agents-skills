@@ -9,51 +9,29 @@ const projectRoot = path.resolve(path.dirname(testFilePath), "..");
 const readmePath = path.join(projectRoot, "README.md");
 
 const REQUIRED_MARKERS = [
-	"Prerequisites",
+	"# Agents Skills",
 	"npm install",
-	"npm run format",
-	"npm run lint:markdown",
 	"npm run build",
 	"npm run check",
-	"npm run install:clients",
-	"npm run install:clients -- --client all",
-	"npm run install:clients -- --client copilot",
-	"npm run install:clients -- --client claude",
-	"npm run install:clients -- --client agents",
-	"Reload the VS Code window",
-	"start a new chat",
-	"Executable Planner",
-	"REQUIRED SKILL",
-	"restart Claude Code",
-	"executable-planning",
-	"Copilot .agent.md is not a Claude agent",
-	"Agent Skills directory convention",
+	"npm run install:artifacts",
+	"npm run install:artifacts -- --list",
+	"--client",
+	"--skill",
+	"--agent",
+	"--skills-dir",
+	"--agents-dir",
+	"install-catalog.json",
+	"Adding Skills",
+	"Adding Agent Formats",
+	"custom destination",
 	"collision",
-	"never overwritten",
-	"moved",
-	"remove the stale symlink",
-	"rerun installation",
-	"official",
+	"stale symlink",
+	"repository is moved",
 	"vendor/copilot/Plan.agent.md",
-	"byte-preserving copy",
-	"sources/executable-planning/transforms.json",
-	"vendor/copilot/README.md",
-	"npm run check:drift",
-	"sources/<name>/skill.json",
-	".agents/skills/<name>/SKILL.md",
-	"without changing src/build-skills.ts",
 ] as const;
 
-const REQUIRED_MAPPINGS = [
-	"Copilot file: `.github/agents/executable-planner.agent.md` -> `~/.copilot/agents/executable-planner.agent.md`",
-	"Copilot directory: `.agents/skills/executable-planning` -> `~/.copilot/skills/executable-planning`",
-	"Claude directory: `.agents/skills/executable-planning` -> `~/.claude/skills/executable-planning`",
-	"Agent Skills directory: `.agents/skills/executable-planning` -> `~/.agents/skills/executable-planning`",
-] as const;
-
-test("README includes required installation and maintenance markers", async () => {
+test("README documents catalog-driven artifact installation and maintenance", async () => {
 	const readme = await readFile(readmePath, "utf8");
-
 	for (const marker of REQUIRED_MARKERS) {
 		assert.match(
 			readme,
@@ -61,12 +39,10 @@ test("README includes required installation and maintenance markers", async () =
 			`README is missing marker: ${marker}`,
 		);
 	}
-
-	for (const mapping of REQUIRED_MAPPINGS) {
-		assert.equal(
-			readme.includes(mapping),
-			true,
-			`README is missing exact mapping: ${mapping}`,
-		);
-	}
+	assert.equal(
+		readme.includes(
+			"Source and destination mappings used by scripts/install-clients.ts",
+		),
+		false,
+	);
 });

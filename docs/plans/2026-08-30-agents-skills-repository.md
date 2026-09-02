@@ -662,23 +662,23 @@ new path.
 	`EXECUTABLE_PLANNING_HOME` as a documented deprecated fallback for one
 	migration cycle.
 
-- [ ] **9.1 Write failing identity tests.** Assert package name, primary install
+- [x] **9.1 Write failing identity tests.** Assert package name, primary install
 	command, generic README title/sections, every CLI selector, catalog extension
 	instructions, collision/move recovery, and primary plus fallback test-home
 	variables. Remove exact single-artifact mapping assertions.
-- [ ] **9.2 Run and verify RED.** Run documentation, toolchain, CLI, and
+- [x] **9.2 Run and verify RED.** Run documentation, toolchain, CLI, and
 	customization tests. Expected: old package/title/env assumptions fail.
-- [ ] **9.3 Update package identity safely.** Change `package.json`, run
+- [x] **9.3 Update package identity safely.** Change `package.json`, run
 	`npm install --package-lock-only --ignore-scripts`, and confirm only root
 	package names change in `package-lock.json`.
-- [ ] **9.4 Rewrite README around the catalog.** Document adding skills,
+- [x] **9.4 Rewrite README around the catalog.** Document adding skills,
 	client-ready agents, new agent formats, listing, selectors, built-in/custom
 	destinations, safety, stale links, moves, and the planning snapshot as one
 	feature-specific maintenance section.
-- [ ] **9.5 Generalize remaining repository markers.** Remove repository-level
+- [x] **9.5 Generalize remaining repository markers.** Remove repository-level
 	wording that implies one planning artifact while retaining planning-specific
 	tests, source names, generated output, vendor provenance, and historical docs.
-- [ ] **9.6 Verify and suggest a commit.** Run focused tests and
+- [x] **9.6 Verify and suggest a commit.** Run focused tests and
 	`npm run check`; search shared code/package/README for unjustified planning
 	identity references; report changed files and evidence, then suggest
 	`chore: rename package to agents-skills`. Do not stage, commit, or push.

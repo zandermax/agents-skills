@@ -189,7 +189,7 @@ async function createFixtureRepo(
 				"# Executable Planning",
 				"",
 				"Run npm run build and npm run check to validate outputs.",
-				"Run npm run install:clients to install for copilot, claude, and .agents/skills consumers.",
+				"Run npm run install:artifacts to install for copilot, claude, and .agents/skills consumers.",
 			].join("\n"),
 		"utf8",
 	);
@@ -538,7 +538,7 @@ test("checkCustomizations rejects missing README command and client instructions
 			(error: unknown) => {
 				assert.match(String(error), /README\.md:/);
 				assert.match(String(error), /npm run check/);
-				assert.match(String(error), /install:clients/);
+				assert.match(String(error), /install:artifacts/);
 				assert.match(String(error), /copilot/i);
 				assert.match(String(error), /claude/i);
 				return true;

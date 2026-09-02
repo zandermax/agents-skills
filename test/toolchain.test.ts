@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 type PackageJson = {
+	name?: string;
 	type?: string;
 	engines?: {
 		node?: string;
@@ -19,6 +20,7 @@ test("toolchain package contract is configured", async () => {
 	);
 	const packageJson = JSON.parse(packageJsonText) as PackageJson;
 
+	assert.equal(packageJson.name, "agents-skills");
 	assert.equal(packageJson.type, "module");
 	assert.equal(packageJson.engines?.node, "24.15.0");
 	assert.equal(packageJson.scripts?.install, undefined);

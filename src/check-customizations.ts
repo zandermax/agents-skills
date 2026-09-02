@@ -310,7 +310,7 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		const requiredReadmeMarkers = [
 			"npm run build",
 			"npm run check",
-			"npm run install:clients",
+			"npm run install:artifacts",
 		];
 
 		for (const marker of requiredReadmeMarkers) {
