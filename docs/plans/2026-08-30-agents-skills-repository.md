@@ -427,18 +427,18 @@ export function parseArtifactArguments(
 ): ParsedArtifactArguments;
 ```
 
-- [ ] **5.1 Write failing parser tests.** Cover every repeatable flag, stable
+- [x] **5.1 Write failing parser tests.** Cover every repeatable flag, stable
 	deduplication, `--client all`, `format=path`, `format:name`, missing values,
 	empty halves, unknown flags, and `--list` exclusivity.
-- [ ] **5.2 Run and verify RED.** Run
+- [x] **5.2 Run and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/artifact-arguments.test.ts`. Expected:
 	missing module/import.
-- [ ] **5.3 Implement syntax-only parsing.** Preserve raw relative paths for
+- [x] **5.3 Implement syntax-only parsing.** Preserve raw relative paths for
 	later cwd resolution; do not consult the catalog or filesystem. Set
 	`hasDestinationArguments` only for client and custom destination flags.
-- [ ] **5.4 Run and verify GREEN.** All parser cases pass with stable usage
+- [x] **5.4 Run and verify GREEN.** All parser cases pass with stable usage
 	errors naming `npm run install:artifacts`.
-- [ ] **5.5 Report argument parsing and suggest a commit.** Report changed files
+- [x] **5.5 Report argument parsing and suggest a commit.** Report changed files
 	and validation evidence, then suggest
 	`feat: parse artifact installation arguments`. Do not stage, commit, or push.
 
@@ -481,24 +481,24 @@ export function formatArtifactListing(
 ): string;
 ```
 
-- [ ] **6.1 Write failing selection tests.** Cover no destination flags meaning
+- [x] **6.1 Write failing selection tests.** Cover no destination flags meaning
 	all catalog clients, custom-only mode, explicit client plus custom targets,
 	no selectors meaning all compatible artifacts, skill and agent filters,
 	unknown IDs, exact agent format compatibility, normalized target
 	deduplication, and conflicting collection mappings to one path.
-- [ ] **6.2 Write failing listing tests.** Assert each artifact appears once,
+- [x] **6.2 Write failing listing tests.** Assert each artifact appears once,
 	agent IDs include format, compatible clients follow catalog order, output is
 	stable, and `listOnly` returns no targets.
-- [ ] **6.3 Run and verify RED.** Run
+- [x] **6.3 Run and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/artifact-selection.test.ts`. Expected:
 	missing selection exports.
-- [ ] **6.4 Implement request resolution.** Resolve `~/` against
+- [x] **6.4 Implement request resolution.** Resolve `~/` against
 	`homeDirectory`, relative custom paths against `cwd`, apply default clients
 	only when no custom destination flag suppresses them, validate all selectors,
 	then reject selected agent formats lacking an exact selected target.
-- [ ] **6.5 Implement pure listing.** Derive compatible clients by catalog
+- [x] **6.5 Implement pure listing.** Derive compatible clients by catalog
 	destination membership. Return text only; do not inspect destinations.
-- [ ] **6.6 Verify GREEN and suggest a commit.** Run argument and selection
+- [x] **6.6 Verify GREEN and suggest a commit.** Run argument and selection
 	tests, report changed files and evidence, then suggest
 	`feat: resolve and list artifact selections`. Do not stage, commit, or push.
 
