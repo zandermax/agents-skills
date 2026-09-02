@@ -534,23 +534,23 @@ export async function installArtifacts(
 ): Promise<InstallResult>;
 ```
 
-- [ ] **7.1 Port tests before code.** Adapt the existing fixture to two skills,
+- [x] **7.1 Port tests before code.** Adapt the existing fixture to two skills,
 	a file agent, and a directory agent. Test destination names, multiple targets,
 	equivalent mapping deduplication, conflicting mappings, idempotence, regular
 	collisions, unrelated and broken links, canonical aliases, missing/wrong
 	source kinds, aggregate errors, all-before-write, and Windows EPERM guidance.
-- [ ] **7.2 Run and verify RED.** Run
+- [x] **7.2 Run and verify RED.** Run
 	`./node_modules/.bin/tsx --test test/install-artifacts.test.ts`. Expected:
 	missing generic engine module.
-- [ ] **7.3 Move the proven filesystem core.** Transfer and generalize
+- [x] **7.3 Move the proven filesystem core.** Transfer and generalize
 	`classifyDestination`, `validateSource`, canonical path comparison,
 	deduplication, preflight aggregation, and write execution. `buildArtifactLinks`
 	maps each selected artifact to targets with the same collection only.
-- [ ] **7.4 Run new and legacy tests.** Both installer suites must pass before
+- [x] **7.4 Run new and legacy tests.** Both installer suites must pass before
 	removing the legacy script or tests.
-- [ ] **7.5 Mutation-check all-before-write.** Temporarily bypass the error gate,
+- [x] **7.5 Mutation-check all-before-write.** Temporarily bypass the error gate,
 	confirm the partial-batch test fails, restore the gate, and rerun GREEN.
-- [ ] **7.6 Report the engine and suggest a commit.** Report changed files and
+- [x] **7.6 Report the engine and suggest a commit.** Report changed files and
 	validation evidence, then suggest `feat: install resolved artifacts safely`.
 	Do not stage, commit, or push.
 
