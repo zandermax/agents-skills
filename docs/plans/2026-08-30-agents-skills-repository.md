@@ -20,6 +20,11 @@
 - Do not rewrite historical executable-planning records or rename its skill and agent.
 - Do not rename the local directory until the final migration task because the active workspace depends on the current path.
 - Never remove a regular file, directory, or unrelated symlink during link migration.
+- **Plan archival:** When a plan reaches completion (all phases approved and closed), move it to
+	`docs/plans/archive/` with status set to `completed` in its frontmatter metadata. When a plan
+	is abandoned by user request or explicit decision, move it to the same archive directory with
+	status `abandoned` and a comment explaining the reason. This keeps `docs/plans/` focused on
+	active work and maintains decision history in the archive.
 - Never mutate the Git index or staging area. Do not run `git add`, `git mv`,
 	`git rm --cached`, `git restore --staged`, `git reset`, or any command or tool
 	that changes staging state as a side effect.
@@ -49,11 +54,9 @@
 
 ## Current State
 
-- Current phase: Phase 1 - Generic Knowledge Artifacts
-- Current step: `[?]` 1.C - Awaiting user confirmation
-- Next action: Present Phase 1 output and validation evidence, then wait for the
-	user to confirm whether Phase 2 may begin.
-- Blockers: Awaiting the interactive Phase 1 checkpoint decision.
+- Current phase: Phase 2 - Selection and Installation
+- Current step: Starting Phase 2 after Phase 1 completion and user approval
+- Next action: Proceed with Task 5 - Artifact Argument Grammar
 - Blockers: None
 - Observed out-of-sequence state: the repository is already located at
 	`/Users/zander/repos/agents-skills`, and `origin` is already
@@ -63,6 +66,11 @@
 
 ## Decisions
 
+- 2026-09-02: When a plan reaches completion (all phases approved), move it to
+	`docs/plans/archive/` and update its status to `completed` in frontmatter.
+	When a plan is abandoned (by user request or explicit decision), move it to the
+	same archive directory with status `abandoned` and a note explaining the reason.
+	This keeps active plans (`docs/plans/`) focused and maintains decision history.
 - 2026-08-30: Use a unified installation catalog rather than per-artifact manifests or hard-coded conventions.
 - 2026-08-30: Store agents as client-ready artifacts in named format collections.
 - 2026-08-30: Use `--agents-dir <format>=<path>` and `--agent <format>:<name>` for custom agent installation and selection.
