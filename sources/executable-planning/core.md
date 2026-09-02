@@ -96,6 +96,7 @@ In interactive mode:
 - When anything is flagged for the user's interest at a checkpoint, insert it as the immediate next step in the canonical plan, mark it `awaiting-user`, and stop for input.
 - If the user resolves it, record the decision and continue.
 - If the user defers it, move it to a specific appropriate later phase or deferred-items section with a trigger or due point. Never silently discard it.
+- Present a suggested commit message for the work completed in that phase in a fenced `text` code block at the end of the checkpoint so it can be selected with one triple-click. This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
 
 In autopilot mode:
 
@@ -103,13 +104,11 @@ In autopilot mode:
 - Replace each phase checkpoint with an automated go/no-go gate based on the phase's completion criteria and validation evidence.
 - Record assumptions and autonomous decisions. Prefer reversible choices and stop only for safety, missing authorization, destructive ambiguity, or an unrecoverable blocker.
 
-At the end of every checkpoint, interactive or autopilot, present a suggested commit message for the work completed in that phase on its own single line so it can be selected with one triple-click. This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
-
 ## Required Plan Format
 
 Use this structure, adapting detail to the task:
 
-```markdown
+~~~markdown
 # <Plan title>
 
 ## Plan Metadata
@@ -153,7 +152,13 @@ _Not yet elaborated. Populate immediately before this phase starts._
 
 ### Checkpoint
 
-_Suggested commit message: <single-line message>_
+_Interactive mode only:_
+
+Suggested commit message:
+
+```text
+<single-line message>
+```
 
 ## Phase 2: <domain-based name>
 
@@ -162,7 +167,7 @@ _Suggested commit message: <single-line message>_
 ## Progress Log
 
 - <timestamp>: <state change and evidence>
-```
+~~~
 
 Use stable step identifiers so updates remain easy to audit. Status must be unambiguous: `[ ]` pending, `[-]` in progress, `[x]` complete, `[!]` blocked, and `[?]` awaiting user. Keep exactly one current step and one next action whenever work is active.
 
@@ -173,7 +178,7 @@ Before presenting the plan, verify that:
 - All unresolved clarification answers or explicit assumptions are recorded.
 - The interaction mode and storage choice are explicit.
 - The phases are domain-based, iterative, each has a tangible output and completion criteria, and none contains elaborated steps before its turn.
-- Every phase ends with the checkpoint type matching the interaction mode, followed by a single-line suggested commit message.
+- Every phase ends with the checkpoint type matching the interaction mode. Interactive checkpoints include a suggested commit message in a fenced `text` code block; autopilot checkpoints do not include one.
 - The plan states that git actions are limited to read-only inspection.
 - Subagent delegation for step outlines is scoped to elaboration time, per phase, unless the single-agent exception is justified.
 - The plan can be followed without access to this chat or a specific IDE UI.

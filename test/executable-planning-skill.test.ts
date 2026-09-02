@@ -128,7 +128,7 @@ const expectedProjectOwnedRuleIds = [
 	"R44-elaboration-scoped-clarify",
 	"R45-elaboration-review-checkpoint",
 	"R46-checkpoint-does-not-auto-start-next-phase",
-	"R47-checkpoint-commit-message-suggestion",
+	"R47-interactive-checkpoint-commit-message-suggestion",
 ] as const;
 
 test("executable-planning skill composes required static contract", async () => {
@@ -227,6 +227,22 @@ test("project-owned core section set remains stable", () => {
 		"Required Plan Format",
 		"Quality Check Before Delivery",
 	]);
+});
+
+test("commit suggestions are interactive-only and use a code block", async () => {
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
+
+	assert.match(
+		rendered,
+		/In interactive mode:[\s\S]*?Suggested commit message:[\s\S]*?```text\n<single-line message>\n```/,
+	);
+	const autopilotSection =
+		/In autopilot mode:[\s\S]*?(?=\n## Required Plan Format)/.exec(
+			rendered,
+		)?.[0];
+	assert.ok(autopilotSection);
+	assert.doesNotMatch(autopilotSection, /Suggested commit message:/);
 });
 
 test("behavioral pressure fixtures are complete and cover project-owned rules", () => {
