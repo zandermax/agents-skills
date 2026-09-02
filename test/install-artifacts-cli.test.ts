@@ -65,7 +65,7 @@ test("artifact CLI installs all compatible catalog artifacts by default", async 
 	try {
 		const result = runCli([], fixture.homeDirectory);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /summary created=7 existing=0/);
+		assert.match(result.stdout, /summary created=15 existing=0/);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -80,7 +80,7 @@ test("artifact CLI accepts the deprecated test-home variable", async () => {
 			"EXECUTABLE_PLANNING_HOME",
 		);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /summary created=7 existing=0/);
+		assert.match(result.stdout, /summary created=15 existing=0/);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -120,7 +120,7 @@ test("artifact CLI installs into mixed custom skill and agent targets", async ()
 			fixture.homeDirectory,
 		);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /summary created=3 existing=0/);
+		assert.match(result.stdout, /summary created=7 existing=0/);
 		assert.equal(
 			(
 				await lstat(

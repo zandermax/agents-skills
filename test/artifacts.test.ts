@@ -126,6 +126,14 @@ test("discoverArtifacts finds the real planning skill, its companion, and the Co
 
 	assert.deepEqual(
 		artifacts.map((artifact) => artifact.id),
-		["executable-planning", "plan-it-out", "copilot:executable-planner"],
+		[
+			"code-walk",
+			"executable-planning",
+			"plan-it-out",
+			"teach-by-doing",
+			"copilot:code-walk",
+			"copilot:executable-planner",
+			"copilot:teach-by-doing",
+		],
 	);
 });
