@@ -48,6 +48,8 @@ When local storage is declined, use the harness's persistent plan artifact if on
 
 At creation, and after every material execution event, update the canonical plan before proceeding. Material events include step completion, validation, changed scope, a new decision, a blocker, a failed assumption, user feedback, and deferral of an issue.
 
+Before archiving a completed plan, finish all edits to its content and metadata, run the required validation, and confirm the final file is complete. Only then move the file from the active plans directory into the archive; after the move, perform verification only and do not recreate or edit the active-path copy.
+
 
 
 ## Plan Design

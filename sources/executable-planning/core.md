@@ -36,6 +36,8 @@ When local storage is declined, use the harness's persistent plan artifact if on
 
 At creation, and after every material execution event, update the canonical plan before proceeding. Material events include step completion, validation, changed scope, a new decision, a blocker, a failed assumption, user feedback, and deferral of an issue.
 
+Before archiving a completed plan, finish all edits to its content and metadata, run the required validation, and confirm the final file is complete. Only then move the file from the active plans directory into the archive; after the move, perform verification only and do not recreate or edit the active-path copy.
+
 ## Plan Design
 
 Organize every plan into at least two conceptually domain-based phases. A phase should represent a coherent product, system, or problem domain boundary, not merely a generic activity such as "coding" or "testing". Cross-cutting validation may be included in each phase or as its own phase when it is genuinely a domain of work.
