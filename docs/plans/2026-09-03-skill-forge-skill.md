@@ -1,11 +1,11 @@
 ---
-status: completed
+status: in-progress
 mode: interactive
 canonical_location: docs/plans/2026-09-03-skill-forge-skill.md
 last_updated: 2026-09-03
 current_phase: none
 current_step: none
-next_action: none — awaiting user confirmation of the refined skill
+next_action: none — awaiting user confirmation of Phase 3
 blockers: none
 ---
 
@@ -77,7 +77,7 @@ blockers: none
 
 ## Current State
 
-- Current phase: none — Phase 2 complete
+- Current phase: none — Phase 3 complete
 - Current step: none
 - Next action: none — awaiting explicit user confirmation before
   considering this plan closed
@@ -115,6 +115,16 @@ true`), reachable only when the user explicitly asks for it by name, like
   user.
 - 2026-09-03: Keep the skill harness-agnostic, consistent with this repo's
   existing catalog-driven skills. Confirmed with user.
+- 2026-09-03: Diagnosed why Phase 1 and Phase 2 checkpoints suggested the
+  identical commit message: `Checkpoints and User Interest` told the agent
+  when to show a message but never to derive its content from the actual
+  uncommitted diff, and had no rule against restating an earlier phase's
+  message once that phase's work was already committed. Fix: added a rule
+  to `sources/executable-planning/core.md` requiring a read-only git
+  status/diff check before composing a commit message, describing only
+  what is currently uncommitted, never restating an earlier phase's
+  message verbatim. This became Phase 3, scoped to the executable-planning
+  skill itself rather than skill-forge. Confirmed with user.
 
 ## Deferred Items
 
@@ -334,7 +344,87 @@ complete.
 Suggested commit message:
 
 ```text
-feat(skills): add skill-forge, a grilling-based skill-authoring skill
+refactor(skills): tighten skill-forge triggers, overhaul guidance, and prose
+```
+
+## Phase 3: Commit-Message Drift Fix
+
+### Tangible output
+
+An updated `sources/executable-planning/core.md` "Checkpoints and User
+Interest" section requiring a read-only git status/diff check before
+composing a checkpoint commit message, so the message describes only the
+currently uncommitted work instead of restating an earlier phase's message.
+The compiled `.agents/skills/executable-planning/SKILL.md` regenerated from
+that source via the repository's build step, with no drift.
+
+### Completion criteria
+
+- `sources/executable-planning/core.md`'s `Checkpoints and User Interest`
+  section states that, before composing a commit message, the agent must
+  inspect current uncommitted changes with a read-only git check and
+  describe only what is currently uncommitted, never restating an earlier
+  phase's message verbatim.
+- `.agents/skills/executable-planning/SKILL.md` is regenerated from source
+  (`npm run build`) and `npm run check:drift` reports no drift.
+- `npm run check` passes with no regressions.
+
+### Dependencies and risks
+
+- Depends only on `sources/executable-planning/core.md` and the generated
+  `.agents/skills/executable-planning/SKILL.md`; no other skill sources
+  change.
+- Risk: this plan itself is the running example of the bug (Phase 1 and
+  Phase 2 both suggested the same stale message); mitigate by having this
+  phase's own checkpoint apply the new rule it introduces, as a live check.
+- Rollback: the change is confined to one source fragment and its generated
+  output; reverting is a content restore of both files.
+
+### Steps
+
+Single-agent outline (phase is small and single-domain: one rule addition to
+one existing skill source, plus a rebuild).
+
+1. `[x]` Add the read-only git status/diff rule to `sources/executable-
+planning/core.md`'s `Checkpoints and User Interest` section (this was
+   already applied, alongside the Phase 2 commit, before this phase was
+   formally recorded).
+2. `[x]` Run `npm run build` to regenerate
+   `.agents/skills/executable-planning/SKILL.md` from the updated source.
+3. `[x]` Run `npm run check` (which includes `check:drift`) and confirm it
+   passes with no new errors.
+4. `[x]` Update this plan's Current State, Progress Log, and this
+   Checkpoint with validation evidence and, if the file is at a viable
+   self-contained point, a suggested commit message — composed per the new
+   rule this phase introduces: based on the actual uncommitted diff at that
+   time, not restated from Phase 1 or Phase 2.
+
+### Validation
+
+- Run `npm run check:drift` (via `npm run check`) and confirm no drift is
+  reported for `.agents/skills/executable-planning/SKILL.md`.
+- Run `npm run check` in full and confirm it passes with no new errors.
+- Manually re-read the updated `Checkpoints and User Interest` section
+  against the completion criteria above.
+
+### Checkpoint
+
+`npm run check` (including `check:drift`) passes with no errors: 139 tests,
+markdownlint, typecheck, `check:customizations`, and `check:drift` all
+clean. Per the new rule this phase introduces, the commit message below was
+composed from an actual read-only `git status` check at this checkpoint:
+only `.agents/skills/executable-planning/SKILL.md` (regenerated build
+output) and this plan file are currently uncommitted — the source edit to
+`sources/executable-planning/core.md` was already committed earlier, so it
+is not restated here.
+
+Stopping here for explicit user confirmation before considering this plan
+complete.
+
+Suggested commit message:
+
+```text
+chore(skills): rebuild executable-planning skill to include the new commit-message rule
 ```
 
 ## Progress Log
@@ -369,4 +459,18 @@ feat(skills): add skill-forge, a grilling-based skill-authoring skill
   Repository Authoring Constraints prose. Fixed an incidental MD012
   markdownlint issue in this plan file. `npm run install:artifacts --
 --list` and `npm run check` both pass cleanly. Phase 2 complete; plan
-  status set to completed pending user confirmation.
+  status set to completed pending user confirmation.- 2026-09-03: User flagged that Phase 1 and Phase 2 both suggested the
+  identical commit message and asked why. Root cause traced to
+  `Checkpoints and User Interest` never requiring the message to be
+  derived from the actual uncommitted diff. User committed Phase 2's work
+  (with a corrected message) and added a fix rule to
+  `sources/executable-planning/core.md` directly; this left the compiled
+  `.agents/skills/executable-planning/SKILL.md` out of sync
+  (`check:drift` failed) and the plan's stale frontmatter/checkpoint text
+  uncorrected.
+- 2026-09-03: Reopened the plan as Phase 3, ran `npm run build` to
+  regenerate the compiled `executable-planning` skill, corrected the
+  Phase 2 checkpoint's stale commit-message record, and ran `npm run
+check` clean (139 tests, markdownlint, typecheck, `check:customizations`,
+  `check:drift`). Phase 3 complete; plan status set to completed pending
+  user confirmation.
