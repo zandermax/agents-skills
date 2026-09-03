@@ -4,8 +4,8 @@ mode: interactive
 canonical_location: docs/plans/2026-09-03-skill-forge-skill.md
 last_updated: 2026-09-03
 current_phase: "Phase 1: Skill Forge Authoring"
-current_step: none
-next_action: "Elaborate Phase 1 steps, then present them for user confirmation before implementing"
+current_step: "1-7: drafting SKILL.md content"
+next_action: "Draft the full skill-forge SKILL.md content (steps 1-7), then write the file"
 blockers: none
 ---
 
@@ -85,6 +85,22 @@ blockers: none
 
 ## Decisions
 
+- 2026-09-03: `skill-forge` is user-invoked only (`disable-model-invocation:
+true`), reachable only when the user explicitly asks for it by name, like
+  `grill-me`. Confirmed with user.
+- 2026-09-03: The drafted skill's default destination is
+  `.agents/skills/<name>/SKILL.md` in this repository; the user still
+  chooses hand-authored vs. manifest-driven per `AGENTS.md`. Confirmed with
+  user.
+- 2026-09-03: Include one compact worked example (a sample grilling round
+  plus the resulting draft snippet) so the format is concrete, not purely
+  instructional prose. Confirmed with user.
+- 2026-09-03: Considered mirroring the `grill-me`/`grilling` two-file split
+  (thin user-invoked delegator + separate model-invokable core skill) but
+  rejected it — `skill-forge` stays a single user-invoked-only file holding
+  all the logic itself, since there is no separate need for the model to
+  reach the grilling logic on its own outside of skill authoring. Confirmed
+  with user.
 - 2026-09-03: Author `skill-forge` as a single hand-authored `SKILL.md`
   (no `sources/skill-forge/skill.json` manifest), matching the
   `teach-by-doing`/`code-walk` precedent, because it is self-contained and
@@ -157,7 +173,46 @@ skill-forge` and a description written in third person, "Use when..."
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+Single-agent outline (phase is small and single-domain: one new hand-authored
+file; no subagent delegation needed).
+
+1. `[ ]` Draft frontmatter: `name: skill-forge`, `disable-model-invocation:
+true`, and a third-person "Use when..." description naming triggers
+   (creating/editing/reviewing skills) without summarizing the workflow.
+2. `[ ]` Write "When to Use" and "Overview" sections distinguishing
+   skill-forge from ad hoc skill writing: it exists to run the grilling
+   interview before drafting, and to check the draft against this repo's
+   authoring rules.
+3. `[ ]` Write the "Grilling Interview" section: reproduce the design-tree /
+   frontier / numbered-rounds / recommended-answer format tool-agnostically
+   (describe dispatching sub-work to find facts instead of naming a specific
+   tool), and the rule that facts are the agent's job, decisions are the
+   user's. Cover the frontier topics a new skill needs settled: purpose,
+   trigger phrasing, hand-authored vs. manifest-driven, output location,
+   model-invoked vs. user-invoked, verification depth.
+4. `[ ]` Write the "Repository Authoring Constraints" section: allowed
+   frontmatter keys (`name`, `description`, optional
+   `disable-model-invocation: true`), folder name must match frontmatter
+   `name`, forbidden literal tokens, hand-authored vs. manifest-driven
+   decision criteria from `AGENTS.md`, default output path
+   `.agents/skills/<name>/SKILL.md`, and the `npm run build` (manifest-driven
+   only) / `npm run check` validation step.
+5. `[ ]` Write the "Lightweight Verification Loop" section: run one pressure
+   scenario without the drafted skill (baseline), then with it, compare
+   whether the target behavior changed; no benchmark/eval-viewer scaffolding.
+6. `[ ]` Write a compact worked example: one sample grilling round (2-3
+   numbered questions with recommended answers) and the resulting draft
+   frontmatter/section snippet it produces.
+7. `[ ]` Self-review the full draft against Completion Criteria, specifically
+   scanning for the forbidden literal tokens and confirming frontmatter only
+   has the three allowed keys.
+8. `[ ]` Create `.agents/skills/skill-forge/SKILL.md` with the finished
+   content.
+9. `[ ]` Run `npm run install:artifacts -- --list` and `npm run check`; fix
+   any reported issues and re-run until clean.
+10. `[ ]` Update this plan's Current State, Progress Log, and this
+    Checkpoint with validation evidence and, if the file is at a viable
+    self-contained point, a suggested commit message.
 
 ### Validation
 
