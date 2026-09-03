@@ -21,9 +21,9 @@
 - Do not rename the local directory until the final migration task because the active workspace depends on the current path.
 - Never remove a regular file, directory, or unrelated symlink during link migration.
 - **Plan archival:** When a plan reaches completion (all phases approved and closed), move it to
-	`docs/plans/archive/` with status set to `completed` in its frontmatter metadata. When a plan
+	`plans/archive/` with status set to `completed` in its frontmatter metadata. When a plan
 	is abandoned by user request or explicit decision, move it to the same archive directory with
-	status `abandoned` and a comment explaining the reason. This keeps `docs/plans/` focused on
+	status `abandoned` and a comment explaining the reason. This keeps `plans/` focused on
 	active work and maintains decision history in the archive.
 - Never mutate the Git index or staging area. Do not run `git add`, `git mv`,
 	`git rm --cached`, `git restore --staged`, `git reset`, or any command or tool
@@ -46,7 +46,7 @@
 
 - Status: completed
 - Mode: interactive
-- Canonical location: `docs/plans/2026-08-30-agents-skills-repository.md`
+- Canonical location: `plans/archive/2026-08-30-agents-skills-repository.md`
 - Last updated: 2026-09-02
 - Goal: A validated `agents-skills` repository can list and selectively install multiple skills and named agent formats into built-in and arbitrary destinations, with known links intact after local and remote rename.
 - Success criteria: Generic skill titles; validated catalog and multi-format discovery; collection-aware agent validation; list and selective install commands; all repository checks pass; GitHub, package, remote, README, and local path renamed; known links resolve after migration.
@@ -56,7 +56,8 @@
 
 - Current phase: Phase 3 - Repository Identity and Migration
 - Current step: Task 12.8 report completion and archive the completed plan.
-- Next action: Move this completed plan to `docs/plans/archive/` and run the
+
+- Next action: Move this completed plan to `plans/archive/` and run the
 	required Markdown lint.
 - Blockers: none.
 - Observed out-of-sequence state: `origin` already targeted
@@ -83,17 +84,17 @@
 	`plan-it-out`, and `copilot:executable-planner`; the second installation
 	reported `created=0 existing=7`; `npm run check` passed 135/135 tests.
 - **Completion:** Tasks 12.7, 12.8, and checkpoint 3.C are complete. The plan
-	will be moved to `docs/plans/archive/` with a filesystem move, not `git mv`.
+	will be moved to `plans/archive/` with a filesystem move, not `git mv`.
 	Markdown lint passed; suggested commit message:
 	`docs: complete agents-skills migration`. Do not stage, commit, or push.
 
 ## Decisions
 
 - 2026-09-02: When a plan reaches completion (all phases approved), move it to
-	`docs/plans/archive/` and update its status to `completed` in frontmatter.
+	`plans/archive/` and update its status to `completed` in frontmatter.
 	When a plan is abandoned (by user request or explicit decision), move it to the
 	same archive directory with status `abandoned` and a note explaining the reason.
-	This keeps active plans (`docs/plans/`) focused and maintains decision history.
+	This keeps active plans (`plans/`) focused and maintains decision history.
 - 2026-08-30: Use a unified installation catalog rather than per-artifact manifests or hard-coded conventions.
 - 2026-08-30: Store agents as client-ready artifacts in named format collections.
 - 2026-08-30: Use `--agents-dir <format>=<path>` and `--agent <format>:<name>` for custom agent installation and selection.
@@ -103,8 +104,9 @@
 - 2026-08-30: The user exclusively owns every Git index mutation, including
 	staging and removing staged changes, plus commits and pushes. Agents preserve
 	the initial staged state and only suggest a commit message after each task.
-- 2026-08-30: Store active repository-wide plans and specs under neutral
-	`docs/plans` and `docs/specs` paths; retain historical Superpowers documents
+
+- 2026-08-30: Store active repository-wide plans under `plans/` and specs under
+	`docs/specs`; retain historical Superpowers documents
 	unchanged as provenance.
 - 2026-08-31: Treat the existing local-directory and origin renames as
 	out-of-sequence completed state. Before Phase 3 execution, replace obsolete
@@ -789,7 +791,7 @@ new path.
 - Move directory: `<workspace-root>/personal/agents-skills` to
 	`<workspace-root>/agents-skills`.
 - Continue canonical plan at:
-	`<workspace-root>/agents-skills/docs/plans/2026-08-30-agents-skills-repository.md`.
+	`<workspace-root>/agents-skills/plans/archive/2026-08-30-agents-skills-repository.md`.
 
 - [x] **12.1 Mark local move awaiting user.** Confirmed the target directory
 	does not exist, worktree is clean, HEAD matches the Task 10 migration
@@ -864,8 +866,9 @@ are explicitly reported.
 	workflow, implementation remains stopped at the handoff boundary.
 - 2026-08-30: User revised Git policy: agents must never stage, commit, or push;
 	every task ends with a suggested commit message for the user to apply.
+
 - 2026-08-30: Moved the active generic design and plan into `docs/specs` and
-	`docs/plans`; replaced the harness-specific execution directive with
+	`plans`; replaced the harness-specific execution directive with
 	`executable-planning`.
 - 2026-08-30: Strengthened Git ownership: agents must neither stage changes nor
 	remove staged changes by any direct or indirect mechanism, must preserve the

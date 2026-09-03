@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -45,5 +45,14 @@ test("README documents catalog-driven artifact installation and maintenance", as
 			"Source and destination mappings used by scripts/install-clients.ts",
 		),
 		false,
+	);
+});
+
+test("repository keeps active and archived plans under one plans root", async () => {
+	await access(path.join(projectRoot, "plans"));
+	await access(path.join(projectRoot, "plans", "archive"));
+	await assert.rejects(
+		access(path.join(projectRoot, "docs", "plans")),
+		/ENOENT/,
 	);
 });
