@@ -8,12 +8,18 @@ Never perform git actions beyond read-only inspection, such as `status`, `diff`,
 
 ## Clarify First
 
-Before drafting, ask a compact set of questions covering unresolved items:
+Ask questions through the harness's native interactive question mechanism whenever one exists, so the user answers with the harness's own affordances instead of free-form prose. Prefer a single structured prompt carrying the whole compact question set, with predefined options where the answers are known and fixed. Fall back to plain conversational questions only when the harness exposes no such mechanism.
+
+Before drafting, ask only the questions needed to produce the phase outline. Ask a compact set covering unresolved items:
 
 1. What outcome is required, what is in or out of scope, and what observable conditions define success?
 2. Will execution be interactive, with the user available at checkpoints, or autopilot, with no user interaction?
 3. Should the plan be stored and continuously updated in this repository under `docs/plans/` (repo-backed storage), kept in the harness's native, non-repo plan storage, or held only in this conversation with no interim file writes and delivered as one self-contained markdown document once planning concludes (session-only storage)?
 4. What environment, constraints, risks, deadlines, or required technologies affect the work?
+
+In interactive mode, when the plan will have multiple phases, keep this round strictly at outline level. Ask only what is needed to define the phases, their boundaries, and their tangible outputs. Defer every question that only affects how one phase is carried out to that phase's elaboration, as described in Phase Elaboration.
+
+When autopilot is chosen, ask whether the work should be delegated to subagents working in parallel where appropriate, but only if the work plausibly contains independent phases or steps that could run in parallel and the harness offers a subagent mechanism. Record the answer in the plan as the delegation choice. When the work is inherently sequential or small enough that parallelism would not help, skip the question and record single-agent execution as the delegation choice.
 
 Apply these implications without asking redundant questions:
 
@@ -74,7 +80,7 @@ Elaborate a phase's detailed steps only immediately before that phase begins, in
 In interactive mode:
 
 - Wait for the user to explicitly request starting a phase before elaborating its steps. Do not elaborate steps for a later phase in advance.
-- Ask focused clarifying questions scoped to that phase before proposing steps, following the same intent as Clarify First but limited to what that phase still leaves unresolved.
+- Ask focused clarifying questions scoped to that phase before proposing steps, following the same intent as Clarify First but limited to what that phase still leaves unresolved. Do not re-ask outline-level questions already answered, and do not ask about a phase that is not being elaborated.
 - Delegate the phase's step outline to a subagent under the same rules as Delegate Step Design, unless the phase is genuinely small enough for one agent.
 - Present the elaborated `### Steps` for that phase and update the canonical plan with them, then pause for explicit user confirmation before executing any of them.
 - Exception: when session-only storage is in effect and the whole plan is being produced in one continuous planning conversation with no separate later execution session to return to, treat the user's confirmation of the table of contents as the request to continue, and elaborate each phase in order within that same conversation, still asking that phase's focused clarifying questions and still pausing for confirmation of its steps before moving to the next phase.
@@ -98,10 +104,13 @@ Decide, at each phase's elaboration, whether one agent can easily plan that phas
 
 If subagents are unavailable in the current harness, state that limitation in the plan and produce the smallest sound fallback outline yourself at elaboration time.
 
+In autopilot mode, the recorded delegation choice also governs execution. When the user chose delegated parallel execution, dispatch independent phases or steps to subagents in parallel wherever they share no state and have no sequential dependency, and merge their results into the canonical plan. When the user declined, execute as a single agent. If delegation was chosen but the harness executing the plan offers no subagent capability, do not fail or stop: execute the plan as a single agent, in dependency order, and record that fallback in the plan.
+
 ## Checkpoints and User Interest
 
 In interactive mode:
 
+- Use the harness's native interactive question mechanism for every confirmation, focused phase-elaboration question, and `awaiting-user` item, matching how Clarify First asks questions. Fall back to plain conversational prompts only when the harness offers no such mechanism.
 - Add an explicit user-confirmation step at the end of every phase.
 - Stop after the phase output and its validation are recorded. Do not begin the next phase until the user confirms.
 - Reaching a phase's checkpoint marks that phase complete; it does not by itself elaborate or start the next phase. Wait for the user to explicitly request starting the next phase.
@@ -116,7 +125,7 @@ In interactive mode:
 
 In autopilot mode:
 
-- Do not create blocking user-confirmation steps.
+- Do not use the harness's interactive question mechanism, and do not create blocking user-confirmation steps.
 - Replace each phase checkpoint with an automated go/no-go gate based on the phase's completion criteria and validation evidence.
 - Record assumptions and autonomous decisions. Prefer reversible choices and stop only for safety, missing authorization, destructive ambiguity, or an unrecoverable blocker.
 
@@ -131,6 +140,7 @@ Use this structure, adapting detail to the task:
 
 - Status: drafting | ready | in-progress | blocked | completed
 - Mode: interactive | autopilot
+- Delegation: <autopilot only: parallel subagents where appropriate, or single agent; note the single-agent fallback if subagents are unavailable at execution time>
 - Canonical location: <docs/plans/<slug>.md for repo-backed storage, a description of the harness-native artifact, or "session-only (conversation-held; delivered as a final markdown document)" for session-only storage>
 - Last updated: <timestamp>
 - Goal: <observable outcome>
@@ -192,7 +202,8 @@ Use stable step identifiers so updates remain easy to audit. Status must be unam
 Before presenting the plan, verify that:
 
 - All unresolved clarification answers or explicit assumptions are recorded.
-- The interaction mode and storage choice are explicit.
+- The interaction mode and storage choice are explicit, and in autopilot mode the delegation choice is recorded along with its single-agent fallback.
+- In interactive mode with multiple phases, the up-front questions were limited to what the phase outline required, and phase-specific questions are deferred to that phase's elaboration.
 - The plan uses one domain-based phase only for genuinely small, self-contained work, or multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them. Every phase is iterative, has a tangible output and completion criteria, and contains no elaborated steps before its turn.
 - Every phase ends with the checkpoint type matching the interaction mode. Interactive checkpoints include a suggested commit message in a fenced `text` code block only when code changed that phase and is at a viable, self-contained point; a deferred note when code changed but is not yet viable; or nothing when no code changed. Autopilot checkpoints never include a commit message.
 - The plan states that git actions are limited to read-only inspection.
@@ -201,4 +212,4 @@ Before presenting the plan, verify that:
 - The canonical plan itself contains the latest state and exactly one next action.
 - When session-only storage is in effect, the complete plan is ready to be presented in full as one self-contained markdown document, with no unresolved question left implicit.
 
-Present the plan's location, current state, and next action concisely. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint. When session-only storage is in effect, always close by presenting the complete plan as a single self-contained markdown document instead of a location reference, in addition to any confirmation the mode still requires.
+Present the plan's location, current state, and next action concisely. Once the plan is ready to begin, present it through the harness's native plan-review mechanism whenever one exists, so the user starts execution with the harness's own affordances instead of a free-form reply. Fall back to presenting in conversation only when the harness exposes no such mechanism. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint. When session-only storage is in effect, always close by presenting the complete plan as a single self-contained markdown document instead of a location reference, in addition to any confirmation the mode still requires.
