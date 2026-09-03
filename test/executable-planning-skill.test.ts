@@ -123,6 +123,8 @@ const expectedProjectOwnedRuleIds = [
 	"R45-elaboration-review-checkpoint",
 	"R46-checkpoint-does-not-auto-start-next-phase",
 	"R47-interactive-checkpoint-commit-message-suggestion",
+	"R48-no-commit-message-without-code-change",
+	"R49-defer-commit-message-until-viable",
 ] as const;
 
 test("executable-planning skill composes required static contract", async () => {

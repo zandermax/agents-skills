@@ -48,11 +48,9 @@ test("README documents catalog-driven artifact installation and maintenance", as
 	);
 });
 
-test("repository keeps active and archived plans under one plans root", async () => {
-	await access(path.join(projectRoot, "plans"));
-	await access(path.join(projectRoot, "plans", "archive"));
-	await assert.rejects(
-		access(path.join(projectRoot, "docs", "plans")),
-		/ENOENT/,
-	);
+test("repository keeps active and archived plans beside specifications under docs", async () => {
+	await access(path.join(projectRoot, "docs", "plans"));
+	await access(path.join(projectRoot, "docs", "plans", "archive"));
+	await access(path.join(projectRoot, "docs", "specs"));
+	await assert.rejects(access(path.join(projectRoot, "plans")), /ENOENT/);
 });
