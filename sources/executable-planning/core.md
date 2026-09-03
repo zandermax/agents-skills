@@ -12,12 +12,12 @@ Before drafting, ask a compact set of questions covering unresolved items:
 
 1. What outcome is required, what is in or out of scope, and what observable conditions define success?
 2. Will execution be interactive, with the user available at checkpoints, or autopilot, with no user interaction?
-3. Should the plan be stored and continuously updated in this repository under `plans/` (repo-backed storage), or should it use the harness's native, non-repo plan storage?
+3. Should the plan be stored and continuously updated in this repository under `docs/plans/` (repo-backed storage), or should it use the harness's native, non-repo plan storage?
 4. What environment, constraints, risks, deadlines, or required technologies affect the work?
 
 Apply these implications without asking redundant questions:
 
-- "local plan" means repo-backed storage: store and update the plan under `plans/`.
+- "local plan" means repo-backed storage: store and update the plan under `docs/plans/`.
 - "auto-run", "autorun", "autopilot", "unattended", or similar wording means no user interaction will be available.
 - If the invocation already specifies a storage choice (for example through an agent argument), honor it without asking.
 - If the user already answered an item, accept that answer and ask only what remains unresolved.
@@ -30,9 +30,9 @@ Treat repo-backed storage and the harness's native, non-repo plan storage as two
 
 When repo-backed storage is selected or implied:
 
-- Create or continue exactly one plan at `plans/<descriptive-slug>.md`.
+- Create or continue exactly one plan at `docs/plans/<descriptive-slug>.md`.
 - Reuse an existing plan for the same effort instead of creating a competing file.
-- Create `plans/` if needed.
+- Create `docs/plans/` if needed.
 - Put all execution state in that file. Chat summaries are not a substitute for updating it.
 - If no git repository is present but repo-backed storage was explicitly chosen anyway, honor it: create the file as a plain, non-version-controlled folder and note in the plan that it is not git-tracked.
 
@@ -40,7 +40,7 @@ When repo-backed storage is declined, or no repository is present and no explici
 
 At creation, and after every material execution event, update the canonical plan before proceeding. Material events include step completion, validation, changed scope, a new decision, a blocker, a failed assumption, user feedback, and deferral of an issue.
 
-Before archiving a completed plan, finish all edits to its content and metadata, run the required validation, and confirm the final file is complete. Only then move the file from the active plans directory into the archive; after the move, perform verification only and do not recreate or edit the active-path copy.
+Before archiving a completed plan, finish all edits to its content and metadata, run the required validation, and confirm the final file is complete. Only then move the file from `docs/plans/` into `docs/plans/archive/`; after the move, perform verification only and do not recreate or edit the active-path copy.
 
 ## Plan Design
 
@@ -116,14 +116,14 @@ In autopilot mode:
 
 Use this structure, adapting detail to the task:
 
-~~~markdown
+````markdown
 # <Plan title>
 
 ## Plan Metadata
 
 - Status: drafting | ready | in-progress | blocked | completed
 - Mode: interactive | autopilot
-- Canonical location: <plans/<slug>.md for repo-backed storage, or a description of the harness-native artifact>
+- Canonical location: <docs/plans/<slug>.md for repo-backed storage, or a description of the harness-native artifact>
 - Last updated: <timestamp>
 - Goal: <observable outcome>
 - Success criteria: <measurable list>
@@ -175,7 +175,7 @@ Suggested commit message:
 ## Progress Log
 
 - <timestamp>: <state change and evidence>
-~~~
+````
 
 Use stable step identifiers so updates remain easy to audit. Status must be unambiguous: `[ ]` pending, `[-]` in progress, `[x]` complete, `[!]` blocked, and `[?]` awaiting user. Keep exactly one current step and one next action whenever work is active.
 

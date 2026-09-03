@@ -1,10 +1,21 @@
+---
+status: completed
+mode: autopilot
+canonical_location: docs/plans/archive/2026-09-02-teach-by-doing-and-code-walk-skills.md
+last_updated: 2026-09-03
+current_phase: none
+current_step: none
+next_action: none
+blockers: none
+---
+
 # Teach-By-Doing and Code-Walk Skills/Agents
 
 ## Plan Metadata
 
 - Status: completed
 - Mode: autopilot
-- Canonical location: plans/2026-09-02-teach-by-doing-and-code-walk-skills.md
+- Canonical location: docs/plans/archive/2026-09-02-teach-by-doing-and-code-walk-skills.md
 - Last updated: 2026-09-02
 - Goal: Add two manual-trigger companion skills (`teach-by-doing`, `code-walk`)
   and two matching Copilot agents that auto-invoke them, so a user can be
@@ -33,7 +44,7 @@
     with user.
   - Execution mode is autopilot: no blocking phase checkpoints; each phase
     ends with an automated go/no-go gate against its completion criteria.
-  - Plan is stored and updated locally under `plans/` — confirmed with user.
+  - Plan is stored and updated locally under `docs/plans/` — confirmed with user.
   - No `install-catalog.json` changes are needed: the `skills` collection
     discovers any directory containing `SKILL.md` under `.agents/skills`, and
     the `copilot` collection discovers any `*.agent.md` file under
@@ -167,8 +178,8 @@ before acting.
 1.3. Run `npm run check` and `npm run install:artifacts -- --list`; fix any
 frontmatter, forbidden-token, or `copilot-agent` validation failures found.
 
-*(Step 1.3 depends on 1.1 and 1.2; 1.1 and 1.2 can be drafted in either
-order.)*
+_(Step 1.3 depends on 1.1 and 1.2; 1.1 and 1.2 can be drafted in either
+order.)_
 
 ### Validation
 
@@ -190,7 +201,7 @@ updating the three hard-coded artifact-count tests noted in Decisions), and
 `npm run install:artifacts -- --list` shows `skill teach-by-doing` and
 `agent copilot:teach-by-doing`.
 
-*Suggested commit message: Add teach-by-doing skill and agent*
+_Suggested commit message: Add teach-by-doing skill and agent_
 
 ## Phase 2: Code-Walk Skill and Agent
 
@@ -232,8 +243,8 @@ message before its checkpoint.
 
 ### Steps
 
-*Not yet elaborated. Populate immediately before this phase starts, informed
-by Phase 1's final heading names and validation results.*
+_Not yet elaborated. Populate immediately before this phase starts, informed
+by Phase 1's final heading names and validation results._
 
 ### Validation
 
@@ -255,7 +266,7 @@ and `npm run install:artifacts -- --list` shows `skill code-walk` and
 skill body's structure (delegate loop, then verification, then final
 single-line commit-message output before checkpoint) was reviewed directly
 instead.
-*Suggested commit message: Add code-walk skill and agent building on teach-by-doing*
+_Suggested commit message: Add code-walk skill and agent building on teach-by-doing_
 
 ## Phase 3: Test Coverage and Documentation
 
@@ -305,7 +316,7 @@ individual artifacts.
 Autopilot go/no-go gate: plan is complete once `npm run check` passes with
 no hard-coded-artifact-list failures remaining.
 **Result: passed.** Plan complete.
-*Suggested commit message: Cover teach-by-doing and code-walk in repository tests*
+_Suggested commit message: Cover teach-by-doing and code-walk in repository tests_
 
 ## Progress Log
 
