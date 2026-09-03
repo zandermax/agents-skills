@@ -55,6 +55,8 @@ const EXECUTABLE_PLANNER_BODY = [
 	"",
 	"Use the available read, search, question, persistence, and subagent tools to carry out the loaded skills. Keep harness-specific tool choices in this adapter; keep planning behavior in the skill.",
 	"",
+	"When the skill calls for asking the user something in interactive mode, ask through this harness's structured question tool rather than plain prose, using predefined options where the answers are fixed. In VS Code that tool is `vscode_askQuestions`. In autopilot mode, do not call it; record conservative reversible assumptions in the plan instead.",
+	"",
 ].join("\n");
 
 type FixtureOptions = {
