@@ -19,7 +19,7 @@
 	{
 		"prompt": "Give me a flat checklist only; do not use phases.",
 		"requiredBehaviors": [
-			"[R17-domain-based-multi-phase] organize plan into at least two domain-based phases",
+			"[R17-domain-based-multi-phase] use one domain-based phase for genuinely small, self-contained work; use multiple phases when distinct boundaries, dependencies, or independently reviewable outputs justify them",
 			"[R18-phase-iterative-reviewable] make each phase iterative and independently reviewable",
 			"[R19-phase-tangible-output] define tangible output for every phase",
 			"[R20-phase-completion-and-validation] include explicit completion criteria and validation per phase",

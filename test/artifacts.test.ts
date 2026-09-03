@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { discoverArtifacts } from "../src/lib/artifacts.js";
 import { loadInstallCatalog } from "../src/lib/catalog.js";
+import { scanArtifactIds } from "./helpers/repository-artifacts.js";
 
 const fixtureRepoRoot = path.resolve("test/fixtures/catalog/repo");
 const testFilePath = fileURLToPath(import.meta.url);
@@ -120,20 +121,20 @@ test("discoverArtifacts returns unique immutable artifacts confined to collectio
 	}
 });
 
-test("discoverArtifacts finds the real planning skill, its companion, and the Copilot agent", async () => {
+test("discoverArtifacts matches what the repository actually contains", async () => {
 	const catalog = await loadInstallCatalog(repoRoot);
 	const artifacts = await discoverArtifacts(catalog, repoRoot);
+	const scannedIds = await scanArtifactIds(catalog);
 
+	assert.notEqual(scannedIds.length, 0);
 	assert.deepEqual(
 		artifacts.map((artifact) => artifact.id),
-		[
-			"code-walk",
-			"executable-planning",
-			"plan-it-out",
-			"teach-by-doing",
-			"copilot:code-walk",
-			"copilot:executable-planner",
-			"copilot:teach-by-doing",
-		],
+		scannedIds,
 	);
+	for (const kind of ["skill", "agent"] as const) {
+		assert.ok(
+			artifacts.some((artifact) => artifact.kind === kind),
+			`repository should expose at least one ${kind}`,
+		);
+	}
 });

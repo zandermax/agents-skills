@@ -6,6 +6,16 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { type Artifact, discoverArtifacts } from "../src/lib/artifacts.js";
+import {
+	clientsForCollection,
+	destinationCountsForClients,
+	expectedLinkCount,
+	loadRepositoryCatalog,
+	requireArtifact,
+	requireClientForCollection,
+} from "./helpers/repository-artifacts.js";
+
 const testFilePath = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(testFilePath), "..");
 const tsxCliPath = path.join(
@@ -52,6 +62,18 @@ function runCli(
 	);
 }
 
+const catalog = await loadRepositoryCatalog();
+const repositoryArtifacts = await discoverArtifacts(catalog, projectRoot);
+const sampleSkill = requireArtifact(repositoryArtifacts, "skill");
+const sampleAgent = requireArtifact(repositoryArtifacts, "agent");
+const allClientNames = catalog.clients.map((client) => client.name);
+
+function expectedListingPattern(artifact: Artifact): RegExp {
+	const clients = clientsForCollection(catalog, artifact.collection).join(", ");
+	const listing = `${artifact.kind} ${artifact.id} [${clients}]`;
+	return new RegExp(listing.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+}
+
 function runNpm(arguments_: readonly string[], homeDirectory: string) {
 	return spawnSync("npm", arguments_, {
 		cwd: projectRoot,
@@ -60,12 +82,20 @@ function runNpm(arguments_: readonly string[], homeDirectory: string) {
 	});
 }
 
+const defaultLinkCount = expectedLinkCount(
+	repositoryArtifacts,
+	destinationCountsForClients(catalog, allClientNames),
+);
+
 test("artifact CLI installs all compatible catalog artifacts by default", async () => {
 	const fixture = await createFixture("install-artifacts-cli-default");
 	try {
 		const result = runCli([], fixture.homeDirectory);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /summary created=15 existing=0/);
+		assert.match(
+			result.stdout,
+			new RegExp(`summary created=${defaultLinkCount} existing=0`),
+		);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -80,7 +110,10 @@ test("artifact CLI accepts the deprecated test-home variable", async () => {
 			"EXECUTABLE_PLANNING_HOME",
 		);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /summary created=15 existing=0/);
+		assert.match(
+			result.stdout,
+			new RegExp(`summary created=${defaultLinkCount} existing=0`),
+		);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -88,20 +121,35 @@ test("artifact CLI accepts the deprecated test-home variable", async () => {
 
 test("artifact CLI installs a selected skill and selected agent", async () => {
 	const fixture = await createFixture("install-artifacts-cli-selectors");
+	const skillLinkCount = expectedLinkCount(
+		[sampleSkill],
+		destinationCountsForClients(catalog, allClientNames),
+	);
+	const agentClient = requireClientForCollection(
+		catalog,
+		sampleAgent.collection,
+	);
+	const agentLinkCount = expectedLinkCount(
+		[sampleAgent],
+		destinationCountsForClients(catalog, [agentClient]),
+	);
 	try {
-		const skill = runCli(
-			["--skill", "executable-planning"],
-			fixture.homeDirectory,
-		);
+		const skill = runCli(["--skill", sampleSkill.id], fixture.homeDirectory);
 		assert.equal(skill.status, 0, skill.stderr);
-		assert.match(skill.stdout, /summary created=3 existing=0/);
+		assert.match(
+			skill.stdout,
+			new RegExp(`summary created=${skillLinkCount} existing=0`),
+		);
 
 		const agent = runCli(
-			["--client", "copilot", "--agent", "copilot:executable-planner"],
+			["--client", agentClient, "--agent", sampleAgent.id],
 			fixture.homeDirectory,
 		);
 		assert.equal(agent.status, 0, agent.stderr);
-		assert.match(agent.stdout, /summary created=1 existing=0/);
+		assert.match(
+			agent.stdout,
+			new RegExp(`summary created=${agentLinkCount} existing=0`),
+		);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -109,22 +157,32 @@ test("artifact CLI installs a selected skill and selected agent", async () => {
 
 test("artifact CLI installs into mixed custom skill and agent targets", async () => {
 	const fixture = await createFixture("install-artifacts-cli-custom");
+	const customLinkCount = expectedLinkCount(
+		repositoryArtifacts,
+		new Map([
+			["skills", 1],
+			[sampleAgent.collection, 1],
+		]),
+	);
 	try {
 		const result = runCli(
 			[
 				"--skills-dir",
 				`skills=${fixture.customSkillsDirectory}`,
 				"--agents-dir",
-				`copilot=${fixture.customAgentsDirectory}`,
+				`${sampleAgent.collection}=${fixture.customAgentsDirectory}`,
 			],
 			fixture.homeDirectory,
 		);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, /summary created=7 existing=0/);
+		assert.match(
+			result.stdout,
+			new RegExp(`summary created=${customLinkCount} existing=0`),
+		);
 		assert.equal(
 			(
 				await lstat(
-					path.join(fixture.customSkillsDirectory, "executable-planning"),
+					path.join(fixture.customSkillsDirectory, sampleSkill.destinationName),
 				)
 			).isSymbolicLink(),
 			true,
@@ -132,10 +190,7 @@ test("artifact CLI installs into mixed custom skill and agent targets", async ()
 		assert.equal(
 			(
 				await lstat(
-					path.join(
-						fixture.customAgentsDirectory,
-						"executable-planner.agent.md",
-					),
+					path.join(fixture.customAgentsDirectory, sampleAgent.destinationName),
 				)
 			).isSymbolicLink(),
 			true,
@@ -150,11 +205,9 @@ test("artifact CLI lists without writing destinations", async () => {
 	try {
 		const result = runCli(["--list"], fixture.homeDirectory);
 		assert.equal(result.status, 0, result.stderr);
-		assert.match(
-			result.stdout,
-			/skill executable-planning \[copilot, claude, agents\]/,
-		);
-		assert.match(result.stdout, /agent copilot:executable-planner \[copilot\]/);
+		for (const artifact of [sampleSkill, sampleAgent]) {
+			assert.match(result.stdout, expectedListingPattern(artifact));
+		}
 		await assert.rejects(lstat(fixture.homeDirectory), /ENOENT/);
 	} finally {
 		await fixture.cleanup();
@@ -185,18 +238,9 @@ test("install:clients remains an exact install:artifacts compatibility alias", a
 		);
 		assert.equal(artifacts.status, 0, artifacts.stderr);
 		assert.equal(clients.status, 0, clients.stderr);
-		for (const listing of [
-			"skill executable-planning [copilot, claude, agents]",
-			"agent copilot:executable-planner [copilot]",
-		]) {
-			assert.match(
-				artifacts.stdout,
-				new RegExp(listing.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
-			);
-			assert.match(
-				clients.stdout,
-				new RegExp(listing.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
-			);
+		for (const artifact of [sampleSkill, sampleAgent]) {
+			assert.match(artifacts.stdout, expectedListingPattern(artifact));
+			assert.match(clients.stdout, expectedListingPattern(artifact));
 		}
 	} finally {
 		await fixture.cleanup();

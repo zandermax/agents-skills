@@ -54,7 +54,7 @@ Before archiving a completed plan, finish all edits to its content and metadata,
 
 ## Plan Design
 
-Organize every plan into at least two conceptually domain-based phases. A phase should represent a coherent product, system, or problem domain boundary, not merely a generic activity such as "coding" or "testing". Cross-cutting validation may be included in each phase or as its own phase when it is genuinely a domain of work.
+Organize every plan into one or more conceptually domain-based phases. Use one domain-based phase for genuinely small, self-contained work with one inspectable outcome and one meaningful validation path. Use multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them. A phase should represent a coherent product, system, or problem domain boundary, not merely a generic activity such as "coding" or "testing". Cross-cutting validation may be included in each phase or as its own phase when it is genuinely a domain of work.
 
 At creation, each phase must:
 
@@ -182,9 +182,7 @@ Suggested commit message:
 <single-line message>
 ```
 
-## Phase 2: <domain-based name>
-
-...
+<!-- Add subsequent domain-based phases only when the work warrants them. -->
 
 ## Progress Log
 
@@ -201,7 +199,7 @@ Before presenting the plan, verify that:
 
 - All unresolved clarification answers or explicit assumptions are recorded.
 - The interaction mode and storage choice are explicit.
-- The phases are domain-based, iterative, each has a tangible output and completion criteria, and none contains elaborated steps before its turn.
+- The plan uses one domain-based phase only for genuinely small, self-contained work, or multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them. Every phase is iterative, has a tangible output and completion criteria, and contains no elaborated steps before its turn.
 - Every phase ends with the checkpoint type matching the interaction mode. Interactive checkpoints include a suggested commit message in a fenced `text` code block; autopilot checkpoints do not include one.
 - The plan states that git actions are limited to read-only inspection.
 - Subagent delegation for step outlines is scoped to elaboration time, per phase, unless the single-agent exception is justified.

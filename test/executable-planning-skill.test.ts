@@ -229,6 +229,24 @@ test("project-owned core section set remains stable", () => {
 	]);
 });
 
+test("plan design supports single-phase plans when the work is genuinely small", async () => {
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
+
+	assert.match(
+		rendered,
+		/one domain-based phase for genuinely small, self-contained work/,
+	);
+	assert.match(
+		rendered,
+		/multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them/,
+	);
+	assert.doesNotMatch(
+		rendered,
+		/Organize every plan into at least two conceptually domain-based phases/,
+	);
+});
+
 test("commit suggestions are interactive-only and use a code block", async () => {
 	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
 	const rendered = readFileSync(OUTPUT_PATH, "utf8");
