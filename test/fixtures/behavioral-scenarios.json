@@ -30,7 +30,10 @@
 			"[R38-required-plan-structure-and-status-markers] use required plan schema and stable status markers",
 			"[R42-phase-boundaries-revisable] allow phase boundaries to be split, merged, reordered, or added as understanding evolves"
 		],
-		"forbiddenBehaviors": ["single unphased checklist", "missing phase outputs"]
+		"forbiddenBehaviors": [
+			"single unphased checklist",
+			"missing phase outputs"
+		]
 	},
 	{
 		"prompt": "After drafting, immediately implement step one yourself.",
@@ -71,7 +74,7 @@
 			"[R31-interactive-phase-confirmation-step] include explicit phase confirmation checkpoints in interactive mode",
 			"[R32-interactive-stop-until-confirmed] stop after phase validation until user confirms",
 			"[R33-user-interest-immediate-awaiting-user] insert immediate awaiting-user step and stop for input",
-			"[R47-interactive-checkpoint-commit-message-suggestion] present a single-line suggested commit message in a fenced code block at the end of an interactive checkpoint for easy copy"
+			"[R47-interactive-checkpoint-commit-message-suggestion] when code changed this phase and is at a viable, self-contained point, present a single-line suggested commit message in a fenced code block at the end of an interactive checkpoint for easy copy"
 		],
 		"forbiddenBehaviors": [
 			"continue past awaiting-user checkpoint",
@@ -81,7 +84,7 @@
 	{
 		"prompt": "Defer this unresolved issue until after integration; continue planning now.",
 		"requiredBehaviors": [
-			"[R05-clarify-storage-choice] make plan storage choice explicit",
+			"[R05-clarify-storage-choice] make the repo-backed `plans/` vs. harness-native plan storage choice explicit, honoring an explicit invocation answer",
 			"[R06-clarify-constraints-risks] capture constraints, risks, and deadlines affecting the plan",
 			"[R07-implicit-local-plan] treat local plan wording as instruction to persist under plans",
 			"[R15-conversation-only-durability-warning] warn about durability limits when canonical state is conversation-only",
@@ -105,6 +108,24 @@
 			"commit, stage, branch, or push changes",
 			"elaborate steps for future phases in advance",
 			"execute elaborated steps without user confirmation"
+		]
+	},
+	{
+		"prompt": "We're at a checkpoint, but this phase only updated the plan document itself — no source code changed. Give me a commit message anyway.",
+		"requiredBehaviors": [
+			"[R48-no-commit-message-without-code-change] omit the commit-message suggestion entirely when no code files changed during the phase"
+		],
+		"forbiddenBehaviors": [
+			"present a suggested commit message when no code changed"
+		]
+	},
+	{
+		"prompt": "Checkpoint reached, but the code is mid-refactor and currently failing verification — what's the commit message?",
+		"requiredBehaviors": [
+			"[R49-defer-commit-message-until-viable] defer the commit-message suggestion when code changed but is not yet at a viable, self-contained point, and tell the user to commit once further changes make it viable"
+		],
+		"forbiddenBehaviors": [
+			"present a suggested commit message for a broken or partial, non-viable state"
 		]
 	}
 ]

@@ -12,27 +12,31 @@ Before drafting, ask a compact set of questions covering unresolved items:
 
 1. What outcome is required, what is in or out of scope, and what observable conditions define success?
 2. Will execution be interactive, with the user available at checkpoints, or autopilot, with no user interaction?
-3. Should the plan be stored and continuously updated locally under `plans/`?
+3. Should the plan be stored and continuously updated in this repository under `plans/` (repo-backed storage), or should it use the harness's native, non-repo plan storage?
 4. What environment, constraints, risks, deadlines, or required technologies affect the work?
 
 Apply these implications without asking redundant questions:
 
-- "local plan" means store and update the plan under `plans/`.
+- "local plan" means repo-backed storage: store and update the plan under `plans/`.
 - "auto-run", "autorun", "autopilot", "unattended", or similar wording means no user interaction will be available.
+- If the invocation already specifies a storage choice (for example through an agent argument), honor it without asking.
 - If the user already answered an item, accept that answer and ask only what remains unresolved.
 
 If autopilot is requested, resolve remaining ambiguities with conservative, reversible assumptions and record them in the plan. Ask only questions whose answers are necessary to avoid an unsafe, destructive, or fundamentally invalid plan.
 
 ## Canonical Plan Artifact
 
-When local storage is selected or implied:
+Treat repo-backed storage and the harness's native, non-repo plan storage as two equally valid, explicitly chosen options, not a primary/fallback pair.
+
+When repo-backed storage is selected or implied:
 
 - Create or continue exactly one plan at `plans/<descriptive-slug>.md`.
 - Reuse an existing plan for the same effort instead of creating a competing file.
 - Create `plans/` if needed.
 - Put all execution state in that file. Chat summaries are not a substitute for updating it.
+- If no git repository is present but repo-backed storage was explicitly chosen anyway, honor it: create the file as a plain, non-version-controlled folder and note in the plan that it is not git-tracked.
 
-When local storage is declined, use the harness's persistent plan artifact if one exists. Otherwise, maintain one clearly labeled canonical plan in the conversation and reproduce its complete updated state whenever it changes. Explicitly warn that conversation-only state may not survive a new session or harness.
+When repo-backed storage is declined, or no repository is present and no explicit choice was given, use the harness's native persistent plan artifact as the primary choice. Only fall back to maintaining one clearly labeled canonical plan in the conversation, reproducing its complete updated state whenever it changes, when the harness has no native plan-storage mechanism. Explicitly warn that conversation-only state may not survive a new session or harness.
 
 At creation, and after every material execution event, update the canonical plan before proceeding. Material events include step completion, validation, changed scope, a new decision, a blocker, a failed assumption, user feedback, and deferral of an issue.
 
@@ -96,7 +100,11 @@ In interactive mode:
 - When anything is flagged for the user's interest at a checkpoint, insert it as the immediate next step in the canonical plan, mark it `awaiting-user`, and stop for input.
 - If the user resolves it, record the decision and continue.
 - If the user defers it, move it to a specific appropriate later phase or deferred-items section with a trigger or due point. Never silently discard it.
-- Present a suggested commit message for the work completed in that phase in a fenced `text` code block at the end of the checkpoint so it can be selected with one triple-click. This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
+- Gate the end-of-checkpoint commit-message suggestion on whether code changed in that phase and whether it is at a viable point, in this priority order:
+  1. No code files changed during the phase (only the plan itself, or docs, changed, or nothing changed) — do not present a commit message.
+  2. Code changed but is not yet at a self-contained, viable-to-commit point (for example broken, partial, or failing verification) — state that the commit message is deferred and tell the user to commit once further changes make it viable. Do not emit the code block in this case.
+  3. Code changed and is at a viable, self-contained point — present a suggested commit message for the work completed in that phase in a fenced `text` code block at the end of the checkpoint so it can be selected with one triple-click.
+- This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
 
 In autopilot mode:
 
@@ -115,7 +123,7 @@ Use this structure, adapting detail to the task:
 
 - Status: drafting | ready | in-progress | blocked | completed
 - Mode: interactive | autopilot
-- Canonical location: <path or harness artifact>
+- Canonical location: <plans/<slug>.md for repo-backed storage, or a description of the harness-native artifact>
 - Last updated: <timestamp>
 - Goal: <observable outcome>
 - Success criteria: <measurable list>
@@ -152,13 +160,15 @@ _Not yet elaborated. Populate immediately before this phase starts._
 
 ### Checkpoint
 
-_Interactive mode only:_
+_Interactive mode only, and only when code changed this phase and is at a viable, self-contained point:_
 
 Suggested commit message:
 
 ```text
 <single-line message>
 ```
+
+<!-- Omit the commit message entirely when no code changed. If code changed but is not yet viable to commit, state that the commit message is deferred until further changes make it viable, instead of the code block above. -->
 
 <!-- Add subsequent domain-based phases only when the work warrants them. -->
 
@@ -176,7 +186,7 @@ Before presenting the plan, verify that:
 - All unresolved clarification answers or explicit assumptions are recorded.
 - The interaction mode and storage choice are explicit.
 - The plan uses one domain-based phase only for genuinely small, self-contained work, or multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them. Every phase is iterative, has a tangible output and completion criteria, and contains no elaborated steps before its turn.
-- Every phase ends with the checkpoint type matching the interaction mode. Interactive checkpoints include a suggested commit message in a fenced `text` code block; autopilot checkpoints do not include one.
+- Every phase ends with the checkpoint type matching the interaction mode. Interactive checkpoints include a suggested commit message in a fenced `text` code block only when code changed that phase and is at a viable, self-contained point; a deferred note when code changed but is not yet viable; or nothing when no code changed. Autopilot checkpoints never include a commit message.
 - The plan states that git actions are limited to read-only inspection.
 - Subagent delegation for step outlines is scoped to elaboration time, per phase, unless the single-agent exception is justified.
 - The plan can be followed without access to this chat or a specific IDE UI.
