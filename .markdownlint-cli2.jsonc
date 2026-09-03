@@ -1,19 +1,27 @@
 {
-	"$schema": "./node_modules/markdownlint-cli2/schema/markdownlint-cli2-config-schema.json",
-	"config": {
-		"default": true,
-		"MD010": false,
-		"MD013": false
-	},
-	"gitignore": true,
-	"globs": ["README.md", "docs/**/*.md", "sources/**/*.md", ".github/**/*.md"],
-	"overrides": [
-		{
-			"filter": [".github/agents/**/*.md", "sources/**/*.md"],
-			"config": {
-				"MD041": false
-			},
-			"combine": "merge"
-		}
-	]
+  "$schema": "./node_modules/markdownlint-cli2/schema/markdownlint-cli2-config-schema.json",
+  "config": {
+    "default": true,
+    "MD010": false,
+    "MD013": false,
+  },
+  "gitignore": true,
+  "globs": ["README.md", "docs/**/*.md", "sources/**/*.md", ".github/**/*.md"],
+  "overrides": [
+    {
+      "filter": [".github/agents/**/*.md", "sources/**/*.md"],
+      "config": {
+        "MD041": false,
+      },
+      "combine": "merge",
+    },
+    {
+      "filter": ["docs/plans/**/*.md"],
+      "config": {
+        "MD024": { "siblings_only": true },
+        "MD036": false,
+      },
+      "combine": "merge",
+    },
+  ],
 }
