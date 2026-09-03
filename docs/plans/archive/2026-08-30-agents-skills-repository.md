@@ -62,8 +62,8 @@
 - Observed out-of-sequence state: `origin` already targeted
 	`https://github.com/zandermax/agents-skills.git`, so remote rename steps were
 	reconciled through verification. The local checkout was moved from
-	`/Users/zander/repos/personal/agents-skills` to
-	`/Users/zander/repos/agents-skills` after explicit user approval.
+	`<workspace-root>/personal/agents-skills` to
+	`<workspace-root>/agents-skills` after explicit user approval.
 
 ## Continuation Handoff
 
@@ -75,10 +75,11 @@
 	`01434fe86c4ed4b1e2214f2e9e018c3c72129f6a`, on `mainline`, with origin
 	`https://github.com/zandermax/agents-skills.git`. The only expected working
 	tree modification is this plan handoff update.
-- **Validated migration facts:** `/Users/zander/repos/personal/agents-skills`
+
+- **Validated migration facts:** `<workspace-root>/personal/agents-skills`
 	is absent. `/tmp/agents-skills-link-inventory.json` records the seven managed
 	client links. They were recreated and all resolve beneath
-	`/Users/zander/repos/agents-skills`. Listing returns `executable-planning`,
+	`<workspace-root>/agents-skills`. Listing returns `executable-planning`,
 	`plan-it-out`, and `copilot:executable-planner`; the second installation
 	reported `created=0 existing=7`; `npm run check` passed 135/135 tests.
 - **Completion:** Tasks 12.7, 12.8, and checkpoint 3.C are complete. The plan
@@ -650,7 +651,7 @@ user's manual commit decision.
 
 The collection is documented and packaged as `agents-skills`, manually
 committed and pushed by the user, renamed to `zandermax/agents-skills`, moved to
-`/Users/zander/repos/agents-skills`, and known client links resolve into the
+	`<workspace-root>/agents-skills`, and known client links resolve into the
 new path.
 
 ### Phase 3 Dependencies and Risks
@@ -693,8 +694,8 @@ new path.
 	package names change in `package-lock.json`.
 - [x] **9.4 Rewrite README around the catalog.** Document adding skills,
 	client-ready agents, new agent formats, listing, selectors, built-in/custom
-	destinations, safety, stale links, moves, and the planning snapshot as one
-	feature-specific maintenance section.
+	destinations, safety, stale links, moves, and planning-skill maintenance as
+	one feature-specific section.
 - [x] **9.5 Generalize remaining repository markers.** Remove repository-level
 	wording that implies one planning artifact while retaining planning-specific
 	tests, source names, generated output, vendor provenance, and historical docs.
@@ -732,7 +733,7 @@ new path.
 
 - [x] **10.5 Validate inventory safety.** Every existing known destination is a
 	symlink whose normalized target is inside the current repository root
-	`/Users/zander/repos/personal/agents-skills`; no destination is absent,
+	`<workspace-root>/personal/agents-skills`; no destination is absent,
 	unrelated, broken, or a file/directory collision. These links must be removed
 	before a local move would make them stale. The original old-root check is
 	superseded by the verified current-root state.
@@ -785,20 +786,20 @@ new path.
 
 **Files:**
 
-- Move directory: `/Users/zander/repos/personal/agents-skills` to
-	`/Users/zander/repos/agents-skills`.
+- Move directory: `<workspace-root>/personal/agents-skills` to
+	`<workspace-root>/agents-skills`.
 - Continue canonical plan at:
-	`/Users/zander/repos/agents-skills/docs/plans/2026-08-30-agents-skills-repository.md`.
+	`<workspace-root>/agents-skills/docs/plans/2026-08-30-agents-skills-repository.md`.
 
 - [x] **12.1 Mark local move awaiting user.** Confirmed the target directory
 	does not exist, worktree is clean, HEAD matches the Task 10 migration
 	baseline, origin already matches `zandermax/agents-skills`, and verified
 	current-root symlinks are absent. Rollback command:
-	`mv /Users/zander/repos/agents-skills /Users/zander/repos/personal/agents-skills`.
+	`mv <workspace-root>/agents-skills <workspace-root>/personal/agents-skills`.
 	Await explicit approval.
 
 - [x] **12.2 Perform the move as the final old-workspace operation.** From
-	`/Users/zander/repos`, run `mv personal/agents-skills agents-skills`, then
+	`<workspace-root>`, run `mv personal/agents-skills agents-skills`, then
 	immediately change into the new directory. Do not issue later commands against
 	the old path.
 - [x] **12.3 Verify repository identity at the new path.** The old path is
@@ -808,7 +809,7 @@ new path.
 	back before recreating old-path links.
 - [x] **12.4 Recreate known links through the installer.** Created all seven
 	inventory paths; every `readlink` target normalizes inside
-	`/Users/zander/repos/agents-skills` and exists.
+	`<workspace-root>/agents-skills` and exists.
 - [x] **12.5 Run final smoke validation.** Listing returned the expected three
 	artifacts, the second client installation reported `created=0 existing=7`,
 	and `npm run check` passed 135/135 tests with all remaining gates green.
@@ -827,11 +828,11 @@ new path.
 
 ### Phase 3 Validation
 
-From `/Users/zander/repos/agents-skills`, run:
+From `<workspace-root>/agents-skills`, run:
 
 ```sh
-test ! -e /Users/zander/repos/personal/agents-skills
-test -d /Users/zander/repos/agents-skills/.git
+test ! -e <workspace-root>/personal/agents-skills
+test -d <workspace-root>/agents-skills/.git
 git status --short
 git remote get-url origin
 gh repo view zandermax/agents-skills --json nameWithOwner,description,url
@@ -1002,7 +1003,7 @@ are explicitly reported.
 	of this migration-state record before requesting local-move approval.
 
 - 2026-09-02: The user approved the local move. The repository was moved to
-	`/Users/zander/repos/agents-skills`; the old path is absent and immediate
+	`<workspace-root>/agents-skills`; the old path is absent and immediate
 	identity checks passed. The installer recreated all seven inventoried links,
 	and every target resolves inside the new root. Listing returned the three
 	cataloged artifacts, the second installation was idempotent

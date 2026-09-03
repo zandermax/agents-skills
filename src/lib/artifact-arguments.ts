@@ -25,23 +25,28 @@ export function parseArtifactArguments(
 	let hasDestinationArguments = false;
 
 	for (let i = 0; i < arguments_.length; i += 1) {
-		const arg = arguments_[i]!;
+		const arg = arguments_[i];
+		if (arg === undefined) {
+			throw new Error("argument index is unexpectedly missing");
+		}
 
 		if (arg === "--list") {
 			listOnly = true;
 		} else if (arg === "--client") {
-			if (i + 1 >= arguments_.length) {
+			const value = arguments_[i + 1];
+			if (value === undefined) {
 				throw new Error("--client requires a value");
 			}
 			hasDestinationArguments = true;
-			const value = arguments_[++i]!;
+			i += 1;
 			clients.add(value);
 		} else if (arg === "--skills-dir") {
-			if (i + 1 >= arguments_.length) {
+			const value = arguments_[i + 1];
+			if (value === undefined) {
 				throw new Error("--skills-dir requires a value");
 			}
 			hasDestinationArguments = true;
-			const value = arguments_[++i]!;
+			i += 1;
 			const [format, path] = value.split("=");
 			if (!format || format.length === 0) {
 				throw new Error(
@@ -53,11 +58,12 @@ export function parseArtifactArguments(
 			}
 			skillDirectories.add(path);
 		} else if (arg === "--agents-dir") {
-			if (i + 1 >= arguments_.length) {
+			const value = arguments_[i + 1];
+			if (value === undefined) {
 				throw new Error("--agents-dir requires a value");
 			}
 			hasDestinationArguments = true;
-			const value = arguments_[++i]!;
+			i += 1;
 			const [format, path] = value.split("=");
 			if (!format || format.length === 0) {
 				throw new Error(
@@ -69,16 +75,18 @@ export function parseArtifactArguments(
 			}
 			agentDirectories.set(format, path);
 		} else if (arg === "--skill") {
-			if (i + 1 >= arguments_.length) {
+			const value = arguments_[i + 1];
+			if (value === undefined) {
 				throw new Error("--skill requires a value");
 			}
-			const value = arguments_[++i]!;
+			i += 1;
 			skills.add(value);
 		} else if (arg === "--agent") {
-			if (i + 1 >= arguments_.length) {
+			const value = arguments_[i + 1];
+			if (value === undefined) {
 				throw new Error("--agent requires a value");
 			}
-			const value = arguments_[++i]!;
+			i += 1;
 			agents.add(value);
 		} else if (arg.startsWith("--")) {
 			throw new Error(

@@ -16,14 +16,8 @@ const REPO_ROOT = path.resolve(
 const SOURCE_DIR = path.join(REPO_ROOT, "sources", "executable-planning");
 const MANIFEST_PATH = path.join(SOURCE_DIR, "skill.json");
 const CORE_PATH = path.join(SOURCE_DIR, "core.md");
-const OFFICIAL_PATH = path.join(
-	REPO_ROOT,
-	"vendor",
-	"copilot",
-	"Plan.agent.md",
-);
+const WORKFLOW_PATH = path.join(SOURCE_DIR, "workflow.md");
 const SKILL_ONLY_PATH = path.join(SOURCE_DIR, "skill-only.md");
-const TRANSFORMS_PATH = path.join(SOURCE_DIR, "transforms.json");
 const BEHAVIORAL_FIXTURES_PATH = path.join(
 	REPO_ROOT,
 	"test",
@@ -48,10 +42,10 @@ const expectedH2Order = [
 	"Checkpoints and User Interest",
 	"Required Plan Format",
 	"Quality Check Before Delivery",
-	"1. Discovery",
-	"2. Alignment",
-	"3. Design",
-	"4. Refinement",
+	"Discovery",
+	"Alignment",
+	"Design",
+	"Refinement",
 	"When to Use",
 	"Harness Adaptation",
 ] as const;
@@ -135,9 +129,8 @@ test("executable-planning skill composes required static contract", async () => 
 	for (const requiredPath of [
 		MANIFEST_PATH,
 		CORE_PATH,
-		OFFICIAL_PATH,
+		WORKFLOW_PATH,
 		SKILL_ONLY_PATH,
-		TRANSFORMS_PATH,
 	]) {
 		assert.equal(
 			existsSync(requiredPath),
