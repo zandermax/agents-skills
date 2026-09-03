@@ -1,74 +1,74 @@
 {
-  "name": "executable-planning",
-  "title": "Executable Planning",
-  "description": "Use when creating or maintaining a multi-step implementation plan that must remain executable across agents, sessions, IDEs, or unattended harnesses.",
-  "output": ".agents/skills/executable-planning/SKILL.md",
-  "selections": [
-    {
-      "source": "core.md",
-      "owner": "core",
-      "headings": [
-        "Operating Contract",
-        "Clarify First",
-        "Canonical Plan Artifact",
-        "Plan Design",
-        "Phase Elaboration",
-        "Delegate Step Design",
-        "Checkpoints and User Interest",
-        "Required Plan Format",
-        "Quality Check Before Delivery"
-      ]
-    },
-    {
-      "source": "workflow.md",
-      "owner": "core",
-      "headings": ["Discovery", "Alignment", "Design", "Refinement"]
-    },
-    {
-      "source": "skill-only.md",
-      "owner": "skill",
-      "headings": ["When to Use", "Harness Adaptation"]
-    }
-  ],
-  "sectionOwnership": {
-    "Operating Contract": "core",
-    "Clarify First": "core",
-    "Canonical Plan Artifact": "core",
-    "Plan Design": "core",
-    "Phase Elaboration": "core",
-    "Delegate Step Design": "core",
-    "Checkpoints and User Interest": "core",
-    "Required Plan Format": "core",
-    "Quality Check Before Delivery": "core",
-    "Discovery": "core",
-    "Alignment": "core",
-    "Design": "core",
-    "Refinement": "core",
-    "When to Use": "skill",
-    "Harness Adaptation": "skill"
-  },
-  "requiredPhrases": [
-    "local plan",
-    "autopilot",
-    "domain-based",
-    "tangible output",
-    "awaiting-user",
-    "elaborat",
-    "git",
-    "commit message",
-    "triple-click",
-    "Discovery",
-    "Alignment",
-    "Design",
-    "Refinement",
-    "plan-review"
-  ],
-  "forbiddenPhrases": [
-    "#tool:vscode",
-    "/memories/session/",
-    "handoff buttons",
-    "target: vscode",
-    "tools:",
-    "agents:"
-  ]
+	"name": "executable-planning",
+	"title": "Executable Planning",
+	"description": "Use when creating or maintaining a multi-step implementation plan that must remain executable across agents, sessions, IDEs, or unattended harnesses.",
+	"output": ".agents/skills/executable-planning/SKILL.md",
+	"selections": [
+		{
+			"source": "core.md",
+			"owner": "core",
+			"headings": [
+				"Operating Contract",
+				"Clarify First",
+				"Canonical Plan Artifact",
+				"Plan Design",
+				"Phase Elaboration",
+				"Delegate Step Design",
+				"Checkpoints and User Interest",
+				"Required Plan Format",
+				"Quality Check Before Delivery"
+			]
+		},
+		{
+			"source": "workflow.md",
+			"owner": "core",
+			"headings": ["Discovery", "Alignment", "Design", "Refinement"]
+		},
+		{
+			"source": "skill-only.md",
+			"owner": "skill",
+			"headings": ["When to Use", "Harness Adaptation"]
+		}
+	],
+	"sectionOwnership": {
+		"Operating Contract": "core",
+		"Clarify First": "core",
+		"Canonical Plan Artifact": "core",
+		"Plan Design": "core",
+		"Phase Elaboration": "core",
+		"Delegate Step Design": "core",
+		"Checkpoints and User Interest": "core",
+		"Required Plan Format": "core",
+		"Quality Check Before Delivery": "core",
+		"Discovery": "core",
+		"Alignment": "core",
+		"Design": "core",
+		"Refinement": "core",
+		"When to Use": "skill",
+		"Harness Adaptation": "skill"
+	},
+	"requiredPhrases": [
+		"local plan",
+		"autopilot",
+		"domain-based",
+		"tangible output",
+		"awaiting-user",
+		"elaborat",
+		"git",
+		"commit message",
+		"triple-click",
+		"Discovery",
+		"Alignment",
+		"Design",
+		"Refinement",
+		"plan-review"
+	],
+	"forbiddenPhrases": [
+		"#tool:vscode",
+		"/memories/session/",
+		"handoff buttons",
+		"target: vscode",
+		"tools:",
+		"agents:"
+	]
 }
