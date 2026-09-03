@@ -5,7 +5,7 @@ canonical_location: docs/plans/2026-09-03-skill-forge-skill.md
 last_updated: 2026-09-03
 current_phase: none
 current_step: none
-next_action: none — awaiting user confirmation of the finished skill
+next_action: none — awaiting user confirmation of the refined skill
 blockers: none
 ---
 
@@ -13,7 +13,7 @@ blockers: none
 
 ## Plan Metadata
 
-- Status: drafting
+- Status: in-progress
 - Mode: interactive
 - Canonical location: docs/plans/2026-09-03-skill-forge-skill.md
 - Last updated: 2026-09-03
@@ -77,10 +77,10 @@ blockers: none
 
 ## Current State
 
-- Current phase: none — Phase 1 complete
+- Current phase: none — Phase 2 complete
 - Current step: none
-- Next action: none — awaiting explicit user confirmation of the finished
-  skill before considering this plan closed
+- Next action: none — awaiting explicit user confirmation before
+  considering this plan closed
 - Blockers: none
 
 ## Decisions
@@ -176,77 +176,43 @@ skill-forge` and a description written in third person, "Use when..."
 Single-agent outline (phase is small and single-domain: one new hand-authored
 file; no subagent delegation needed).
 
-1. `[ ]` Draft frontmatter: `name: skill-forge`, `disable-model-invocation:
+1. `[x]` Draft frontmatter: `name: skill-forge`, `disable-model-invocation:
 true`, and a third-person "Use when..." description naming triggers
    (creating/editing/reviewing skills) without summarizing the workflow.
-2. `[ ]` Write "When to Use" and "Overview" sections distinguishing
+2. `[x]` Write "When to Use" and "Overview" sections distinguishing
    skill-forge from ad hoc skill writing: it exists to run the grilling
    interview before drafting, and to check the draft against this repo's
    authoring rules.
-3. `[ ]` Write the "Grilling Interview" section: reproduce the design-tree /
+3. `[x]` Write the "Grilling Interview" section: reproduce the design-tree /
    frontier / numbered-rounds / recommended-answer format tool-agnostically
    (describe dispatching sub-work to find facts instead of naming a specific
    tool), and the rule that facts are the agent's job, decisions are the
    user's. Cover the frontier topics a new skill needs settled: purpose,
    trigger phrasing, hand-authored vs. manifest-driven, output location,
    model-invoked vs. user-invoked, verification depth.
-4. `[ ]` Write the "Repository Authoring Constraints" section: allowed
+4. `[x]` Write the "Repository Authoring Constraints" section: allowed
    frontmatter keys (`name`, `description`, optional
    `disable-model-invocation: true`), folder name must match frontmatter
    `name`, forbidden literal tokens, hand-authored vs. manifest-driven
    decision criteria from `AGENTS.md`, default output path
    `.agents/skills/<name>/SKILL.md`, and the `npm run build` (manifest-driven
    only) / `npm run check` validation step.
-5. `[ ]` Write the "Lightweight Verification Loop" section: run one pressure
+5. `[x]` Write the "Lightweight Verification Loop" section: run one pressure
    scenario without the drafted skill (baseline), then with it, compare
    whether the target behavior changed; no benchmark/eval-viewer scaffolding.
-6. `[ ]` Write a compact worked example: one sample grilling round (2-3
+6. `[x]` Write a compact worked example: one sample grilling round (2-3
    numbered questions with recommended answers) and the resulting draft
    frontmatter/section snippet it produces.
-7. `[ ]` Self-review the full draft against Completion Criteria, specifically
+7. `[x]` Self-review the full draft against Completion Criteria, specifically
    scanning for the forbidden literal tokens and confirming frontmatter only
    has the three allowed keys.
-8. `[ ]` Create `.agents/skills/skill-forge/SKILL.md` with the finished
+8. `[x]` Create `.agents/skills/skill-forge/SKILL.md` with the finished
    content.
-9. `[ ]` Run `npm run install:artifacts -- --list` and `npm run check`; fix
-   any reported issues and re-run until clean.
-10. `[x]` Draft frontmatter: `name: skill-forge`, `disable-model-invocation:
-true`, and a third-person "Use when..." description naming triggers
-    (creating/editing/reviewing skills) without summarizing the workflow.
-11. `[x]` Write "When to Use" and "Overview" sections distinguishing
-    skill-forge from ad hoc skill writing: it exists to run the grilling
-    interview before drafting, and to check the draft against this repo's
-    authoring rules.
-12. `[x]` Write the "Grilling Interview" section: reproduce the design-tree /
-    frontier / numbered-rounds / recommended-answer format tool-agnostically
-    (describe dispatching sub-work to find facts instead of naming a specific
-    tool), and the rule that facts are the agent's job, decisions are the
-    user's. Cover the frontier topics a new skill needs settled: purpose,
-    trigger phrasing, hand-authored vs. manifest-driven, output location,
-    model-invoked vs. user-invoked, verification depth.
-13. `[x]` Write the "Repository Authoring Constraints" section: allowed
-    frontmatter keys (`name`, `description`, optional
-    `disable-model-invocation: true`), folder name must match frontmatter
-    `name`, forbidden literal tokens, hand-authored vs. manifest-driven
-    decision criteria from `AGENTS.md`, default output path
-    `.agents/skills/<name>/SKILL.md`, and the `npm run build` (manifest-driven
-    only) / `npm run check` validation step.
-14. `[x]` Write the "Lightweight Verification Loop" section: run one pressure
-    scenario without the drafted skill (baseline), then with it, compare
-    whether the target behavior changed; no benchmark/eval-viewer scaffolding.
-15. `[x]` Write a compact worked example: one sample grilling round (2-3
-    numbered questions with recommended answers) and the resulting draft
-    frontmatter/section snippet it produces.
-16. `[x]` Self-review the full draft against Completion Criteria, specifically
-    scanning for the forbidden literal tokens and confirming frontmatter only
-    has the three allowed keys.
-17. `[x]` Create `.agents/skills/skill-forge/SKILL.md` with the finished
-    content.
-18. `[x]` Run `npm run install:artifacts -- --list` and `npm run check`; fix
-    any reported issues and re-run until clean. Both passed cleanly:
-    `skill-forge` listed under `[copilot, claude, agents]`; all 139 tests,
-    markdownlint, typecheck, `check:customizations`, and `check:drift` passed.
-19. `[x]` Update this plan's Current State, Progress Log, and this
+9. `[x]` Run `npm run install:artifacts -- --list` and `npm run check`; fix
+   any reported issues and re-run until clean. Both passed cleanly:
+   `skill-forge` listed under `[copilot, claude, agents]`; all 139 tests,
+   markdownlint, typecheck, `check:customizations`, and `check:drift` passed.
+10. `[x]` Update this plan's Current State, Progress Log, and this
     Checkpoint with validation evidence and, if the file is at a viable
     self-contained point, a suggested commit message.
 
@@ -269,6 +235,98 @@ semantic diff, a side effect of the mandated check command rather than of
 this plan's work. Flagged for the user's awareness; not reverted (git
 actions are read-only-only per the Operating Contract, and reformatting
 semantically-unchanged pre-existing files is not part of this plan's scope).
+
+Suggested commit message:
+
+```text
+feat(skills): add skill-forge, a grilling-based skill-authoring skill
+```
+
+## Phase 2: Skill Forge Refinement
+
+### Tangible output
+
+A revised `.agents/skills/skill-forge/SKILL.md` incorporating the six review
+findings from the post-Phase-1 read-through: an explicit `## When to Use`
+heading, explicit "overhaul an existing skill" guidance, a tightened
+description, a discovery-check mention in Repository Authoring Constraints,
+a worked-example formatting fix, and a trim pass for length.
+
+### Completion criteria
+
+- `## When to Use` exists as its own top-level section (matching the
+  `teach-by-doing`/`code-walk` convention), separate from `## Purpose`.
+- A short passage addresses overhauling an existing skill: read the current
+  file first, then grill about what's changing and why, rather than
+  assuming a blank slate.
+- Frontmatter `description` is tightened to remove verb redundancy
+  (`create, draft, author, or overhaul` → two verbs) while keeping the same
+  triggering conditions.
+- "Repository Authoring Constraints" → "Validate before declaring done"
+  mentions running the discovery/list check
+  (`npm run install:artifacts -- --list`) alongside the build/check step.
+- The Worked Example's Round 1 question bodies wrap with the same
+  indentation as the format template shown earlier in the file.
+- Overall word count is trimmed from the Repository Authoring Constraints
+  prose where possible without losing any required rule.
+- `npm run install:artifacts -- --list` still lists `skill-forge`, and
+  `npm run check` still passes with no regressions.
+
+### Dependencies and risks
+
+- Depends only on the existing `.agents/skills/skill-forge/SKILL.md` from
+  Phase 1; no other files change.
+- Risk: trimming prose could accidentally drop a rule required by
+  `src/check-customizations.ts` (allowed frontmatter keys, forbidden
+  tokens); mitigate by re-running `npm run check` after edits.
+- Risk: shortening the description could weaken triggering recall; mitigate
+  by keeping all current triggering phrases, only removing redundant verbs.
+- Rollback: the change is confined to one existing file; reverting to the
+  Phase 1 version is a simple content restore if the user rejects it.
+
+### Steps
+
+Single-agent outline (phase is small and single-domain: wordsmithing one
+existing file; no subagent delegation needed).
+
+1. `[x]` Add a standalone `## When to Use` section (after `## Purpose`),
+   stating the triggers plainly; trim any now-redundant "when to use" prose
+   left in `## Purpose`.
+2. `[x]` Add an "overhauling an existing skill" passage: read the current
+   skill file first, then run the grilling interview scoped to what's
+   changing and why, instead of assuming a greenfield draft.
+3. `[x]` Tighten the frontmatter `description` to two non-redundant verbs
+   covering create/author and overhaul, keeping existing trigger phrasing.
+4. `[x]` Add a discovery-check mention (`npm run install:artifacts --
+--list`) next to the existing build/check validation bullet in
+   "Repository Authoring Constraints".
+5. `[x]` Fix the Worked Example's Round 1 formatting so question bodies
+   indent consistently with the format template shown earlier.
+6. `[x]` Re-read "Repository Authoring Constraints" for trimmable prose and
+   shorten where it doesn't drop a required rule.
+7. `[x]` Run `npm run install:artifacts -- --list` and `npm run check`; fix
+   any reported issues and re-run until clean. First run surfaced a
+   markdownlint MD012 (multiple blank lines) issue in this plan file
+   itself; fixed and re-ran clean: `skill-forge` still listed under
+   `[copilot, claude, agents]`; all 139 tests, markdownlint, typecheck,
+   `check:customizations`, and `check:drift` passed.
+8. `[x]` Update this plan's Current State, Progress Log, and this
+   Checkpoint with validation evidence and, if the file is at a viable
+   self-contained point, a suggested commit message.
+
+### Validation
+
+- Run `npm run install:artifacts -- --list` and confirm `skill-forge` is
+  still listed with no catalog changes.
+- Run `npm run check` and confirm it passes with no new errors.
+- Manually re-read the revised file against the six items above.
+
+### Checkpoint
+
+All six review findings are applied and validated. `npm run install:artifacts
+-- --list` still lists `skill-forge`; `npm run check` passes with no new
+errors (139 tests, markdownlint, typecheck, `check:customizations`,
+`check:drift`).
 
 Stopping here for explicit user confirmation before considering this plan
 complete.
@@ -299,3 +357,16 @@ feat(skills): add skill-forge, a grilling-based skill-authoring skill
   `[copilot, claude, agents]`) and `npm run check` (all 139 tests,
   markdownlint, typecheck, `check:customizations`, `check:drift` passed).
   Phase 1 complete; plan status set to completed pending user confirmation.
+- 2026-09-03: User reviewed Phase 1's output and asked for improvement
+  suggestions instead of confirming completion. Six findings identified
+  (When to Use heading, overhaul guidance, description redundancy,
+  discovery-check mention, worked-example formatting, length trim) and
+  planned as Phase 2. Plan status reopened from completed to in-progress;
+  Phase 2 steps elaborated and awaiting user confirmation before execution.
+- 2026-09-03: Executed Phase 2 — added `## When to Use`, overhaul-existing-
+  skill guidance, tightened the frontmatter description, added the
+  discovery-check mention, fixed Worked Example formatting, and trimmed
+  Repository Authoring Constraints prose. Fixed an incidental MD012
+  markdownlint issue in this plan file. `npm run install:artifacts --
+--list` and `npm run check` both pass cleanly. Phase 2 complete; plan
+  status set to completed pending user confirmation.

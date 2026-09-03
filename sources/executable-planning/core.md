@@ -122,6 +122,7 @@ In interactive mode:
   2. Code changed but is not yet at a self-contained, viable-to-commit point (for example broken, partial, or failing verification) — state that the commit message is deferred and tell the user to commit once further changes make it viable. Do not emit the code block in this case.
   3. Code changed and is at a viable, self-contained point — present a suggested commit message for the work completed in that phase in a fenced `text` code block at the end of the checkpoint so it can be selected with one triple-click.
 - This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
+- Before composing the message, inspect the current uncommitted changes with a read-only git check (status/diff). Describe only what is currently uncommitted, never restate an earlier phase's message verbatim — an earlier phase's changes may already be committed by the time this checkpoint is reached.
 
 In autopilot mode:
 

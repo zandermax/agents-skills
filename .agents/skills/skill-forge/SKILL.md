@@ -1,8 +1,8 @@
 ---
 name: skill-forge
-description: Use when the user explicitly asks to create, draft, author, or
-  overhaul an agent skill for this repository, or asks how to turn a
-  technique or workflow into a skill file.
+description: Use when the user explicitly asks to author or overhaul an
+  agent skill for this repository, or asks how to turn a technique or
+  workflow into a skill file.
 disable-model-invocation: true
 ---
 
@@ -19,6 +19,19 @@ repository's own authoring rules so it passes validation on the first try.
 Do not draft a skill from assumptions. An untested skill is a guess about
 what makes an agent behave differently; only a real interview with the user,
 plus a before/after check, tells you if the guess was right.
+
+## When to Use
+
+Use this skill whenever the user explicitly asks to create, draft, author,
+or overhaul an agent skill for this repository, or asks how to turn a
+recurring technique or workflow into a skill file. It is reachable only by
+name (`disable-model-invocation: true`), not something the agent reaches for
+on its own.
+
+When the request is to overhaul an existing skill rather than create a new
+one, read that skill's current file first, then scope the grilling
+interview below to what's changing and why, instead of assuming a
+greenfield draft.
 
 ## The Grilling Interview
 
@@ -90,25 +103,25 @@ them afterward:
   `sources/<name>/` with a `skill.json` only when it composes reusable
   sections, uses transforms, or needs generated output — that path also
   requires running the repository's build step before the file is usable.
-  Choose manifest-driven for composition and reuse, never simply because a
-  skill is long.
+  Choose manifest-driven for composition and reuse, never because a skill
+  is merely long.
 - **Frontmatter is minimal**: only `name`, `description`, and optionally
   `disable-model-invocation: true` are allowed. Anything else (tool lists,
   target harness, model, handoffs) belongs on an agent definition, not a
   skill.
 - **Description is a trigger, not a summary**: write it in the third person,
   starting with "Use when...", describing concrete triggering conditions —
-  never a summary of the skill's steps. An agent that reads a workflow
-  summary in the description may follow that shortcut instead of reading the
+  never a summary of the skill's steps. A workflow summary in the
+  description can make an agent follow that shortcut instead of reading the
   skill body.
 - **No harness-specific literal tool names or paths** in the body — describe
   what needs to happen (search the repository, run the project's checks) so
   the skill works across whichever harness loads it, not just the one you
   drafted it in.
-- **Validate before declaring done**: after writing the file, the
-  repository's own checks (its build step for manifest-driven skills, and
-  its overall validation/check step) must pass with no new errors. Fix
-  anything they report and re-run until clean.
+- **Validate before declaring done**: after writing the file, confirm the
+  new skill is discoverable and that the repository's own checks (its build
+  step for manifest-driven skills, and its overall validation/check step)
+  pass with no new errors. Fix anything reported and re-run until clean.
 
 ## Lightweight Verification Loop
 
@@ -140,7 +153,7 @@ now):
 
 ```
 ❓ Q1 - Purpose: should this skill produce the PR summary itself, or just
-remind you of the format you already use?
+   remind you of the format you already use?
 ➡️ Produce the summary itself, from staged/committed changes — that's the
    repetitive part you're describing.
 
