@@ -22,13 +22,14 @@ Before drafting, ask a compact set of questions covering unresolved items:
 
 1. What outcome is required, what is in or out of scope, and what observable conditions define success?
 2. Will execution be interactive, with the user available at checkpoints, or autopilot, with no user interaction?
-3. Should the plan be stored and continuously updated in this repository under `docs/plans/` (repo-backed storage), or should it use the harness's native, non-repo plan storage?
+3. Should the plan be stored and continuously updated in this repository under `docs/plans/` (repo-backed storage), kept in the harness's native, non-repo plan storage, or held only in this conversation with no interim file writes and delivered as one self-contained markdown document once planning concludes (session-only storage)?
 4. What environment, constraints, risks, deadlines, or required technologies affect the work?
 
 Apply these implications without asking redundant questions:
 
 - "local plan" means repo-backed storage: store and update the plan under `docs/plans/`.
 - "auto-run", "autorun", "autopilot", "unattended", or similar wording means no user interaction will be available.
+- Wording that rules out writing to the repository or any harness-native artifact, or that asks for a plan to hand off to a new session or agent, means session-only storage: keep the plan only in the conversation and follow the session-only rules in Canonical Plan Artifact.
 - If the invocation already specifies a storage choice (for example through an agent argument), honor it without asking.
 - If the user already answered an item, accept that answer and ask only what remains unresolved.
 
@@ -38,7 +39,7 @@ If autopilot is requested, resolve remaining ambiguities with conservative, reve
 
 ## Canonical Plan Artifact
 
-Treat repo-backed storage and the harness's native, non-repo plan storage as two equally valid, explicitly chosen options, not a primary/fallback pair.
+Treat repo-backed storage, the harness's native, non-repo plan storage, and session-only storage as three equally valid, explicitly chosen options, not a primary/fallback pair.
 
 When repo-backed storage is selected or implied:
 
@@ -48,7 +49,13 @@ When repo-backed storage is selected or implied:
 - Put all execution state in that file. Chat summaries are not a substitute for updating it.
 - If no git repository is present but repo-backed storage was explicitly chosen anyway, honor it: create the file as a plain, non-version-controlled folder and note in the plan that it is not git-tracked.
 
-When repo-backed storage is declined, or no repository is present and no explicit choice was given, use the harness's native persistent plan artifact as the primary choice. Only fall back to maintaining one clearly labeled canonical plan in the conversation, reproducing its complete updated state whenever it changes, when the harness has no native plan-storage mechanism. Explicitly warn that conversation-only state may not survive a new session or harness.
+When repo-backed storage is declined, or no repository is present and no explicit choice was given, and session-only storage was not explicitly chosen either, use the harness's native persistent plan artifact as the primary choice. Only fall back to maintaining one clearly labeled canonical plan in the conversation, reproducing its complete updated state whenever it changes, when the harness has no native plan-storage mechanism. Explicitly warn that conversation-only state may not survive a new session or harness.
+
+When session-only storage is selected or implied, for example by a planning-only session that must not write to the repository and must end with a document handed to a new agent session:
+
+- Never create or update a file for the plan, in the repository or in a harness-native artifact, at any point during Discovery, Alignment, Design, or Refinement. Hold the complete canonical plan only in the conversation, updating it there after every material event exactly as repo-backed or harness-native storage would require.
+- Warn once, up front, that conversation-only state may not survive a new session or harness, and that the plan will only be delivered as the final markdown document described below.
+- When planning concludes for the requested scope, always produce one self-contained markdown document reproducing the complete, current canonical plan in the Required Plan Format below, presented in full in the conversation. Write it so a new agent session with no access to this conversation can execute the plan without further clarification: resolve every open question or record it as an explicit assumption or decision first.
 
 At creation, and after every material execution event, update the canonical plan before proceeding. Material events include step completion, validation, changed scope, a new decision, a blocker, a failed assumption, user feedback, and deferral of an issue.
 
@@ -86,6 +93,7 @@ In interactive mode:
 - Ask focused clarifying questions scoped to that phase before proposing steps, following the same intent as Clarify First but limited to what that phase still leaves unresolved.
 - Delegate the phase's step outline to a subagent under the same rules as Delegate Step Design, unless the phase is genuinely small enough for one agent.
 - Present the elaborated `### Steps` for that phase and update the canonical plan with them, then pause for explicit user confirmation before executing any of them.
+- Exception: when session-only storage is in effect and the whole plan is being produced in one continuous planning conversation with no separate later execution session to return to, treat the user's confirmation of the table of contents as the request to continue, and elaborate each phase in order within that same conversation, still asking that phase's focused clarifying questions and still pausing for confirmation of its steps before moving to the next phase.
 
 In autopilot mode:
 
@@ -145,7 +153,7 @@ Use this structure, adapting detail to the task:
 
 - Status: drafting | ready | in-progress | blocked | completed
 - Mode: interactive | autopilot
-- Canonical location: <docs/plans/<slug>.md for repo-backed storage, or a description of the harness-native artifact>
+- Canonical location: <docs/plans/<slug>.md for repo-backed storage, a description of the harness-native artifact, or "session-only (conversation-held; delivered as a final markdown document)" for session-only storage>
 - Last updated: <timestamp>
 - Goal: <observable outcome>
 - Success criteria: <measurable list>
@@ -215,8 +223,9 @@ Before presenting the plan, verify that:
 - Subagent delegation for step outlines is scoped to elaboration time, per phase, unless the single-agent exception is justified.
 - The plan can be followed without access to this chat or a specific IDE UI.
 - The canonical plan itself contains the latest state and exactly one next action.
+- When session-only storage is in effect, the complete plan is ready to be presented in full as one self-contained markdown document, with no unresolved question left implicit.
 
-Present the plan's location, current state, and next action concisely. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint.
+Present the plan's location, current state, and next action concisely. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint. When session-only storage is in effect, always close by presenting the complete plan as a single self-contained markdown document instead of a location reference, in addition to any confirmation the mode still requires.
 
 
 ## Discovery
