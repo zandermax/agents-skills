@@ -1,11 +1,11 @@
 ---
-status: drafting
+status: in-progress
 mode: interactive
 canonical_location: docs/plans/2026-09-03-skill-forge-skill.md
 last_updated: 2026-09-03
-current_phase: "Phase 1: Skill Forge Authoring"
+current_phase: none
 current_step: none
-next_action: "Elaborate Phase 1 steps, then present them for user confirmation before implementing"
+next_action: none — awaiting user confirmation of Phase 3
 blockers: none
 ---
 
@@ -13,7 +13,7 @@ blockers: none
 
 ## Plan Metadata
 
-- Status: drafting
+- Status: in-progress
 - Mode: interactive
 - Canonical location: docs/plans/2026-09-03-skill-forge-skill.md
 - Last updated: 2026-09-03
@@ -77,14 +77,30 @@ blockers: none
 
 ## Current State
 
-- Current phase: Phase 1: Skill Forge Authoring
-- Current step: not started — steps not yet elaborated
-- Next action: Elaborate Phase 1 steps, then present them for user
-  confirmation before implementing
+- Current phase: none — Phase 3 complete
+- Current step: none
+- Next action: none — awaiting explicit user confirmation before
+  considering this plan closed
 - Blockers: none
 
 ## Decisions
 
+- 2026-09-03: `skill-forge` is user-invoked only (`disable-model-invocation:
+true`), reachable only when the user explicitly asks for it by name, like
+  `grill-me`. Confirmed with user.
+- 2026-09-03: The drafted skill's default destination is
+  `.agents/skills/<name>/SKILL.md` in this repository; the user still
+  chooses hand-authored vs. manifest-driven per `AGENTS.md`. Confirmed with
+  user.
+- 2026-09-03: Include one compact worked example (a sample grilling round
+  plus the resulting draft snippet) so the format is concrete, not purely
+  instructional prose. Confirmed with user.
+- 2026-09-03: Considered mirroring the `grill-me`/`grilling` two-file split
+  (thin user-invoked delegator + separate model-invokable core skill) but
+  rejected it — `skill-forge` stays a single user-invoked-only file holding
+  all the logic itself, since there is no separate need for the model to
+  reach the grilling logic on its own outside of skill authoring. Confirmed
+  with user.
 - 2026-09-03: Author `skill-forge` as a single hand-authored `SKILL.md`
   (no `sources/skill-forge/skill.json` manifest), matching the
   `teach-by-doing`/`code-walk` precedent, because it is self-contained and
@@ -99,6 +115,16 @@ blockers: none
   user.
 - 2026-09-03: Keep the skill harness-agnostic, consistent with this repo's
   existing catalog-driven skills. Confirmed with user.
+- 2026-09-03: Diagnosed why Phase 1 and Phase 2 checkpoints suggested the
+  identical commit message: `Checkpoints and User Interest` told the agent
+  when to show a message but never to derive its content from the actual
+  uncommitted diff, and had no rule against restating an earlier phase's
+  message once that phase's work was already committed. Fix: added a rule
+  to `sources/executable-planning/core.md` requiring a read-only git
+  status/diff check before composing a commit message, describing only
+  what is currently uncommitted, never restating an earlier phase's
+  message verbatim. This became Phase 3, scoped to the executable-planning
+  skill itself rather than skill-forge. Confirmed with user.
 
 ## Deferred Items
 
@@ -157,7 +183,48 @@ skill-forge` and a description written in third person, "Use when..."
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+Single-agent outline (phase is small and single-domain: one new hand-authored
+file; no subagent delegation needed).
+
+1. `[x]` Draft frontmatter: `name: skill-forge`, `disable-model-invocation:
+true`, and a third-person "Use when..." description naming triggers
+   (creating/editing/reviewing skills) without summarizing the workflow.
+2. `[x]` Write "When to Use" and "Overview" sections distinguishing
+   skill-forge from ad hoc skill writing: it exists to run the grilling
+   interview before drafting, and to check the draft against this repo's
+   authoring rules.
+3. `[x]` Write the "Grilling Interview" section: reproduce the design-tree /
+   frontier / numbered-rounds / recommended-answer format tool-agnostically
+   (describe dispatching sub-work to find facts instead of naming a specific
+   tool), and the rule that facts are the agent's job, decisions are the
+   user's. Cover the frontier topics a new skill needs settled: purpose,
+   trigger phrasing, hand-authored vs. manifest-driven, output location,
+   model-invoked vs. user-invoked, verification depth.
+4. `[x]` Write the "Repository Authoring Constraints" section: allowed
+   frontmatter keys (`name`, `description`, optional
+   `disable-model-invocation: true`), folder name must match frontmatter
+   `name`, forbidden literal tokens, hand-authored vs. manifest-driven
+   decision criteria from `AGENTS.md`, default output path
+   `.agents/skills/<name>/SKILL.md`, and the `npm run build` (manifest-driven
+   only) / `npm run check` validation step.
+5. `[x]` Write the "Lightweight Verification Loop" section: run one pressure
+   scenario without the drafted skill (baseline), then with it, compare
+   whether the target behavior changed; no benchmark/eval-viewer scaffolding.
+6. `[x]` Write a compact worked example: one sample grilling round (2-3
+   numbered questions with recommended answers) and the resulting draft
+   frontmatter/section snippet it produces.
+7. `[x]` Self-review the full draft against Completion Criteria, specifically
+   scanning for the forbidden literal tokens and confirming frontmatter only
+   has the three allowed keys.
+8. `[x]` Create `.agents/skills/skill-forge/SKILL.md` with the finished
+   content.
+9. `[x]` Run `npm run install:artifacts -- --list` and `npm run check`; fix
+   any reported issues and re-run until clean. Both passed cleanly:
+   `skill-forge` listed under `[copilot, claude, agents]`; all 139 tests,
+   markdownlint, typecheck, `check:customizations`, and `check:drift` passed.
+10. `[x]` Update this plan's Current State, Progress Log, and this
+    Checkpoint with validation evidence and, if the file is at a viable
+    self-contained point, a suggested commit message.
 
 ### Validation
 
@@ -169,10 +236,196 @@ _Not yet elaborated. Populate immediately before this phase starts._
 
 ### Checkpoint
 
-_Interactive mode: stop after this phase's output and validation are
-recorded, and wait for explicit user confirmation before considering the
-work complete. A suggested commit message will be added here once the file
-is authored and validated, if it is at a viable, self-contained point._
+Phase output and validation are recorded above. `npm run check` (which also
+ran `biome --write .`) reformatted three pre-existing, unrelated files —
+`sources/executable-planning/skill.json`,
+`test/check-customizations.test.ts`, and
+`test/executable-planning-skill.test.ts` — indentation-only changes, no
+semantic diff, a side effect of the mandated check command rather than of
+this plan's work. Flagged for the user's awareness; not reverted (git
+actions are read-only-only per the Operating Contract, and reformatting
+semantically-unchanged pre-existing files is not part of this plan's scope).
+
+Suggested commit message:
+
+```text
+feat(skills): add skill-forge, a grilling-based skill-authoring skill
+```
+
+## Phase 2: Skill Forge Refinement
+
+### Tangible output
+
+A revised `.agents/skills/skill-forge/SKILL.md` incorporating the six review
+findings from the post-Phase-1 read-through: an explicit `## When to Use`
+heading, explicit "overhaul an existing skill" guidance, a tightened
+description, a discovery-check mention in Repository Authoring Constraints,
+a worked-example formatting fix, and a trim pass for length.
+
+### Completion criteria
+
+- `## When to Use` exists as its own top-level section (matching the
+  `teach-by-doing`/`code-walk` convention), separate from `## Purpose`.
+- A short passage addresses overhauling an existing skill: read the current
+  file first, then grill about what's changing and why, rather than
+  assuming a blank slate.
+- Frontmatter `description` is tightened to remove verb redundancy
+  (`create, draft, author, or overhaul` → two verbs) while keeping the same
+  triggering conditions.
+- "Repository Authoring Constraints" → "Validate before declaring done"
+  mentions running the discovery/list check
+  (`npm run install:artifacts -- --list`) alongside the build/check step.
+- The Worked Example's Round 1 question bodies wrap with the same
+  indentation as the format template shown earlier in the file.
+- Overall word count is trimmed from the Repository Authoring Constraints
+  prose where possible without losing any required rule.
+- `npm run install:artifacts -- --list` still lists `skill-forge`, and
+  `npm run check` still passes with no regressions.
+
+### Dependencies and risks
+
+- Depends only on the existing `.agents/skills/skill-forge/SKILL.md` from
+  Phase 1; no other files change.
+- Risk: trimming prose could accidentally drop a rule required by
+  `src/check-customizations.ts` (allowed frontmatter keys, forbidden
+  tokens); mitigate by re-running `npm run check` after edits.
+- Risk: shortening the description could weaken triggering recall; mitigate
+  by keeping all current triggering phrases, only removing redundant verbs.
+- Rollback: the change is confined to one existing file; reverting to the
+  Phase 1 version is a simple content restore if the user rejects it.
+
+### Steps
+
+Single-agent outline (phase is small and single-domain: wordsmithing one
+existing file; no subagent delegation needed).
+
+1. `[x]` Add a standalone `## When to Use` section (after `## Purpose`),
+   stating the triggers plainly; trim any now-redundant "when to use" prose
+   left in `## Purpose`.
+2. `[x]` Add an "overhauling an existing skill" passage: read the current
+   skill file first, then run the grilling interview scoped to what's
+   changing and why, instead of assuming a greenfield draft.
+3. `[x]` Tighten the frontmatter `description` to two non-redundant verbs
+   covering create/author and overhaul, keeping existing trigger phrasing.
+4. `[x]` Add a discovery-check mention (`npm run install:artifacts --
+--list`) next to the existing build/check validation bullet in
+   "Repository Authoring Constraints".
+5. `[x]` Fix the Worked Example's Round 1 formatting so question bodies
+   indent consistently with the format template shown earlier.
+6. `[x]` Re-read "Repository Authoring Constraints" for trimmable prose and
+   shorten where it doesn't drop a required rule.
+7. `[x]` Run `npm run install:artifacts -- --list` and `npm run check`; fix
+   any reported issues and re-run until clean. First run surfaced a
+   markdownlint MD012 (multiple blank lines) issue in this plan file
+   itself; fixed and re-ran clean: `skill-forge` still listed under
+   `[copilot, claude, agents]`; all 139 tests, markdownlint, typecheck,
+   `check:customizations`, and `check:drift` passed.
+8. `[x]` Update this plan's Current State, Progress Log, and this
+   Checkpoint with validation evidence and, if the file is at a viable
+   self-contained point, a suggested commit message.
+
+### Validation
+
+- Run `npm run install:artifacts -- --list` and confirm `skill-forge` is
+  still listed with no catalog changes.
+- Run `npm run check` and confirm it passes with no new errors.
+- Manually re-read the revised file against the six items above.
+
+### Checkpoint
+
+All six review findings are applied and validated. `npm run install:artifacts
+-- --list` still lists `skill-forge`; `npm run check` passes with no new
+errors (139 tests, markdownlint, typecheck, `check:customizations`,
+`check:drift`).
+
+Stopping here for explicit user confirmation before considering this plan
+complete.
+
+Suggested commit message:
+
+```text
+refactor(skills): tighten skill-forge triggers, overhaul guidance, and prose
+```
+
+## Phase 3: Commit-Message Drift Fix
+
+### Tangible output
+
+An updated `sources/executable-planning/core.md` "Checkpoints and User
+Interest" section requiring a read-only git status/diff check before
+composing a checkpoint commit message, so the message describes only the
+currently uncommitted work instead of restating an earlier phase's message.
+The compiled `.agents/skills/executable-planning/SKILL.md` regenerated from
+that source via the repository's build step, with no drift.
+
+### Completion criteria
+
+- `sources/executable-planning/core.md`'s `Checkpoints and User Interest`
+  section states that, before composing a commit message, the agent must
+  inspect current uncommitted changes with a read-only git check and
+  describe only what is currently uncommitted, never restating an earlier
+  phase's message verbatim.
+- `.agents/skills/executable-planning/SKILL.md` is regenerated from source
+  (`npm run build`) and `npm run check:drift` reports no drift.
+- `npm run check` passes with no regressions.
+
+### Dependencies and risks
+
+- Depends only on `sources/executable-planning/core.md` and the generated
+  `.agents/skills/executable-planning/SKILL.md`; no other skill sources
+  change.
+- Risk: this plan itself is the running example of the bug (Phase 1 and
+  Phase 2 both suggested the same stale message); mitigate by having this
+  phase's own checkpoint apply the new rule it introduces, as a live check.
+- Rollback: the change is confined to one source fragment and its generated
+  output; reverting is a content restore of both files.
+
+### Steps
+
+Single-agent outline (phase is small and single-domain: one rule addition to
+one existing skill source, plus a rebuild).
+
+1. `[x]` Add the read-only git status/diff rule to `sources/executable-
+planning/core.md`'s `Checkpoints and User Interest` section (this was
+   already applied, alongside the Phase 2 commit, before this phase was
+   formally recorded).
+2. `[x]` Run `npm run build` to regenerate
+   `.agents/skills/executable-planning/SKILL.md` from the updated source.
+3. `[x]` Run `npm run check` (which includes `check:drift`) and confirm it
+   passes with no new errors.
+4. `[x]` Update this plan's Current State, Progress Log, and this
+   Checkpoint with validation evidence and, if the file is at a viable
+   self-contained point, a suggested commit message — composed per the new
+   rule this phase introduces: based on the actual uncommitted diff at that
+   time, not restated from Phase 1 or Phase 2.
+
+### Validation
+
+- Run `npm run check:drift` (via `npm run check`) and confirm no drift is
+  reported for `.agents/skills/executable-planning/SKILL.md`.
+- Run `npm run check` in full and confirm it passes with no new errors.
+- Manually re-read the updated `Checkpoints and User Interest` section
+  against the completion criteria above.
+
+### Checkpoint
+
+`npm run check` (including `check:drift`) passes with no errors: 139 tests,
+markdownlint, typecheck, `check:customizations`, and `check:drift` all
+clean. Per the new rule this phase introduces, the commit message below was
+composed from an actual read-only `git status` check at this checkpoint:
+only `.agents/skills/executable-planning/SKILL.md` (regenerated build
+output) and this plan file are currently uncommitted — the source edit to
+`sources/executable-planning/core.md` was already committed earlier, so it
+is not restated here.
+
+Stopping here for explicit user confirmation before considering this plan
+complete.
+
+Suggested commit message:
+
+```text
+chore(skills): rebuild executable-planning skill to include the new commit-message rule
+```
 
 ## Progress Log
 
@@ -185,3 +438,39 @@ is authored and validated, if it is at a viable, self-contained point._
   name `skill-forge`, embed grilling technique in-skill, lighter
   TDD-for-skills rigor, harness-agnostic scope. Plan drafted and saved to
   `docs/plans/2026-09-03-skill-forge-skill.md`.
+- 2026-09-03: Phase-scoped grilling round resolved remaining opens:
+  user-invoked only, default output path
+  `.agents/skills/<name>/SKILL.md`, worked example included, single-file
+  (no grill-me/grilling two-file split). Steps elaborated and confirmed.
+- 2026-09-03: Authored `.agents/skills/skill-forge/SKILL.md` (steps 1-8).
+  Ran `npm run install:artifacts -- --list` (skill-forge listed under
+  `[copilot, claude, agents]`) and `npm run check` (all 139 tests,
+  markdownlint, typecheck, `check:customizations`, `check:drift` passed).
+  Phase 1 complete; plan status set to completed pending user confirmation.
+- 2026-09-03: User reviewed Phase 1's output and asked for improvement
+  suggestions instead of confirming completion. Six findings identified
+  (When to Use heading, overhaul guidance, description redundancy,
+  discovery-check mention, worked-example formatting, length trim) and
+  planned as Phase 2. Plan status reopened from completed to in-progress;
+  Phase 2 steps elaborated and awaiting user confirmation before execution.
+- 2026-09-03: Executed Phase 2 — added `## When to Use`, overhaul-existing-
+  skill guidance, tightened the frontmatter description, added the
+  discovery-check mention, fixed Worked Example formatting, and trimmed
+  Repository Authoring Constraints prose. Fixed an incidental MD012
+  markdownlint issue in this plan file. `npm run install:artifacts --
+--list` and `npm run check` both pass cleanly. Phase 2 complete; plan
+  status set to completed pending user confirmation.- 2026-09-03: User flagged that Phase 1 and Phase 2 both suggested the
+  identical commit message and asked why. Root cause traced to
+  `Checkpoints and User Interest` never requiring the message to be
+  derived from the actual uncommitted diff. User committed Phase 2's work
+  (with a corrected message) and added a fix rule to
+  `sources/executable-planning/core.md` directly; this left the compiled
+  `.agents/skills/executable-planning/SKILL.md` out of sync
+  (`check:drift` failed) and the plan's stale frontmatter/checkpoint text
+  uncorrected.
+- 2026-09-03: Reopened the plan as Phase 3, ran `npm run build` to
+  regenerate the compiled `executable-planning` skill, corrected the
+  Phase 2 checkpoint's stale commit-message record, and ran `npm run
+check` clean (139 tests, markdownlint, typecheck, `check:customizations`,
+  `check:drift`). Phase 3 complete; plan status set to completed pending
+  user confirmation.
