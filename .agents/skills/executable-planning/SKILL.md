@@ -209,82 +209,57 @@ Before presenting the plan, verify that:
 Present the plan's location, current state, and next action concisely. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint.
 
 
-## 1. Discovery
+## Discovery
 
-Run the *Explore* subagent to gather context, analogous existing features to use as implementation templates, and potential blockers or ambiguities. When the task spans multiple independent areas (e.g., frontend + backend, different features, separate repos), launch **2-3 *Explore* subagents in parallel** — one per area — to speed up discovery.
+Before proposing a plan, inspect the relevant repository area and any nearby
+tests, documentation, or operational constraints. Identify the smallest set
+of facts needed to describe the intended outcome, affected components, and
+likely validation.
 
-Update the plan with your findings.
-
-
-
-## 2. Alignment
-
-If research reveals major ambiguities or if you need to validate assumptions:
-- Ask focused questions to clarify intent with the user.
-- Surface discovered technical constraints or alternative approaches
-- If answers significantly change the scope, loop back to **Discovery**
+For work spanning independent domains, gather evidence for each domain
+separately. Record findings in the canonical plan rather than relying on
+conversation context alone.
 
 
 
-## 3. Design
+## Alignment
 
-Once context is clear, draft a comprehensive implementation plan.
+Resolve the outcome, scope, interaction mode, storage choice, and constraints
+required by the planning contract. Ask only questions that remain unanswered
+or that would materially change a safe plan.
 
-The plan should reflect:
-- Structured concise enough to be scannable and detailed enough for effective execution
-- Step-by-step implementation with explicit dependencies — mark which steps can run in parallel vs. which block on prior steps
-
-- Verification steps for validating the implementation, both automated and manual
-- Critical architecture to reuse or use as reference — reference specific functions, types, or patterns, not just file names
-- Critical files to be modified (with full paths)
-- Explicit scope boundaries — what's included and what's deliberately excluded
-- Reference decisions from the discussion
-- Leave no ambiguity
-
-Update the canonical plan artifact with the comprehensive plan, then show the scannable plan to the user for review. You MUST show plan to the user, as the canonical artifact is for persistence only, not a substitute for showing it to the user.
+When alternatives have meaningful trade-offs, state the recommendation and
+record the decision. In autopilot mode, make conservative reversible
+assumptions when the answer is not essential to safety or validity.
 
 
 
-## 4. Refinement
+## Design
 
-On user input after showing the plan:
-- Changes requested → revise and present updated plan. Update the canonical plan artifact to keep the documented plan in sync
-- Questions asked → clarify with focused follow-up questions as needed
-- Alternatives wanted → loop back to **Discovery** with new subagent
-- Approval given → record explicit approval in the canonical plan artifact and stop before implementation.
+Create the canonical plan using the required format. Give each phase a
+specific domain boundary, tangible output, completion criteria, validation,
+and checkpoint. Use the smallest number of phases that accurately represents
+the work: one phase for a small self-contained outcome, and additional phases
+when dependencies or independently reviewable results warrant them.
 
-Keep iterating until explicit approval or handoff.
-</workflow>
+Keep detailed implementation steps deferred until the relevant phase begins.
+Name the likely files, components, interfaces, risks, recovery considerations,
+and dependencies needed to carry out the work without access to this chat.
 
-<plan_style_guide>
-```markdown
-## Plan: {Title (2-10 words)}
-
-{TL;DR - what, why, and how (your recommended approach).}
-
-**Steps**
-1. {Implementation step-by-step — note dependency ("*depends on N*") or parallelism ("*parallel with step N*") when applicable}
+Present the plan concisely after updating its canonical artifact.
 
 
-**Relevant files**
-- `{full/path/to/file}` — {what to modify or reuse, referencing specific functions/patterns}
 
-**Verification**
-1. {Verification steps for validating the implementation (**Specific** tasks, tests, commands, MCP tools, etc; not generic statements)}
+## Refinement
 
-**Decisions** (if applicable)
-- {Decision, assumptions, and includes/excluded scope}
+Treat user feedback as a plan change. Clarify questions, revise decisions and
+scope when requested, and keep the canonical artifact synchronized with the
+latest version.
 
-**Further Considerations** (if applicable, 1-3 items)
-1. {Clarifying question with recommendation. Option A / Option B / Option C}
-2. {…}
-```
+When the user approves an interactive plan, record the approval and stop
+before implementation. When the user asks to begin a phase, elaborate only
+that phase's steps and follow its documented checkpoint rules.
 
-Rules:
-
-- NO blocking questions at the end — resolve alignment questions during the workflow.
-- The plan MUST be presented to the user, don't just mention the plan file.
-</plan_style_guide>
 
 ## When to Use
 

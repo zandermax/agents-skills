@@ -10,7 +10,7 @@ collection while removing planning-specific assumptions from shared code.
 
 Rename the GitHub repository from `zandermax/plans` to
 `zandermax/agents-skills` and the local directory from
-`/Users/zander/repos/plans` to `/Users/zander/repos/agents-skills` only after
+`<workspace-root>/plans` to `<workspace-root>/agents-skills` only after
 the generalized repository passes validation and known installed symlinks have
 been inventoried.
 
@@ -71,7 +71,7 @@ user has admin access, and `zandermax/agents-skills` was available.
 Use these repository-level identities after migration:
 
 - GitHub repository: `zandermax/agents-skills`
-- Local directory: `/Users/zander/repos/agents-skills`
+- Local directory: `<workspace-root>/agents-skills`
 - npm package: `agents-skills`
 - README title: `Agents and Skills Toolchain`
 - GitHub description: `Build, validate, and install custom agents and skills
@@ -378,8 +378,8 @@ Rewrite the README around collection maintenance:
 - How to list, select, and install artifacts.
 - Built-in client compatibility and arbitrary harness examples.
 - Collision, stale symlink, repository move, and recovery behavior.
-- Official snapshot maintenance for the planning skill as one
-  feature-specific section.
+- Repository-owned planning-skill source maintenance as one feature-specific
+  section.
 
 Historical executable-planning specs and plans remain unchanged except for a
 short supersession reference if navigation becomes ambiguous.
@@ -396,15 +396,15 @@ Perform identity changes only after generalized code is committed and
   artifact path, use `lstat` to require a symlink, resolve its `readlink`
   value relative to the link's parent without dereferencing the final target,
   and accept it only when that normalized path is inside
-  `/Users/zander/repos/plans`.
+  `<workspace-root>/plans`.
 4. Record destinations that require recreation and remove only links verified
   by that lexical containment check. Never remove regular files, directories,
   unrelated links, or links found by an unrestricted home-directory scan.
 5. Rename the GitHub repository to `agents-skills` and update its description.
 6. Set `origin` explicitly to
    `https://github.com/zandermax/agents-skills.git` and verify fetch metadata.
-7. Move `/Users/zander/repos/plans` to
-   `/Users/zander/repos/agents-skills` from the parent directory.
+7. Move `<workspace-root>/plans` to
+  `<workspace-root>/agents-skills` from the parent directory.
 8. Recreate recorded symlinks from the new checkout and verify their canonical
    targets.
 9. Run a smoke check from the new path and reopen the VS Code workspace there.
@@ -468,5 +468,5 @@ as `zandermax/agents-skills` locally and remotely.
 - `npm run check` passes before and after the repository identity migration.
 - GitHub, `origin`, package metadata, README, and local directory use
   `agents-skills`.
-- Known installed links resolve into `/Users/zander/repos/agents-skills` after
+- Known installed links resolve into `<workspace-root>/agents-skills` after
   migration, and unknown custom destinations are called out explicitly.

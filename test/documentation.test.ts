@@ -27,7 +27,8 @@ const REQUIRED_MARKERS = [
 	"collision",
 	"stale symlink",
 	"repository is moved",
-	"vendor/copilot/Plan.agent.md",
+	"Planning Skill Maintenance",
+	"sources/executable-planning/workflow.md",
 ] as const;
 
 test("README documents catalog-driven artifact installation and maintenance", async () => {

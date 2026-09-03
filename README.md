@@ -92,8 +92,9 @@ symlink, or a stale symlink fails without replacing anything.
 If the repository is moved, remove each stale symlink manually and rerun
 installation. Do not replace regular files, directories, or unrelated links.
 
-## Planning Snapshot Maintenance
+## Planning Skill Maintenance
 
-The executable-planning skill is maintained from the pinned official snapshot
-at `vendor/copilot/Plan.agent.md`. Update its transforms and provenance records
-when the upstream source changes, then run `npm run build` and `npm run check`.
+The executable-planning skill is composed from repository-owned source files
+under `sources/executable-planning/`. Update
+`sources/executable-planning/workflow.md` and its supporting sources together,
+then run `npm run build` and `npm run check`.

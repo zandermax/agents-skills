@@ -116,8 +116,12 @@ test("installArtifacts creates file and directory links and is idempotent", asyn
 			links.map((link) => link.destinationPath),
 		);
 		assert.deepEqual(first.existing, []);
-		await assertLinkPointsTo(links[0]!.destinationPath, fixture.sources.skill);
-		await assertLinkPointsTo(links[1]!.destinationPath, fixture.sources.agent);
+		const [skillLink, agentLink] = links;
+		if (skillLink === undefined || agentLink === undefined) {
+			assert.fail("expected skill and agent links");
+		}
+		await assertLinkPointsTo(skillLink.destinationPath, fixture.sources.skill);
+		await assertLinkPointsTo(agentLink.destinationPath, fixture.sources.agent);
 
 		const second = await installArtifacts(links);
 		assert.deepEqual(second.created, []);
