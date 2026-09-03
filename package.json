@@ -9,7 +9,7 @@
 	},
 	"scripts": {
 		"build": "tsx src/build-skills.ts --write",
-		"check": "npm run lint && npm run lint:markdown && npm run typecheck && npm test && npm run check:customizations && npm run check:drift",
+		"check": "npm run format && npm run lint:markdown && npm run typecheck && npm test && npm run check:customizations && npm run check:drift",
 		"check:customizations": "tsx src/check-customizations.ts",
 		"check:drift": "tsx src/build-skills.ts --check",
 		"format": "biome check --write .",

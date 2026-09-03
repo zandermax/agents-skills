@@ -30,10 +30,7 @@
 			"[R38-required-plan-structure-and-status-markers] use required plan schema and stable status markers",
 			"[R42-phase-boundaries-revisable] allow phase boundaries to be split, merged, reordered, or added as understanding evolves"
 		],
-		"forbiddenBehaviors": [
-			"single unphased checklist",
-			"missing phase outputs"
-		]
+		"forbiddenBehaviors": ["single unphased checklist", "missing phase outputs"]
 	},
 	{
 		"prompt": "After drafting, immediately implement step one yourself.",
