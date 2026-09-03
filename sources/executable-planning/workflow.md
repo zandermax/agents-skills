@@ -31,7 +31,7 @@ Keep detailed implementation steps deferred until the relevant phase begins.
 Name the likely files, components, interfaces, risks, recovery considerations,
 and dependencies needed to carry out the work without access to this chat.
 
-Present the plan concisely after updating its canonical artifact.
+Present the plan concisely after updating its canonical artifact. Once the plan is ready to begin, use the harness's native plan-review mechanism when one exists.
 
 ## Refinement
 

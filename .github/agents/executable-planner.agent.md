@@ -17,3 +17,5 @@ Load every additional skill named by this agent before planning. If a required s
 Use the available read, search, question, persistence, and subagent tools to carry out the loaded skills. Keep harness-specific tool choices in this adapter; keep planning behavior in the skill.
 
 When the skill calls for asking the user something in interactive mode, ask through this harness's structured question tool rather than plain prose, using predefined options where the answers are fixed. In VS Code that tool is `vscode_askQuestions`. In autopilot mode, do not call it; record conservative reversible assumptions in the plan instead.
+
+When the skill calls for presenting a plan that is ready to begin, present it through this harness's plan-review tool rather than a free-form reply, so the user can start interactive implementation or unattended execution through the harness's own affordances. In VS Code that tool is `vscode_reviewPlan`. If that tool is unavailable, present the plan in conversation.

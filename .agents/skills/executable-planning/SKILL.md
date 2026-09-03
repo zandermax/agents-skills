@@ -236,7 +236,7 @@ Before presenting the plan, verify that:
 - The canonical plan itself contains the latest state and exactly one next action.
 - When session-only storage is in effect, the complete plan is ready to be presented in full as one self-contained markdown document, with no unresolved question left implicit.
 
-Present the plan's location, current state, and next action concisely. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint. When session-only storage is in effect, always close by presenting the complete plan as a single self-contained markdown document instead of a location reference, in addition to any confirmation the mode still requires.
+Present the plan's location, current state, and next action concisely. Once the plan is ready to begin, present it through the harness's native plan-review mechanism whenever one exists, so the user starts execution with the harness's own affordances instead of a free-form reply. Fall back to presenting in conversation only when the harness exposes no such mechanism. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint. When session-only storage is in effect, always close by presenting the complete plan as a single self-contained markdown document instead of a location reference, in addition to any confirmation the mode still requires.
 
 
 ## Discovery
@@ -276,7 +276,7 @@ Keep detailed implementation steps deferred until the relevant phase begins.
 Name the likely files, components, interfaces, risks, recovery considerations,
 and dependencies needed to carry out the work without access to this chat.
 
-Present the plan concisely after updating its canonical artifact.
+Present the plan concisely after updating its canonical artifact. Once the plan is ready to begin, use the harness's native plan-review mechanism when one exists.
 
 
 
@@ -308,6 +308,8 @@ Adapt read/search operations to the current harness and gather enough context to
 Adapt plan persistence to one canonical artifact and keep it synchronized after each material state change.
 
 Adapt clarification prompts to the harness's native interactive question mechanism, calling whichever tool that harness provides for asking the user structured questions. Use it in interactive mode for clarification, phase confirmations, and awaiting-user items; if no such mechanism exists, ask in plain conversation. In autopilot mode, never use it and record conservative reversible assumptions instead.
+
+Adapt plan presentation to the harness's native plan-review mechanism, calling whichever tool that harness provides for reviewing a completed plan and starting execution. Use it once the plan is ready to begin, so the user can start interactive implementation or unattended/autopilot execution through the harness's own affordances. If no such mechanism exists, present the plan in conversation; in interactive mode wait for an explicit start request, and in autopilot mode begin execution.
 
 Adapt delegation to available subagent mechanisms; when unavailable, record the limitation and produce a smallest-sound single-agent fallback, both when outlining steps and when executing an autopilot plan that requested parallel delegation.
 

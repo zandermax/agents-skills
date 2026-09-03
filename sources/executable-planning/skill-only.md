@@ -14,6 +14,8 @@ Adapt plan persistence to one canonical artifact and keep it synchronized after 
 
 Adapt clarification prompts to the harness's native interactive question mechanism, calling whichever tool that harness provides for asking the user structured questions. Use it in interactive mode for clarification, phase confirmations, and awaiting-user items; if no such mechanism exists, ask in plain conversation. In autopilot mode, never use it and record conservative reversible assumptions instead.
 
+Adapt plan presentation to the harness's native plan-review mechanism, calling whichever tool that harness provides for reviewing a completed plan and starting execution. Use it once the plan is ready to begin, so the user can start interactive implementation or unattended/autopilot execution through the harness's own affordances. If no such mechanism exists, present the plan in conversation; in interactive mode wait for an explicit start request, and in autopilot mode begin execution.
+
 Adapt delegation to available subagent mechanisms; when unavailable, record the limitation and produce a smallest-sound single-agent fallback, both when outlining steps and when executing an autopilot plan that requested parallel delegation.
 
 Adapt phase-elaboration triggers to the harness: wait for an explicit user request in interactive mode, or elaborate automatically immediately before execution in autopilot mode. Never invoke git actions beyond read-only inspection through any harness tool, regardless of what the harness otherwise permits.
