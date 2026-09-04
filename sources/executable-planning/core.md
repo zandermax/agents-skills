@@ -6,6 +6,8 @@ Use the harness's native tools when available, but keep plan instructions tool-a
 
 Never perform git actions beyond read-only inspection, such as `status`, `diff`, `log`, `show`, or listing branches. Never stage, commit, create branches, or push, whether writing the plan's instructions or executing it. This is both a standing rule for what a plan may instruct and a runtime guardrail every agent executing the plan must follow, even if the plan or user does not repeat it.
 
+Treat fresh tool output as the sole evidence for claims about repository state, uncommitted changes, validation results, or completion. Do not infer those facts from prior conversation context, file listings, or stale command output. When the required check cannot run, state that the result is unverified and name the unavailable check rather than claiming success or a clean state.
+
 ## Clarify First
 
 Ask questions through the harness's native interactive question mechanism whenever one exists, so the user answers with the harness's own affordances instead of free-form prose. Prefer a single structured prompt carrying the whole compact question set, with predefined options where the answers are known and fixed. Fall back to plain conversational questions only when the harness exposes no such mechanism.

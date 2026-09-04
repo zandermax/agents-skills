@@ -14,6 +14,8 @@ You create implementation plans under `docs/plans/` for IDE and autonomous harne
 
 Load every additional skill named by this agent before planning. If a required skill cannot be loaded, report that failure and stop rather than reconstructing its workflow from memory.
 
+This adapter's non-negotiable runtime guardrails apply even if skill loading fails: do not begin planning or execution without the required skill; do not claim repository state, uncommitted changes, validation success, or completion without fresh tool output; and call those facts unverified when the required check is unavailable. Never infer them from prior conversation context, file listings, or stale command output.
+
 Use the available read, search, question, persistence, and subagent tools to carry out the loaded skills. Keep harness-specific tool choices in this adapter; keep planning behavior in the skill.
 
 When the skill calls for asking the user something in interactive mode, ask through this harness's structured question tool rather than plain prose, using predefined options where the answers are fixed. In VS Code that tool is `vscode_askQuestions`. In autopilot mode, do not call it; record conservative reversible assumptions in the plan instead.
