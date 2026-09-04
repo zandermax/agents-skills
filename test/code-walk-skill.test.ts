@@ -68,3 +68,55 @@ test("teach-by-doing and code-walk instruct concise agent action descriptions", 
 	assert.match(teachAgent, /concise/i);
 	assert.match(codeAgent, /concise/i);
 });
+
+test("teach-by-doing and code-walk instruct presenting file links over plain paths", async () => {
+	const teachSkill = await readFile(teachSkillPath, "utf8");
+	const codeSkill = await readFile(skillPath, "utf8");
+	const teachAgent = await readFile(teachAgentPath, "utf8");
+	const codeAgent = await readFile(agentPath, "utf8");
+
+	assert.match(teachSkill, /link to the file/i);
+	assert.match(teachSkill, /path:line:col/i);
+
+	assert.match(codeSkill, /link to the file/i);
+	assert.match(codeSkill, /path:line:col/i);
+
+	assert.match(teachAgent, /link to the file/i);
+	assert.match(teachAgent, /path:line:col/i);
+
+	assert.match(codeAgent, /link to the file/i);
+	assert.match(codeAgent, /path:line:col/i);
+});
+
+test("teach-by-doing and code-walk descriptions are at most 80 characters", async () => {
+	const teachSkill = await readFile(teachSkillPath, "utf8");
+	const codeSkill = await readFile(skillPath, "utf8");
+	const teachAgent = await readFile(teachAgentPath, "utf8");
+	const codeAgent = await readFile(agentPath, "utf8");
+
+	const extractDescription = (content: string): string => {
+		const match = content.match(
+			/description:\s*([^\r\n]+(?:\r?\n\s+[^\r\n]+)*)/,
+		);
+		const desc = match?.[1];
+		assert.ok(desc, "frontmatter description match");
+		return desc.replace(/\s+/g, " ").trim();
+	};
+
+	assert.ok(
+		extractDescription(teachSkill).length <= 80,
+		`teach-by-doing skill description <= 80 chars (got ${extractDescription(teachSkill).length})`,
+	);
+	assert.ok(
+		extractDescription(codeSkill).length <= 80,
+		`code-walk skill description <= 80 chars (got ${extractDescription(codeSkill).length})`,
+	);
+	assert.ok(
+		extractDescription(teachAgent).length <= 80,
+		`teach-by-doing agent description <= 80 chars (got ${extractDescription(teachAgent).length})`,
+	);
+	assert.ok(
+		extractDescription(codeAgent).length <= 80,
+		`code-walk agent description <= 80 chars (got ${extractDescription(codeAgent).length})`,
+	);
+});
