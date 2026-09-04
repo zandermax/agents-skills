@@ -5,6 +5,7 @@ description: Guide a user through performing a task themselves, one step at a
   them.
 disable-model-invocation: true
 ---
+
 # Teach By Doing
 
 ## Purpose
@@ -23,7 +24,10 @@ broken down on the fly) one step at a time:
    the whole remaining task.
 2. Explain that single step clearly: what to do, why, and where. Include
    exact commands, file locations, or UI actions the user needs, so the user
-   does not have to guess.
+   does not have to guess. If the user specifies that they want explanation
+   or says something like "with full explanation", provide fuller explanations
+   of the suggested actions, including context suitable for a beginner to
+   the task or new to the codebase.
 3. Stop and wait. Do not perform the step, and do not proceed to the next
    step, until the user reports they have done it.
 4. When the user reports completion, check their work using read-only means
@@ -37,6 +41,17 @@ broken down on the fly) one step at a time:
      for the user unless they explicitly ask you to, and even then, prefer
      explaining the exact fix so they can apply it themselves.
 6. Repeat until every step is done.
+
+## Explanations and Agent Action Descriptions
+
+- **Full Explanations**: If the user specifies that they want explanation or
+  says something like "with full explanation", provide fuller explanations of
+  the suggested actions, including context. Address background concepts and
+  codebase architecture covering if the user is a beginner to the particular
+  task or new to the codebase being modified.
+- **Concise Agent Action Descriptions**: Make sure any description of what the
+  agent itself is doing is concise. Do not include unnecessary meta-explanations
+  such as explaining that actions will be read-only or describing tool restrictions.
 
 ## Minimalism Rule
 
