@@ -5,6 +5,7 @@ description: Guide a user through implementing a coding task themselves, one
   suggested commit message.
 disable-model-invocation: true
 ---
+
 # Code Walk
 
 ## Purpose
@@ -19,6 +20,17 @@ Call the Skill tool with teach-by-doing and follow its step loop for every
 step of the coding task: explain one step, stop and wait, then check the
 user's work read-only before advancing. Do not repeat that loop's rules
 here; this skill only adds the coding-specific pieces below.
+
+## Code Suggestions
+
+For every implementation step, suggest the exact code the user should add,
+remove, or replace unless the user asks not to receive code suggestions.
+Show only the lines that need to change, with the minimum unchanged context
+needed to locate them. Do not reproduce an entire function or file unless
+all of it changes or the user explicitly asks for the complete version.
+Identify where the change belongs and briefly explain why it satisfies the
+step. These suggestions are instructions for the user to apply; never edit
+the files on their behalf.
 
 ## Coding-Specific Verification
 
