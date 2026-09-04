@@ -233,6 +233,30 @@ async function createFixtureRepo(
     ),
     "utf8",
   );
+
+  const githooksDir = path.join(repoRoot, ".githooks");
+  await mkdir(githooksDir, { recursive: true });
+  await writeFile(
+    path.join(githooksDir, "pre-push"),
+    "#!/bin/sh\nnpm run check\n",
+    "utf8",
+  );
+
+  await writeFile(
+    path.join(repoRoot, "package.json"),
+    JSON.stringify(
+      {
+        name: "fixture",
+        scripts: {
+          prepare: "git config core.hooksPath .githooks",
+        },
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+
   if (options.planStatus !== undefined) {
     const planDirectory = path.join(
       repoRoot,
@@ -635,6 +659,60 @@ test("checkCustomizations CLI exits nonzero with stable path-prefixed errors", a
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /sources\/executable-planning\/skill\.json:/);
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("checkCustomizations rejects missing or invalid pre-push hook or prepare script", async () => {
+  const repoRoot = await createFixtureRepo();
+
+  try {
+    await rm(path.join(repoRoot, ".githooks", "pre-push"));
+    await assert.rejects(
+      async () => {
+        await checkCustomizations(repoRoot);
+      },
+      (error: unknown) => {
+        assert.match(String(error), /\.githooks\/pre-push: file is missing/);
+        return true;
+      },
+    );
+
+    await writeFile(
+      path.join(repoRoot, ".githooks", "pre-push"),
+      "#!/bin/sh\necho hello\n",
+    );
+    await assert.rejects(
+      async () => {
+        await checkCustomizations(repoRoot);
+      },
+      (error: unknown) => {
+        assert.match(
+          String(error),
+          /\.githooks\/pre-push: missing required marker: npm run check/,
+        );
+        return true;
+      },
+    );
+
+    await writeFile(
+      path.join(repoRoot, ".githooks", "pre-push"),
+      "#!/bin/sh\nnpm run check\n",
+    );
+    await writeFile(path.join(repoRoot, "package.json"), "{}");
+    await assert.rejects(
+      async () => {
+        await checkCustomizations(repoRoot);
+      },
+      (error: unknown) => {
+        assert.match(
+          String(error),
+          /package\.json: prepare script must configure git core\.hooksPath \.githooks/,
+        );
+        return true;
+      },
+    );
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }

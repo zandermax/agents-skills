@@ -48,7 +48,7 @@ function createManifest(skillName: string, options: SkillOptions = {}): string {
     {
       name: skillName,
       title: `${skillName} skill`,
-      description: `Use when ${skillName} requires deterministic planning.`,
+      description: `Creates deterministic planning for ${skillName}.`,
       output: `.agents/skills/${skillName}/SKILL.md`,
       selections: [
         {

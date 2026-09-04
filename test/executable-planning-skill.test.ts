@@ -10,8 +10,8 @@ import { parseSkillManifest } from "../src/lib/manifests.js";
 import { listSections } from "../src/lib/markdown-sections.js";
 
 const REPO_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
 );
 const SOURCE_DIR = path.join(REPO_ROOT, "sources", "executable-planning");
 const MANIFEST_PATH = path.join(SOURCE_DIR, "skill.json");
@@ -19,332 +19,332 @@ const CORE_PATH = path.join(SOURCE_DIR, "core.md");
 const WORKFLOW_PATH = path.join(SOURCE_DIR, "workflow.md");
 const SKILL_ONLY_PATH = path.join(SOURCE_DIR, "skill-only.md");
 const BEHAVIORAL_FIXTURES_PATH = path.join(
-  REPO_ROOT,
-  "test",
-  "fixtures",
-  "behavioral-scenarios.json",
+	REPO_ROOT,
+	"test",
+	"fixtures",
+	"behavioral-scenarios.json",
 );
 const OUTPUT_PATH = path.join(
-  REPO_ROOT,
-  ".agents",
-  "skills",
-  "executable-planning",
-  "SKILL.md",
+	REPO_ROOT,
+	".agents",
+	"skills",
+	"executable-planning",
+	"SKILL.md",
 );
 
 const expectedH2Order = [
-  "Operating Contract",
-  "Clarify First",
-  "Canonical Plan Artifact",
-  "Plan Design",
-  "Phase Elaboration",
-  "Delegate Step Design",
-  "Checkpoints and User Interest",
-  "Required Plan Format",
-  "Quality Check Before Delivery",
-  "Discovery",
-  "Alignment",
-  "Design",
-  "Refinement",
-  "When to Use",
-  "Harness Adaptation",
+	"Operating Contract",
+	"Clarify First",
+	"Canonical Plan Artifact",
+	"Plan Design",
+	"Phase Elaboration",
+	"Delegate Step Design",
+	"Checkpoints and User Interest",
+	"Required Plan Format",
+	"Quality Check Before Delivery",
+	"Discovery",
+	"Alignment",
+	"Design",
+	"Refinement",
+	"When to Use",
+	"Harness Adaptation",
 ] as const;
 
 const requiredPhrases = [
-  "local plan",
-  "autopilot",
-  "domain-based",
-  "tangible output",
-  "awaiting-user",
-  "elaborat",
-  "git",
-  "commit message",
-  "triple-click",
-  "Discovery",
-  "Alignment",
-  "Design",
-  "Refinement",
-  "plan-review",
+	"local plan",
+	"autopilot",
+	"domain-based",
+	"tangible output",
+	"awaiting-user",
+	"elaborat",
+	"git",
+	"commit message",
+	"triple-click",
+	"Discovery",
+	"Alignment",
+	"Design",
+	"Refinement",
+	"plan-review",
 ] as const;
 
 const forbiddenPhrases = [
-  "#tool:vscode",
-  "/memories/session/",
-  "handoff buttons",
-  "target: vscode",
-  "tools:",
-  "agents:",
+	"#tool:vscode",
+	"/memories/session/",
+	"handoff buttons",
+	"target: vscode",
+	"tools:",
+	"agents:",
 ] as const;
 
 const expectedProjectOwnedRuleIds = [
-  "R01-planning-canonical-record",
-  "R02-tool-agnostic-outcomes",
-  "R03-clarify-success-scope",
-  "R04-clarify-interaction-mode",
-  "R05-clarify-storage-choice",
-  "R06-clarify-constraints-risks",
-  "R07-implicit-local-plan",
-  "R08-implicit-autopilot",
-  "R09-targeted-clarification-only",
-  "R10-autopilot-conservative-assumptions",
-  "R11-single-canonical-plan-path",
-  "R12-reuse-existing-plan",
-  "R13-create-plans-directory",
-  "R14-plan-state-in-canonical-artifact",
-  "R15-conversation-only-durability-warning",
-  "R16-update-on-material-events",
-  "R17-domain-based-multi-phase",
-  "R18-phase-iterative-reviewable",
-  "R19-phase-tangible-output",
-  "R20-phase-completion-and-validation",
-  "R21-phase-steps-deferred-to-elaboration",
-  "R22-phase-dependencies-risks-rollback",
-  "R23-phase-checkpoint-by-mode",
-  "R24-thin-end-to-end-increments",
-  "R25-single-agent-exception-justified",
-  "R26-subagent-phase-step-outlines",
-  "R27-subagent-no-implementation",
-  "R28-parallelize-independent-phase-planning",
-  "R29-synthesize-and-resolve-conflicts",
-  "R30-record-subagent-unavailable-fallback",
-  "R31-interactive-phase-confirmation-step",
-  "R32-interactive-stop-until-confirmed",
-  "R33-user-interest-immediate-awaiting-user",
-  "R34-user-deferral-preserved-with-trigger",
-  "R35-autopilot-no-blocking-confirmation",
-  "R36-autopilot-go-no-go-gates",
-  "R37-autopilot-stop-only-safety-or-blocker",
-  "R38-required-plan-structure-and-status-markers",
-  "R39-one-current-step-and-next-action",
-  "R40-quality-gate-before-delivery",
-  "R41-git-read-only",
-  "R42-phase-boundaries-revisable",
-  "R43-elaboration-explicit-or-preexecution-trigger",
-  "R44-elaboration-scoped-clarify",
-  "R45-elaboration-review-checkpoint",
-  "R46-checkpoint-does-not-auto-start-next-phase",
-  "R47-interactive-checkpoint-commit-message-suggestion",
-  "R48-no-commit-message-without-code-change",
-  "R49-defer-commit-message-until-viable",
+	"R01-planning-canonical-record",
+	"R02-tool-agnostic-outcomes",
+	"R03-clarify-success-scope",
+	"R04-clarify-interaction-mode",
+	"R05-clarify-storage-choice",
+	"R06-clarify-constraints-risks",
+	"R07-implicit-local-plan",
+	"R08-implicit-autopilot",
+	"R09-targeted-clarification-only",
+	"R10-autopilot-conservative-assumptions",
+	"R11-single-canonical-plan-path",
+	"R12-reuse-existing-plan",
+	"R13-create-plans-directory",
+	"R14-plan-state-in-canonical-artifact",
+	"R15-conversation-only-durability-warning",
+	"R16-update-on-material-events",
+	"R17-domain-based-multi-phase",
+	"R18-phase-iterative-reviewable",
+	"R19-phase-tangible-output",
+	"R20-phase-completion-and-validation",
+	"R21-phase-steps-deferred-to-elaboration",
+	"R22-phase-dependencies-risks-rollback",
+	"R23-phase-checkpoint-by-mode",
+	"R24-thin-end-to-end-increments",
+	"R25-single-agent-exception-justified",
+	"R26-subagent-phase-step-outlines",
+	"R27-subagent-no-implementation",
+	"R28-parallelize-independent-phase-planning",
+	"R29-synthesize-and-resolve-conflicts",
+	"R30-record-subagent-unavailable-fallback",
+	"R31-interactive-phase-confirmation-step",
+	"R32-interactive-stop-until-confirmed",
+	"R33-user-interest-immediate-awaiting-user",
+	"R34-user-deferral-preserved-with-trigger",
+	"R35-autopilot-no-blocking-confirmation",
+	"R36-autopilot-go-no-go-gates",
+	"R37-autopilot-stop-only-safety-or-blocker",
+	"R38-required-plan-structure-and-status-markers",
+	"R39-one-current-step-and-next-action",
+	"R40-quality-gate-before-delivery",
+	"R41-git-read-only",
+	"R42-phase-boundaries-revisable",
+	"R43-elaboration-explicit-or-preexecution-trigger",
+	"R44-elaboration-scoped-clarify",
+	"R45-elaboration-review-checkpoint",
+	"R46-checkpoint-does-not-auto-start-next-phase",
+	"R47-interactive-checkpoint-commit-message-suggestion",
+	"R48-no-commit-message-without-code-change",
+	"R49-defer-commit-message-until-viable",
 ] as const;
 
 test("executable-planning skill composes required static contract", async () => {
-  for (const requiredPath of [
-    MANIFEST_PATH,
-    CORE_PATH,
-    WORKFLOW_PATH,
-    SKILL_ONLY_PATH,
-  ]) {
-    assert.equal(
-      existsSync(requiredPath),
-      true,
-      `missing file: ${requiredPath}`,
-    );
-  }
+	for (const requiredPath of [
+		MANIFEST_PATH,
+		CORE_PATH,
+		WORKFLOW_PATH,
+		SKILL_ONLY_PATH,
+	]) {
+		assert.equal(
+			existsSync(requiredPath),
+			true,
+			`missing file: ${requiredPath}`,
+		);
+	}
 
-  const manifest = parseSkillManifest(
-    JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as unknown,
-    MANIFEST_PATH,
-    REPO_ROOT,
-  );
+	const manifest = parseSkillManifest(
+		JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as unknown,
+		MANIFEST_PATH,
+		REPO_ROOT,
+	);
 
-  assert.ok(!/^(?:use|run|call)\b/i.test(manifest.description));
+	assert.ok(!/^(?:use|run|call)\b/i.test(manifest.description));
 
-  const ownershipEntries = new Map<string, string>();
-  for (const selection of manifest.selections) {
-    for (const heading of selection.headings) {
-      assert.equal(
-        ownershipEntries.has(heading),
-        false,
-        `duplicate owner mapping for heading: ${heading}`,
-      );
-      ownershipEntries.set(heading, selection.owner);
-      assert.equal(manifest.sectionOwnership[heading], selection.owner);
-    }
-  }
-  assert.equal(ownershipEntries.size, expectedH2Order.length);
+	const ownershipEntries = new Map<string, string>();
+	for (const selection of manifest.selections) {
+		for (const heading of selection.headings) {
+			assert.equal(
+				ownershipEntries.has(heading),
+				false,
+				`duplicate owner mapping for heading: ${heading}`,
+			);
+			ownershipEntries.set(heading, selection.owner);
+			assert.equal(manifest.sectionOwnership[heading], selection.owner);
+		}
+	}
+	assert.equal(ownershipEntries.size, expectedH2Order.length);
 
-  await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
-  assert.equal(existsSync(OUTPUT_PATH), true, `missing output: ${OUTPUT_PATH}`);
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	assert.equal(existsSync(OUTPUT_PATH), true, `missing output: ${OUTPUT_PATH}`);
 
-  const rendered = readFileSync(OUTPUT_PATH, "utf8");
-  const parsed = parseFrontmatter(rendered, OUTPUT_PATH);
-  assert.deepEqual(Object.keys(parsed.attributes), ["name", "description"]);
-  assert.ok(
-    !/^(?:use|run|call)\b/i.test(String(parsed.attributes.description ?? "")),
-  );
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
+	const parsed = parseFrontmatter(rendered, OUTPUT_PATH);
+	assert.deepEqual(Object.keys(parsed.attributes), ["name", "description"]);
+	assert.ok(
+		!/^(?:use|run|call)\b/i.test(String(parsed.attributes.description ?? "")),
+	);
 
-  const h2Order = listSections(rendered)
-    .filter((section) => section.level === 2)
-    .map((section) => section.heading);
-  assert.deepEqual(h2Order, expectedH2Order);
+	const h2Order = listSections(rendered)
+		.filter((section) => section.level === 2)
+		.map((section) => section.heading);
+	assert.deepEqual(h2Order, expectedH2Order);
 
-  for (const phrase of requiredPhrases) {
-    assert.equal(
-      rendered.includes(phrase),
-      true,
-      `missing required phrase: ${phrase}`,
-    );
-  }
+	for (const phrase of requiredPhrases) {
+		assert.equal(
+			rendered.includes(phrase),
+			true,
+			`missing required phrase: ${phrase}`,
+		);
+	}
 
-  for (const phrase of forbiddenPhrases) {
-    assert.equal(
-      rendered.includes(phrase),
-      false,
-      `forbidden phrase present: ${phrase}`,
-    );
-  }
+	for (const phrase of forbiddenPhrases) {
+		assert.equal(
+			rendered.includes(phrase),
+			false,
+			`forbidden phrase present: ${phrase}`,
+		);
+	}
 
-  for (const conditionalPhasePhrase of [
-    "For plans with many steps",
-    "For plans with 5+ steps",
-  ]) {
-    assert.equal(
-      rendered.includes(conditionalPhasePhrase),
-      false,
-      `conditional phase guidance must be removed: ${conditionalPhasePhrase}`,
-    );
-  }
+	for (const conditionalPhasePhrase of [
+		"For plans with many steps",
+		"For plans with 5+ steps",
+	]) {
+		assert.equal(
+			rendered.includes(conditionalPhasePhrase),
+			false,
+			`conditional phase guidance must be removed: ${conditionalPhasePhrase}`,
+		);
+	}
 });
 
 test("project-owned core section set remains stable", () => {
-  assert.equal(existsSync(CORE_PATH), true, `missing file: ${CORE_PATH}`);
+	assert.equal(existsSync(CORE_PATH), true, `missing file: ${CORE_PATH}`);
 
-  const headings = listSections(readFileSync(CORE_PATH, "utf8"))
-    .filter((section) => section.level === 2)
-    .map((section) => section.heading);
+	const headings = listSections(readFileSync(CORE_PATH, "utf8"))
+		.filter((section) => section.level === 2)
+		.map((section) => section.heading);
 
-  assert.deepEqual(headings, [
-    "Operating Contract",
-    "Clarify First",
-    "Canonical Plan Artifact",
-    "Plan Design",
-    "Phase Elaboration",
-    "Delegate Step Design",
-    "Checkpoints and User Interest",
-    "Required Plan Format",
-    "Quality Check Before Delivery",
-  ]);
+	assert.deepEqual(headings, [
+		"Operating Contract",
+		"Clarify First",
+		"Canonical Plan Artifact",
+		"Plan Design",
+		"Phase Elaboration",
+		"Delegate Step Design",
+		"Checkpoints and User Interest",
+		"Required Plan Format",
+		"Quality Check Before Delivery",
+	]);
 });
 
 test("plan design supports single-phase plans when the work is genuinely small", async () => {
-  await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
-  const rendered = readFileSync(OUTPUT_PATH, "utf8");
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
 
-  assert.match(
-    rendered,
-    /one domain-based phase for genuinely small, self-contained work/,
-  );
-  assert.match(
-    rendered,
-    /multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them/,
-  );
-  assert.doesNotMatch(
-    rendered,
-    /Organize every plan into at least two conceptually domain-based phases/,
-  );
+	assert.match(
+		rendered,
+		/one domain-based phase for genuinely small, self-contained work/,
+	);
+	assert.match(
+		rendered,
+		/multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them/,
+	);
+	assert.doesNotMatch(
+		rendered,
+		/Organize every plan into at least two conceptually domain-based phases/,
+	);
 });
 
 test("commit suggestions are interactive-only and use a code block", async () => {
-  await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
-  const rendered = readFileSync(OUTPUT_PATH, "utf8");
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
 
-  assert.match(
-    rendered,
-    /In interactive mode:[\s\S]*?Suggested commit message:[\s\S]*?```text\n<single-line message>\n```/,
-  );
-  const autopilotSection =
-    /In autopilot mode:[\s\S]*?(?=\n## Required Plan Format)/.exec(
-      rendered,
-    )?.[0];
-  assert.ok(autopilotSection);
-  assert.doesNotMatch(autopilotSection, /Suggested commit message:/);
+	assert.match(
+		rendered,
+		/In interactive mode:[\s\S]*?Suggested commit message:[\s\S]*?```text\n<single-line message>\n```/,
+	);
+	const autopilotSection =
+		/In autopilot mode:[\s\S]*?(?=\n## Required Plan Format)/.exec(
+			rendered,
+		)?.[0];
+	assert.ok(autopilotSection);
+	assert.doesNotMatch(autopilotSection, /Suggested commit message:/);
 });
 
 test("behavioral pressure fixtures are complete and cover project-owned rules", () => {
-  assert.equal(
-    existsSync(BEHAVIORAL_FIXTURES_PATH),
-    true,
-    `missing file: ${BEHAVIORAL_FIXTURES_PATH}`,
-  );
+	assert.equal(
+		existsSync(BEHAVIORAL_FIXTURES_PATH),
+		true,
+		`missing file: ${BEHAVIORAL_FIXTURES_PATH}`,
+	);
 
-  const parsed = JSON.parse(
-    readFileSync(BEHAVIORAL_FIXTURES_PATH, "utf8"),
-  ) as unknown;
+	const parsed = JSON.parse(
+		readFileSync(BEHAVIORAL_FIXTURES_PATH, "utf8"),
+	) as unknown;
 
-  assert.equal(Array.isArray(parsed), true);
-  if (!Array.isArray(parsed)) {
-    assert.fail("behavioral fixtures must be an array");
-  }
+	assert.equal(Array.isArray(parsed), true);
+	if (!Array.isArray(parsed)) {
+		assert.fail("behavioral fixtures must be an array");
+	}
 
-  // Derive expected count from actual fixtures - single source of truth
-  const expectedScenarioCount = parsed.length;
-  assert.equal(parsed.length, expectedScenarioCount);
+	// Derive expected count from actual fixtures - single source of truth
+	const expectedScenarioCount = parsed.length;
+	assert.equal(parsed.length, expectedScenarioCount);
 
-  const seenPrompts = new Set<string>();
-  const observedRuleIds = new Set<string>();
+	const seenPrompts = new Set<string>();
+	const observedRuleIds = new Set<string>();
 
-  for (const [index, caseValue] of parsed.entries()) {
-    assert.equal(typeof caseValue, "object", `case ${index} must be object`);
-    assert.notEqual(caseValue, null, `case ${index} must be non-null`);
+	for (const [index, caseValue] of parsed.entries()) {
+		assert.equal(typeof caseValue, "object", `case ${index} must be object`);
+		assert.notEqual(caseValue, null, `case ${index} must be non-null`);
 
-    const record = caseValue as Record<string, unknown>;
-    assert.deepEqual(Object.keys(record).sort(), [
-      "forbiddenBehaviors",
-      "prompt",
-      "requiredBehaviors",
-    ]);
+		const record = caseValue as Record<string, unknown>;
+		assert.deepEqual(Object.keys(record).sort(), [
+			"forbiddenBehaviors",
+			"prompt",
+			"requiredBehaviors",
+		]);
 
-    assert.equal(
-      typeof record.prompt,
-      "string",
-      `case ${index} prompt must be string`,
-    );
-    assert.notEqual(String(record.prompt).trim().length, 0);
-    assert.equal(seenPrompts.has(String(record.prompt)), false);
-    seenPrompts.add(String(record.prompt));
+		assert.equal(
+			typeof record.prompt,
+			"string",
+			`case ${index} prompt must be string`,
+		);
+		assert.notEqual(String(record.prompt).trim().length, 0);
+		assert.equal(seenPrompts.has(String(record.prompt)), false);
+		seenPrompts.add(String(record.prompt));
 
-    assert.equal(Array.isArray(record.requiredBehaviors), true);
-    assert.equal(Array.isArray(record.forbiddenBehaviors), true);
+		assert.equal(Array.isArray(record.requiredBehaviors), true);
+		assert.equal(Array.isArray(record.forbiddenBehaviors), true);
 
-    const required = record.requiredBehaviors as unknown[];
-    const forbidden = record.forbiddenBehaviors as unknown[];
+		const required = record.requiredBehaviors as unknown[];
+		const forbidden = record.forbiddenBehaviors as unknown[];
 
-    assert.ok(
-      required.length > 0,
-      `case ${index} requiredBehaviors must be non-empty`,
-    );
-    assert.ok(
-      forbidden.length > 0,
-      `case ${index} forbiddenBehaviors must be non-empty`,
-    );
+		assert.ok(
+			required.length > 0,
+			`case ${index} requiredBehaviors must be non-empty`,
+		);
+		assert.ok(
+			forbidden.length > 0,
+			`case ${index} forbiddenBehaviors must be non-empty`,
+		);
 
-    for (const behavior of required) {
-      assert.equal(typeof behavior, "string");
-      assert.notEqual(String(behavior).trim().length, 0);
+		for (const behavior of required) {
+			assert.equal(typeof behavior, "string");
+			assert.notEqual(String(behavior).trim().length, 0);
 
-      const text = String(behavior);
-      const match = /^\[(R\d{2}-[a-z0-9-]+)\]\s+/.exec(text);
-      assert.notEqual(
-        match,
-        null,
-        `case ${index} requiredBehaviors must start with explicit rule id tag`,
-      );
-      const ruleId = match?.[1];
-      if (ruleId) {
-        observedRuleIds.add(ruleId);
-      }
-    }
+			const text = String(behavior);
+			const match = /^\[(R\d{2}-[a-z0-9-]+)\]\s+/.exec(text);
+			assert.notEqual(
+				match,
+				null,
+				`case ${index} requiredBehaviors must start with explicit rule id tag`,
+			);
+			const ruleId = match?.[1];
+			if (ruleId) {
+				observedRuleIds.add(ruleId);
+			}
+		}
 
-    for (const behavior of forbidden) {
-      assert.equal(typeof behavior, "string");
-      assert.notEqual(String(behavior).trim().length, 0);
-    }
-  }
+		for (const behavior of forbidden) {
+			assert.equal(typeof behavior, "string");
+			assert.notEqual(String(behavior).trim().length, 0);
+		}
+	}
 
-  assert.deepEqual(
-    Array.from(observedRuleIds).sort(),
-    Array.from(expectedProjectOwnedRuleIds).sort(),
-    "fixture coverage must include the complete project-owned rule id set",
-  );
+	assert.deepEqual(
+		Array.from(observedRuleIds).sort(),
+		Array.from(expectedProjectOwnedRuleIds).sort(),
+		"fixture coverage must include the complete project-owned rule id set",
+	);
 });
