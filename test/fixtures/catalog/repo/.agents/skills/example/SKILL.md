@@ -1,6 +1,6 @@
 ---
 name: example
-description: Use when testing catalog fixtures.
+description: Tests catalog fixtures.
 ---
 
 # Example

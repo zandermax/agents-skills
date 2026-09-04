@@ -1,6 +1,6 @@
 ---
 name: fixture-skill
-description: Use when validating catalog fixtures.
+description: Validates catalog fixtures.
 ---
 
 # Fixture Skill

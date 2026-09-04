@@ -1,6 +1,6 @@
 ---
 name: zeta
-description: Use when testing lexical skill discovery.
+description: Tests lexical skill discovery.
 ---
 
 # Zeta

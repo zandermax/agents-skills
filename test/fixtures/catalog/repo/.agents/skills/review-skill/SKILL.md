@@ -1,6 +1,6 @@
 ---
 name: review-skill
-description: Use when reviewing catalog fixtures.
+description: Reviews catalog fixtures.
 ---
 
 # Review Skill

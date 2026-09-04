@@ -1,8 +1,6 @@
 ---
 name: executable-planning
-description: Use when creating or maintaining a multi-step implementation plan
-  that must remain executable across agents, sessions, IDEs, or unattended
-  harnesses.
+description: Creates or maintains a multi-step executable implementation plan.
 ---
 # Executable Planning
 

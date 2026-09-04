@@ -1,6 +1,6 @@
 ---
 name: alpha
-description: Use when testing first skill discovery.
+description: Tests first skill discovery.
 ---
 
 # Alpha

@@ -1,6 +1,6 @@
 ---
 name: Code Walk
-description: Walk the user through implementing code step by step with verification
+description: Guides writing code step-by-step with verification
 argument-hint: Describe the coding task the user wants to implement themselves
 tools: ["search", "read", "todo", "execute"]
 user-invocable: true
