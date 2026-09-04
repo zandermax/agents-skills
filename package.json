@@ -1,34 +1,34 @@
 {
-  "name": "agents-skills",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "engines": {
-    "node": "24.15.0",
-    "npm": "11.12.1"
-  },
-  "scripts": {
-    "build": "tsx src/build-skills.ts --write",
-    "check": "npm run format && npm run lint:markdown && npm run typecheck && npm test && npm run check:customizations && npm run check:drift",
-    "check:customizations": "tsx src/check-customizations.ts",
-    "check:drift": "tsx src/build-skills.ts --check",
-    "format": "biome check --write .",
-    "install:artifacts": "tsx scripts/install-artifacts.ts",
-    "install:clients": "npm run install:artifacts --",
-    "lint": "biome check .",
-    "lint:markdown": "markdownlint-cli2",
-    "prepare": "git config core.hooksPath .githooks",
-    "test": "tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "yaml": "2.9.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "2.5.11",
-    "@types/node": "24.13.3",
-    "markdownlint-cli2": "0.23.2",
-    "tsx": "4.23.12",
-    "typescript": "7.0.2"
-  }
+	"name": "agents-skills",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"engines": {
+		"node": "24.15.0",
+		"npm": "11.12.1"
+	},
+	"scripts": {
+		"build": "tsx src/build-skills.ts --write",
+		"check": "npm run format && npm run lint:markdown && npm run typecheck && npm test && npm run check:customizations && npm run check:drift",
+		"check:customizations": "tsx src/check-customizations.ts",
+		"check:drift": "tsx src/build-skills.ts --check",
+		"format": "biome check --write .",
+		"install:artifacts": "tsx scripts/install-artifacts.ts",
+		"install:clients": "npm run install:artifacts --",
+		"lint": "biome check .",
+		"lint:markdown": "markdownlint-cli2",
+		"prepare": "git config core.hooksPath .githooks",
+		"test": "tsx --test test/*.test.ts",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"yaml": "2.9.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.11",
+		"@types/node": "24.13.3",
+		"markdownlint-cli2": "0.23.2",
+		"tsx": "4.23.12",
+		"typescript": "7.0.2"
+	}
 }
