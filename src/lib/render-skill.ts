@@ -14,7 +14,7 @@ export interface RenderedSkill {
 	readonly content: string;
 }
 
-const MAX_DESCRIPTION_LENGTH = 1024;
+const MAX_DESCRIPTION_LENGTH = 80;
 const MAINTENANCE_NOTICE_PHRASES = [
 	"maintenance notice",
 	"do not edit",

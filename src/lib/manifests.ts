@@ -197,10 +197,16 @@ export function parseSkillManifest(
 		manifestPath,
 		"description",
 	);
-	if (!description.startsWith("Use when")) {
+	if (/^(?:use|run|call)\b/i.test(description)) {
 		throw createManifestError(
 			manifestPath,
-			"description must begin with Use when",
+			"description must be a description of the skill itself, not an instruction starting with Use, Run, or Call",
+		);
+	}
+	if (/\busers?\b/i.test(description)) {
+		throw createManifestError(
+			manifestPath,
+			"description must not mention the user or users",
 		);
 	}
 

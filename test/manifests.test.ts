@@ -14,7 +14,7 @@ function createValidManifest(): Record<string, unknown> {
 	return {
 		name: "executable-planning",
 		title: "Executable Planning",
-		description: "Use when planning work requires deterministic checkpoints.",
+		description: "Creates deterministic planning checkpoints.",
 		output: ".agents/skills/executable-planning/SKILL.md",
 		selections: [
 			{
@@ -153,14 +153,31 @@ test("parseSkillManifest validates name, title, description prefix, and output p
 			parseSkillManifest(
 				{
 					...createValidManifest(),
-					description: "Used for planning.",
+					description: "Use when planning.",
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,
 			);
 		},
 		(error: unknown) => {
-			assert.match(String(error), /Use when/);
+			assert.match(String(error), /instruction/i);
+			return true;
+		},
+	);
+
+	assert.throws(
+		() => {
+			parseSkillManifest(
+				{
+					...createValidManifest(),
+					description: "Guides a user through planning.",
+				},
+				fixtureManifestPath,
+				fixtureRepoRoot,
+			);
+		},
+		(error: unknown) => {
+			assert.match(String(error), /user/i);
 			return true;
 		},
 	);

@@ -36,7 +36,7 @@ const executablePlanningCorePath = path.join(
 const EXECUTABLE_PLANNER_FRONTMATTER_BLOCK = [
 	"---",
 	"name: Executable Planner",
-	"description: Create and maintain an iterative, executable plan for IDE or autonomous harness use",
+	"description: Create and maintain an iterative executable plan for IDE or harness use",
 	"argument-hint: Describe the goal, constraints, and whether this is an auto-run or local docs plan",
 	'tools: ["search", "read", "edit", "agent", "todo"]',
 	'agents: ["*"]',
@@ -52,6 +52,8 @@ const EXECUTABLE_PLANNER_BODY = [
 	"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
 	"",
 	"Load every additional skill named by this agent before planning. If a required skill cannot be loaded, report that failure and stop rather than reconstructing its workflow from memory.",
+	"",
+	"This adapter's non-negotiable runtime guardrails apply even if skill loading fails: do not begin planning or execution without the required skill; do not claim repository state, uncommitted changes, validation success, or completion without fresh tool output; and call those facts unverified when the required check is unavailable. Never infer them from prior conversation context, file listings, or stale command output.",
 	"",
 	"Use the available read, search, question, persistence, and subagent tools to carry out the loaded skills. Keep harness-specific tool choices in this adapter; keep planning behavior in the skill.",
 	"",
@@ -84,7 +86,7 @@ async function createFixtureRepo(
 		options.skillFrontmatterName ?? "executable-planning";
 	const skillFrontmatter = {
 		name: skillFrontmatterName,
-		description: "Use when planning requires deterministic checkpoints.",
+		description: "Creates deterministic planning checkpoints.",
 		...(options.skillExtraFrontmatter ?? {}),
 	};
 	const skillFrontmatterYaml = Object.entries(skillFrontmatter)
@@ -154,7 +156,7 @@ async function createFixtureRepo(
 			{
 				name: "executable-planning",
 				title: "Executable Planning",
-				description: "Use when planning requires deterministic checkpoints.",
+				description: "Creates deterministic planning checkpoints.",
 				output: ".agents/skills/executable-planning/SKILL.md",
 				selections: [
 					{
@@ -233,6 +235,30 @@ async function createFixtureRepo(
 		),
 		"utf8",
 	);
+
+	const githooksDir = path.join(repoRoot, ".githooks");
+	await mkdir(githooksDir, { recursive: true });
+	await writeFile(
+		path.join(githooksDir, "pre-push"),
+		"#!/bin/sh\nnpm run check\n",
+		"utf8",
+	);
+
+	await writeFile(
+		path.join(repoRoot, "package.json"),
+		JSON.stringify(
+			{
+				name: "fixture",
+				scripts: {
+					prepare: "git config core.hooksPath .githooks",
+				},
+			},
+			null,
+			2,
+		),
+		"utf8",
+	);
+
 	if (options.planStatus !== undefined) {
 		const planDirectory = path.join(
 			repoRoot,
@@ -486,7 +512,7 @@ test("checkCustomizations validates each Copilot agent against only its declared
 			{
 				name: "reviewing",
 				title: "Reviewing",
-				description: "Use when reviewing requires focused feedback.",
+				description: "Provides focused review feedback.",
 				output: ".agents/skills/reviewing/SKILL.md",
 				selections: [
 					{ source: "core.md", owner: "core", headings: ["Review"] },
@@ -502,7 +528,7 @@ test("checkCustomizations validates each Copilot agent against only its declared
 	);
 	await writeFile(
 		path.join(reviewingSkillDir, "SKILL.md"),
-		"---\nname: reviewing\ndescription: Use when reviewing requires focused feedback.\n---\n# Reviewing\n\n## Review\nReview feedback.\n",
+		"---\nname: reviewing\ndescription: Provides focused review feedback.\n---\n# Reviewing\n\n## Review\nReview feedback.\n",
 		"utf8",
 	);
 	await writeFile(
@@ -640,6 +666,60 @@ test("checkCustomizations CLI exits nonzero with stable path-prefixed errors", a
 	}
 });
 
+test("checkCustomizations rejects missing or invalid pre-push hook or prepare script", async () => {
+	const repoRoot = await createFixtureRepo();
+
+	try {
+		await rm(path.join(repoRoot, ".githooks", "pre-push"));
+		await assert.rejects(
+			async () => {
+				await checkCustomizations(repoRoot);
+			},
+			(error: unknown) => {
+				assert.match(String(error), /\.githooks\/pre-push: file is missing/);
+				return true;
+			},
+		);
+
+		await writeFile(
+			path.join(repoRoot, ".githooks", "pre-push"),
+			"#!/bin/sh\necho hello\n",
+		);
+		await assert.rejects(
+			async () => {
+				await checkCustomizations(repoRoot);
+			},
+			(error: unknown) => {
+				assert.match(
+					String(error),
+					/\.githooks\/pre-push: missing required marker: npm run check/,
+				);
+				return true;
+			},
+		);
+
+		await writeFile(
+			path.join(repoRoot, ".githooks", "pre-push"),
+			"#!/bin/sh\nnpm run check\n",
+		);
+		await writeFile(path.join(repoRoot, "package.json"), "{}");
+		await assert.rejects(
+			async () => {
+				await checkCustomizations(repoRoot);
+			},
+			(error: unknown) => {
+				assert.match(
+					String(error),
+					/package\.json: prepare script must configure git core\.hooksPath \.githooks/,
+				);
+				return true;
+			},
+		);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
 test("executable planner agent is a thin adapter with byte-stable frontmatter", async () => {
 	const [agentContent, coreContent] = await Promise.all([
 		readFile(executablePlannerPath, "utf8"),
@@ -659,7 +739,7 @@ test("executable planner agent is a thin adapter with byte-stable frontmatter", 
 	assert.deepEqual(parsedAgent.attributes, {
 		name: "Executable Planner",
 		description:
-			"Create and maintain an iterative, executable plan for IDE or autonomous harness use",
+			"Create and maintain an iterative executable plan for IDE or harness use",
 		"argument-hint":
 			"Describe the goal, constraints, and whether this is an auto-run or local docs plan",
 		tools: ["search", "read", "edit", "agent", "todo"],
@@ -669,6 +749,16 @@ test("executable planner agent is a thin adapter with byte-stable frontmatter", 
 	});
 
 	assert.equal(parsedAgent.body, EXECUTABLE_PLANNER_BODY);
+
+	assert.match(
+		coreContent,
+		/fresh tool output as the sole evidence for claims about repository state, uncommitted changes, validation results, or completion/i,
+	);
+	assert.match(
+		parsedAgent.body,
+		/do not claim repository state, uncommitted changes, validation success, or completion without fresh tool output/i,
+	);
+	assert.match(parsedAgent.body, /call those facts unverified/i);
 
 	const coreHeadings = new Set(
 		listSections(coreContent)

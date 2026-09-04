@@ -210,6 +210,24 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 				absoluteRepoRoot,
 			);
 
+			if (parsed.description.length > 80) {
+				errors.push(
+					`${toRelativePath(absoluteRepoRoot, manifestPath)}: description length ${parsed.description.length} exceeds 80 characters`,
+				);
+			}
+
+			if (/^(?:use|run|call)\b/i.test(parsed.description)) {
+				errors.push(
+					`${toRelativePath(absoluteRepoRoot, manifestPath)}: description must be a description of the skill itself, not an instruction starting with Use, Run, or Call`,
+				);
+			}
+
+			if (/\busers?\b/i.test(parsed.description)) {
+				errors.push(
+					`${toRelativePath(absoluteRepoRoot, manifestPath)}: description must not mention user or users`,
+				);
+			}
+
 			const folderName = path.basename(path.dirname(manifestPath));
 			if (folderName !== parsed.name) {
 				errors.push(
@@ -288,6 +306,25 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 				);
 			}
 
+			const description = parsed.attributes.description;
+			if (typeof description === "string") {
+				if (description.length > 80) {
+					errors.push(
+						`${relativePath}: frontmatter description length ${description.length} exceeds 80 characters`,
+					);
+				}
+				if (/^(?:use|run|call)\b/i.test(description)) {
+					errors.push(
+						`${relativePath}: frontmatter description must be a description of the skill itself, not an instruction starting with Use, Run, or Call`,
+					);
+				}
+				if (/\busers?\b/i.test(description)) {
+					errors.push(
+						`${relativePath}: frontmatter description must not mention user or users`,
+					);
+				}
+			}
+
 			for (const key of Object.keys(parsed.attributes)) {
 				if (!ALLOWED_SKILL_FRONTMATTER_KEYS.has(key)) {
 					errors.push(
@@ -344,6 +381,26 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		try {
 			const content = await readFile(agentFile, "utf8");
 			const parsed = parseFrontmatter(content, relativePath);
+
+			const agentDescription = parsed.attributes.description;
+			if (typeof agentDescription === "string") {
+				if (agentDescription.length > 80) {
+					errors.push(
+						`${relativePath}: frontmatter description length ${agentDescription.length} exceeds 80 characters`,
+					);
+				}
+				if (/^(?:use|run|call)\b/i.test(agentDescription)) {
+					errors.push(
+						`${relativePath}: frontmatter description must be a description of the agent itself, not an instruction starting with Use, Run, or Call`,
+					);
+				}
+				if (/\busers?\b/i.test(agentDescription)) {
+					errors.push(
+						`${relativePath}: frontmatter description must not mention user or users`,
+					);
+				}
+			}
+
 			const declaredSkills = new Set<string>();
 			const declarationPattern =
 				/\*\*REQUIRED SKILL:\*\*\s+Use\s+([a-z0-9]+(?:-[a-z0-9]+)*)/g;
@@ -416,6 +473,52 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 					`${relativeReadmePath}: missing required client instruction marker: ${marker}`,
 				);
 			}
+		}
+	}
+
+	const prePushPath = path.join(absoluteRepoRoot, ".githooks", "pre-push");
+	const relativePrePushPath = toRelativePath(absoluteRepoRoot, prePushPath);
+	let prePushContent = "";
+	try {
+		prePushContent = await readFile(prePushPath, "utf8");
+	} catch {
+		errors.push(`${relativePrePushPath}: file is missing`);
+	}
+
+	if (prePushContent.length > 0 && !prePushContent.includes("npm run check")) {
+		errors.push(
+			`${relativePrePushPath}: missing required marker: npm run check`,
+		);
+	}
+
+	const packageJsonPath = path.join(absoluteRepoRoot, "package.json");
+	const relativePackageJsonPath = toRelativePath(
+		absoluteRepoRoot,
+		packageJsonPath,
+	);
+	let packageJsonContent = "";
+	try {
+		packageJsonContent = await readFile(packageJsonPath, "utf8");
+	} catch {
+		errors.push(`${relativePackageJsonPath}: file is missing`);
+	}
+
+	if (packageJsonContent.length > 0) {
+		try {
+			const parsedPackage = JSON.parse(packageJsonContent) as {
+				scripts?: Record<string, string>;
+			};
+			const prepareScript = parsedPackage.scripts?.prepare;
+			if (
+				typeof prepareScript !== "string" ||
+				!prepareScript.includes("git config core.hooksPath .githooks")
+			) {
+				errors.push(
+					`${relativePackageJsonPath}: prepare script must configure git core.hooksPath .githooks`,
+				);
+			}
+		} catch {
+			errors.push(`${relativePackageJsonPath}: invalid JSON`);
 		}
 	}
 

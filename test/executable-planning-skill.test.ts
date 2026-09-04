@@ -148,7 +148,7 @@ test("executable-planning skill composes required static contract", async () => 
 		REPO_ROOT,
 	);
 
-	assert.ok(manifest.description.startsWith("Use when"));
+	assert.ok(!/^(?:use|run|call)\b/i.test(manifest.description));
 
 	const ownershipEntries = new Map<string, string>();
 	for (const selection of manifest.selections) {
@@ -170,7 +170,9 @@ test("executable-planning skill composes required static contract", async () => 
 	const rendered = readFileSync(OUTPUT_PATH, "utf8");
 	const parsed = parseFrontmatter(rendered, OUTPUT_PATH);
 	assert.deepEqual(Object.keys(parsed.attributes), ["name", "description"]);
-	assert.ok(String(parsed.attributes.description ?? "").startsWith("Use when"));
+	assert.ok(
+		!/^(?:use|run|call)\b/i.test(String(parsed.attributes.description ?? "")),
+	);
 
 	const h2Order = listSections(rendered)
 		.filter((section) => section.level === 2)

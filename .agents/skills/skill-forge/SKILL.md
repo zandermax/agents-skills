@@ -1,8 +1,6 @@
 ---
 name: skill-forge
-description: Use when the user explicitly asks to author or overhaul an
-  agent skill for this repository, or asks how to turn a technique or
-  workflow into a skill file.
+description: Authors or overhauls an agent skill file for this repository.
 disable-model-invocation: true
 ---
 
@@ -109,11 +107,10 @@ them afterward:
   `disable-model-invocation: true` are allowed. Anything else (tool lists,
   target harness, model, handoffs) belongs on an agent definition, not a
   skill.
-- **Description is a trigger, not a summary**: write it in the third person,
-  starting with "Use when...", describing concrete triggering conditions —
-  never a summary of the skill's steps. A workflow summary in the
-  description can make an agent follow that shortcut instead of reading the
-  skill body.
+- **Description is a concise purpose statement, not an instruction**: write it
+  in the third person describing what the skill does (e.g., "Creates or
+  maintains..."), avoiding instructional phrasing like "Use when...". Keep it
+  concise (maximum 80 characters) and focused on purpose rather than internal steps.
 - **No harness-specific literal tool names or paths** in the body — describe
   what needs to happen (search the repository, run the project's checks) so
   the skill works across whichever harness loads it, not just the one you
@@ -172,8 +169,7 @@ The resulting frontmatter draft:
 ```yaml
 ---
 name: pr-summary-generator
-description: Use when the user asks to summarize a PR, describe staged or
-  committed changes for review, or draft a PR description before opening a
-  pull request.
+description: Summarizes a PR, describes changes for review, or drafts PR
+  descriptions.
 ---
 ```

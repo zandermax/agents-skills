@@ -17,6 +17,7 @@
 		"install:clients": "npm run install:artifacts --",
 		"lint": "biome check .",
 		"lint:markdown": "markdownlint-cli2",
+		"prepare": "git config core.hooksPath .githooks",
 		"test": "tsx --test test/*.test.ts",
 		"typecheck": "tsc --noEmit"
 	},

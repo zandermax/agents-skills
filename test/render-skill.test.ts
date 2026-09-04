@@ -10,7 +10,7 @@ function createManifest(): SkillManifest {
 	return {
 		name: "executable-planning",
 		title: "Executable Planning",
-		description: "Use when planning work requires deterministic checkpoints.",
+		description: "Creates deterministic planning checkpoints.",
 		output: ".agents/skills/executable-planning/SKILL.md",
 		selections: [
 			{
@@ -87,7 +87,7 @@ test("renderSkill composes deterministic output in manifest heading order", () =
 	const expected = [
 		"---",
 		"name: executable-planning",
-		"description: Use when planning work requires deterministic checkpoints.",
+		"description: Creates deterministic planning checkpoints.",
 		"---",
 		"# Executable Planning",
 		"",
@@ -121,7 +121,7 @@ test("renderSkill frontmatter contains only name and description", () => {
 	assert.deepEqual(Object.keys(parsed.attributes), ["name", "description"]);
 	assert.deepEqual(parsed.attributes, {
 		name: "executable-planning",
-		description: "Use when planning work requires deterministic checkpoints.",
+		description: "Creates deterministic planning checkpoints.",
 	});
 });
 
@@ -272,10 +272,10 @@ test("renderSkill rejects when forbidden phrase is present", () => {
 	);
 });
 
-test("renderSkill rejects descriptions longer than 1024 characters", () => {
+test("renderSkill rejects descriptions longer than 80 characters", () => {
 	const manifest: SkillManifest = {
 		...createManifest(),
-		description: `Use when ${"x".repeat(1017)}`,
+		description: `Creates ${"x".repeat(73)}`,
 	};
 
 	assert.throws(
@@ -284,7 +284,7 @@ test("renderSkill rejects descriptions longer than 1024 characters", () => {
 		},
 		(error: unknown) => {
 			assert.match(String(error), /description/i);
-			assert.match(String(error), /1024/);
+			assert.match(String(error), /80/);
 			return true;
 		},
 	);
