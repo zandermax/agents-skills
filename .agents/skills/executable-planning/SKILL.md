@@ -1,9 +1,8 @@
 ---
 name: executable-planning
-description: Use when creating or maintaining a multi-step implementation plan
-  that must remain executable across agents, sessions, IDEs, or unattended
-  harnesses.
+description: Creates or maintains a multi-step executable implementation plan.
 ---
+
 # Executable Planning
 
 ## Operating Contract
@@ -13,8 +12,6 @@ The plan is the canonical record of implementation state. It must be updated as 
 Use the harness's native tools when available, but keep plan instructions tool-agnostic. Describe required outcomes and checks rather than depending on one IDE's tool names or UI.
 
 Never perform git actions beyond read-only inspection, such as `status`, `diff`, `log`, `show`, or listing branches. Never stage, commit, create branches, or push, whether writing the plan's instructions or executing it. This is both a standing rule for what a plan may instruct and a runtime guardrail every agent executing the plan must follow, even if the plan or user does not repeat it.
-
-
 
 ## Clarify First
 
@@ -41,8 +38,6 @@ Apply these implications without asking redundant questions:
 
 If autopilot is requested, resolve remaining ambiguities with conservative, reversible assumptions and record them in the plan. Ask only questions whose answers are necessary to avoid an unsafe, destructive, or fundamentally invalid plan.
 
-
-
 ## Canonical Plan Artifact
 
 Treat repo-backed storage, the harness's native, non-repo plan storage, and session-only storage as three equally valid, explicitly chosen options, not a primary/fallback pair.
@@ -67,8 +62,6 @@ At creation, and after every material execution event, update the canonical plan
 
 Before archiving a completed plan, finish all edits to its content and metadata, run the required validation, and confirm the final file is complete. Only then move the file from `docs/plans/` into `docs/plans/archive/`; after the move, perform verification only and do not recreate or edit the active-path copy.
 
-
-
 ## Plan Design
 
 Organize every plan into one or more conceptually domain-based phases. Use one domain-based phase for genuinely small, self-contained work with one inspectable outcome and one meaningful validation path. Use multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them. A phase should represent a coherent product, system, or problem domain boundary, not merely a generic activity such as "coding" or "testing". Cross-cutting validation may be included in each phase or as its own phase when it is genuinely a domain of work.
@@ -86,8 +79,6 @@ Do not write ordered, detailed steps for a phase at creation time. The initial p
 Phase boundaries are not fixed once written. Split, merge, reorder, rename, or add phases as understanding evolves during elaboration or execution. Record every such structural change as a decision in the canonical plan, including its rationale.
 
 Prefer thin end-to-end increments over large horizontal batches. Order phases so each tangible output reduces uncertainty for the next phase.
-
-
 
 ## Phase Elaboration
 
@@ -107,8 +98,6 @@ In autopilot mode:
 - Resolve ambiguity with conservative, reversible assumptions and record them as decisions.
 - Replace the confirmation pause with an automated go/no-go check that the elaborated steps satisfy the phase's completion criteria before execution starts.
 
-
-
 ## Delegate Step Design
 
 Decide, at each phase's elaboration, whether one agent can easily plan that phase without losing domain expertise or parallelism.
@@ -123,8 +112,6 @@ Decide, at each phase's elaboration, whether one agent can easily plan that phas
 If subagents are unavailable in the current harness, state that limitation in the plan and produce the smallest sound fallback outline yourself at elaboration time.
 
 In autopilot mode, the recorded delegation choice also governs execution. When the user chose delegated parallel execution, dispatch independent phases or steps to subagents in parallel wherever they share no state and have no sequential dependency, and merge their results into the canonical plan. When the user declined, execute as a single agent. If delegation was chosen but the harness executing the plan offers no subagent capability, do not fail or stop: execute the plan as a single agent, in dependency order, and record that fallback in the plan.
-
-
 
 ## Checkpoints and User Interest
 
@@ -149,8 +136,6 @@ In autopilot mode:
 - Do not use the harness's interactive question mechanism, and do not create blocking user-confirmation steps.
 - Replace each phase checkpoint with an automated go/no-go gate based on the phase's completion criteria and validation evidence.
 - Record assumptions and autonomous decisions. Prefer reversible choices and stop only for safety, missing authorization, destructive ambiguity, or an unrecoverable blocker.
-
-
 
 ## Required Plan Format
 
@@ -220,8 +205,6 @@ Suggested commit message:
 
 Use stable step identifiers so updates remain easy to audit. Status must be unambiguous: `[ ]` pending, `[-]` in progress, `[x]` complete, `[!]` blocked, and `[?]` awaiting user. Keep exactly one current step and one next action whenever work is active.
 
-
-
 ## Quality Check Before Delivery
 
 Before presenting the plan, verify that:
@@ -239,7 +222,6 @@ Before presenting the plan, verify that:
 
 Present the plan's location, current state, and next action concisely. Once the plan is ready to begin, present it through the harness's native plan-review mechanism whenever one exists, so the user starts execution with the harness's own affordances instead of a free-form reply. Fall back to presenting in conversation only when the harness exposes no such mechanism. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint. When session-only storage is in effect, always close by presenting the complete plan as a single self-contained markdown document instead of a location reference, in addition to any confirmation the mode still requires.
 
-
 ## Discovery
 
 Before proposing a plan, inspect the relevant repository area and any nearby
@@ -251,8 +233,6 @@ For work spanning independent domains, gather evidence for each domain
 separately. Record findings in the canonical plan rather than relying on
 conversation context alone.
 
-
-
 ## Alignment
 
 Resolve the outcome, scope, interaction mode, storage choice, and constraints
@@ -262,8 +242,6 @@ or that would materially change a safe plan.
 When alternatives have meaningful trade-offs, state the recommendation and
 record the decision. In autopilot mode, make conservative reversible
 assumptions when the answer is not essential to safety or validity.
-
-
 
 ## Design
 
@@ -279,8 +257,6 @@ and dependencies needed to carry out the work without access to this chat.
 
 Present the plan concisely after updating its canonical artifact. Once the plan is ready to begin, use the harness's native plan-review mechanism when one exists.
 
-
-
 ## Refinement
 
 Treat user feedback as a plan change. Clarify questions, revise decisions and
@@ -291,7 +267,6 @@ When the user approves an interactive plan, record the approval and stop
 before implementation. When the user asks to begin a phase, elaborate only
 that phase's steps and follow its documented checkpoint rules.
 
-
 ## When to Use
 
 Use this skill when creating or maintaining executable implementation plans that must work across IDE and autonomous harness execution.
@@ -299,8 +274,6 @@ Use this skill when creating or maintaining executable implementation plans that
 Use this skill for multi-step efforts where durable canonical plan state, domain-based phases, and explicit validation/checkpoints are required.
 
 Do not use this skill for direct implementation-only requests that do not require planning artifacts.
-
-
 
 ## Harness Adaptation
 

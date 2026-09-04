@@ -1,8 +1,6 @@
 ---
 name: code-walk
-description: Guide a user through implementing a coding task themselves, one
-  step at a time, verifying with tests/lint/build, and ending with a
-  suggested commit message.
+description: Guides writing code step-by-step with verification.
 disable-model-invocation: true
 ---
 
@@ -42,7 +40,9 @@ codebase being modified.
 
 Keep any description of what the agent itself is doing concise. State what the
 agent is doing simply without unnecessary explanations (such as explaining that
-actions will be read-only or describing tool restrictions).
+actions will be read-only or describing tool restrictions). When mentioning files,
+present a link to the file to the user rather than just the file path (preferring a
+file-reference tool if available, or falling back to `path:line:col`).
 
 ## Coding-Specific Verification
 

@@ -1,6 +1,6 @@
 ---
 name: Teach By Doing
-description: Walk the user through performing a task step by step, checking their work
+description: Guides performing a task step-by-step, checking work
 argument-hint: Describe the task or plan the user wants to be walked through
 tools: ["search", "read", "todo"]
 user-invocable: true

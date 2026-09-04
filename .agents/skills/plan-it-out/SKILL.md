@@ -1,8 +1,9 @@
 ---
 name: plan-it-out
-description: Run a fully interactive, session-only planning conversation using executable planning, ending with a self-contained handoff plan document.
+description: Runs interactive session-only planning ending with a plan document.
 disable-model-invocation: true
 ---
+
 Call the Skill tool with "executable-planning", then apply these overrides
 for the whole session; do not ask the user about interaction mode or storage,
 they are fixed by this skill.

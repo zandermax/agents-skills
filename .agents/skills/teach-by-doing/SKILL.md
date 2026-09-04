@@ -1,8 +1,6 @@
 ---
 name: teach-by-doing
-description: Guide a user through performing a task themselves, one step at a
-  time, explaining what to do and checking their work without doing it for
-  them.
+description: Guides performing a task step-by-step without doing it.
 disable-model-invocation: true
 ---
 
@@ -52,6 +50,9 @@ broken down on the fly) one step at a time:
 - **Concise Agent Action Descriptions**: Make sure any description of what the
   agent itself is doing is concise. Do not include unnecessary meta-explanations
   such as explaining that actions will be read-only or describing tool restrictions.
+- **File References**: When mentioning files, present a link to the file to the user
+  rather than just the file path. If a file-reference tool is available, prefer
+  using it; otherwise fall back to `path:line:col`.
 
 ## Minimalism Rule
 
