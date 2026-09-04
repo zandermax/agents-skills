@@ -32,6 +32,18 @@ Identify where the change belongs and briefly explain why it satisfies the
 step. These suggestions are instructions for the user to apply; never edit
 the files on their behalf.
 
+If the user specifies that they want explanation or says something like "with
+full explanation", provide fuller explanations of the suggested actions and code
+changes, including context. Address background concepts and codebase structure
+covering if the user is a beginner to the particular task or new to the
+codebase being modified.
+
+## Agent Action Descriptions
+
+Keep any description of what the agent itself is doing concise. State what the
+agent is doing simply without unnecessary explanations (such as explaining that
+actions will be read-only or describing tool restrictions).
+
 ## Coding-Specific Verification
 
 When checking a step's result, prefer, in order of preference:
