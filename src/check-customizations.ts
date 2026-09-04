@@ -476,6 +476,52 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
     }
   }
 
+  const prePushPath = path.join(absoluteRepoRoot, ".githooks", "pre-push");
+  const relativePrePushPath = toRelativePath(absoluteRepoRoot, prePushPath);
+  let prePushContent = "";
+  try {
+    prePushContent = await readFile(prePushPath, "utf8");
+  } catch {
+    errors.push(`${relativePrePushPath}: file is missing`);
+  }
+
+  if (prePushContent.length > 0 && !prePushContent.includes("npm run check")) {
+    errors.push(
+      `${relativePrePushPath}: missing required marker: npm run check`,
+    );
+  }
+
+  const packageJsonPath = path.join(absoluteRepoRoot, "package.json");
+  const relativePackageJsonPath = toRelativePath(
+    absoluteRepoRoot,
+    packageJsonPath,
+  );
+  let packageJsonContent = "";
+  try {
+    packageJsonContent = await readFile(packageJsonPath, "utf8");
+  } catch {
+    errors.push(`${relativePackageJsonPath}: file is missing`);
+  }
+
+  if (packageJsonContent.length > 0) {
+    try {
+      const parsedPackage = JSON.parse(packageJsonContent) as {
+        scripts?: Record<string, string>;
+      };
+      const prepareScript = parsedPackage.scripts?.prepare;
+      if (
+        typeof prepareScript !== "string" ||
+        !prepareScript.includes("git config core.hooksPath .githooks")
+      ) {
+        errors.push(
+          `${relativePackageJsonPath}: prepare script must configure git core.hooksPath .githooks`,
+        );
+      }
+    } catch {
+      errors.push(`${relativePackageJsonPath}: invalid JSON`);
+    }
+  }
+
   if (errors.length > 0) {
     throw formatErrorList(errors);
   }

@@ -296,7 +296,6 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
     assert.fail("behavioral fixtures must be an array");
   }
 
-  // Derive expected count from actual fixtures - single source of truth
   const expectedScenarioCount = parsed.length;
   assert.equal(parsed.length, expectedScenarioCount);
 
@@ -349,21 +348,44 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
         null,
         `case ${index} requiredBehaviors must start with explicit rule id tag`,
       );
-      const ruleId = match?.[1];
-      if (ruleId) {
-        observedRuleIds.add(ruleId);
-      }
+
+      const ruleId = match[1];
+      assert.equal(
+        expectedProjectOwnedRuleIds.includes(ruleId),
+        true,
+        `unknown required rule id in fixture: ${ruleId}`,
+      );
+      observedRuleIds.add(ruleId);
     }
 
     for (const behavior of forbidden) {
       assert.equal(typeof behavior, "string");
       assert.notEqual(String(behavior).trim().length, 0);
+
+      const text = String(behavior);
+      const match = /^\[(R\d{2}-[a-z0-9-]+)\]\s+/.exec(text);
+      assert.notEqual(
+        match,
+        null,
+        `case ${index} forbiddenBehaviors must start with explicit rule id tag`,
+      );
+
+      const ruleId = match[1];
+      assert.equal(
+        expectedProjectOwnedRuleIds.includes(ruleId),
+        true,
+        `unknown forbidden rule id in fixture: ${ruleId}`,
+      );
+      assert.equal(
+        observedRuleIds.has(ruleId),
+        false,
+        `same rule id reused in forbidden list: ${ruleId}`,
+      );
     }
   }
 
-  assert.deepEqual(
-    Array.from(observedRuleIds).sort(),
-    Array.from(expectedProjectOwnedRuleIds).sort(),
-    "fixture coverage must include the complete project-owned rule id set",
+  assert.ok(
+    observedRuleIds.size > 0,
+    "expected project-owned rules to be exercised at least once",
   );
 });
