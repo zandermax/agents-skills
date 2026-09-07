@@ -9,48 +9,71 @@ const projectRoot = path.resolve(path.dirname(testFilePath), "..");
 const readmePath = path.join(projectRoot, "README.md");
 
 const REQUIRED_MARKERS = [
-	"# Agents Skills",
-	"npm install",
-	"npm run build",
-	"npm run check",
-	"npm run install:artifacts",
-	"npm run install:artifacts -- --list",
-	"--client",
-	"--skill",
-	"--agent",
-	"--skills-dir",
-	"--agents-dir",
-	"install-catalog.json",
-	"Adding Skills",
-	"Adding Agent Formats",
-	"custom destination",
-	"collision",
-	"stale symlink",
-	"repository is moved",
-	"Planning Skill Maintenance",
-	"sources/executable-planning/workflow.md",
+  "# Agents Skills",
+  "npm install",
+  "npm run build",
+  "npm run check",
+  "npm run install:artifacts",
+  "npm run install:artifacts -- --list",
+  "--client",
+  "--skill",
+  "--agent",
+  "--skills-dir",
+  "--agents-dir",
+  "install-catalog.json",
+  "Adding Skills",
+  "Adding Agent Formats",
+  "custom destination",
+  "collision",
+  "stale symlink",
+  "repository is moved",
+  "Planning Skill Maintenance",
+  "sources/executable-planning/workflow.md",
 ] as const;
 
 test("README documents catalog-driven artifact installation and maintenance", async () => {
-	const readme = await readFile(readmePath, "utf8");
-	for (const marker of REQUIRED_MARKERS) {
-		assert.match(
-			readme,
-			new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
-			`README is missing marker: ${marker}`,
-		);
-	}
-	assert.equal(
-		readme.includes(
-			"Source and destination mappings used by scripts/install-clients.ts",
-		),
-		false,
-	);
+  const readme = await readFile(readmePath, "utf8");
+  for (const marker of REQUIRED_MARKERS) {
+    assert.match(
+      readme,
+      new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
+      `README is missing marker: ${marker}`,
+    );
+  }
+  assert.equal(
+    readme.includes(
+      "Source and destination mappings used by scripts/install-clients.ts",
+    ),
+    false,
+  );
 });
 
 test("repository keeps active and archived plans beside specifications under docs", async () => {
-	await access(path.join(projectRoot, "docs", "plans"));
-	await access(path.join(projectRoot, "docs", "plans", "archive"));
-	await access(path.join(projectRoot, "docs", "specs"));
-	await assert.rejects(access(path.join(projectRoot, "plans")), /ENOENT/);
+  await access(path.join(projectRoot, "docs", "plans"));
+  await access(path.join(projectRoot, "docs", "plans", "archive"));
+  await access(path.join(projectRoot, "docs", "specs"));
+  await assert.rejects(access(path.join(projectRoot, "plans")), /ENOENT/);
+});
+
+test("completed skill-forge plan exists only in the archive", async () => {
+  await access(
+    path.join(
+      projectRoot,
+      "docs",
+      "plans",
+      "archive",
+      "2026-09-03-skill-forge-skill.md",
+    ),
+  );
+  await assert.rejects(
+    access(
+      path.join(
+        projectRoot,
+        "docs",
+        "plans",
+        "2026-09-03-skill-forge-skill.md",
+      ),
+    ),
+    /ENOENT/,
+  );
 });
