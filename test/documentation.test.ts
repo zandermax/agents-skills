@@ -54,3 +54,26 @@ test("repository keeps active and archived plans beside specifications under doc
 	await access(path.join(projectRoot, "docs", "specs"));
 	await assert.rejects(access(path.join(projectRoot, "plans")), /ENOENT/);
 });
+
+test("completed skill-forge plan exists only in the archive", async () => {
+	await access(
+		path.join(
+			projectRoot,
+			"docs",
+			"plans",
+			"archive",
+			"2026-09-03-skill-forge-skill.md",
+		),
+	);
+	await assert.rejects(
+		access(
+			path.join(
+				projectRoot,
+				"docs",
+				"plans",
+				"2026-09-03-skill-forge-skill.md",
+			),
+		),
+		/ENOENT/,
+	);
+});

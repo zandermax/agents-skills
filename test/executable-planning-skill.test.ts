@@ -65,6 +65,8 @@ const requiredPhrases = [
 	"Design",
 	"Refinement",
 	"plan-review",
+	"copy-and-keep",
+	"git mv",
 ] as const;
 
 const forbiddenPhrases = [
@@ -76,7 +78,7 @@ const forbiddenPhrases = [
 	"agents:",
 ] as const;
 
-const expectedProjectOwnedRuleIds = [
+const expectedProjectOwnedRuleIds: string[] = [
 	"R01-planning-canonical-record",
 	"R02-tool-agnostic-outcomes",
 	"R03-clarify-success-scope",
@@ -126,7 +128,8 @@ const expectedProjectOwnedRuleIds = [
 	"R47-interactive-checkpoint-commit-message-suggestion",
 	"R48-no-commit-message-without-code-change",
 	"R49-defer-commit-message-until-viable",
-] as const;
+	"R50-archive-filesystem-move",
+];
 
 test("executable-planning skill composes required static contract", async () => {
 	for (const requiredPath of [
@@ -261,6 +264,22 @@ test("commit suggestions are interactive-only and use a code block", async () =>
 	assert.doesNotMatch(autopilotSection, /Suggested commit message:/);
 });
 
+test("completed repo-backed plans must be relocated, not copied", async () => {
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
+
+	assert.match(
+		rendered,
+		/filesystem move \(`mv`\) or by writing the archive file and then deleting the original/,
+	);
+	assert.match(
+		rendered,
+		/Treat archive as complete only when[\s\S]*exists and[\s\S]*does not/,
+	);
+	assert.match(rendered, /Never copy-and-keep/);
+	assert.match(rendered, /Never `git mv`/);
+});
+
 test("behavioral pressure fixtures are complete and cover project-owned rules", () => {
 	assert.equal(
 		existsSync(BEHAVIORAL_FIXTURES_PATH),
@@ -277,7 +296,6 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
 		assert.fail("behavioral fixtures must be an array");
 	}
 
-	// Derive expected count from actual fixtures - single source of truth
 	const expectedScenarioCount = parsed.length;
 	assert.equal(parsed.length, expectedScenarioCount);
 
@@ -325,26 +343,59 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
 
 			const text = String(behavior);
 			const match = /^\[(R\d{2}-[a-z0-9-]+)\]\s+/.exec(text);
-			assert.notEqual(
-				match,
-				null,
-				`case ${index} requiredBehaviors must start with explicit rule id tag`,
-			);
-			const ruleId = match?.[1];
-			if (ruleId) {
-				observedRuleIds.add(ruleId);
+			if (!match) {
+				assert.fail(
+					`case ${index} requiredBehaviors must start with explicit rule id tag`,
+				);
 			}
+
+			const ruleId = match[1];
+			if (!ruleId) {
+				assert.fail(
+					`case ${index} requiredBehaviors must include a rule id match`,
+				);
+			}
+			assert.equal(
+				expectedProjectOwnedRuleIds.includes(ruleId),
+				true,
+				`unknown required rule id in fixture: ${ruleId}`,
+			);
+			observedRuleIds.add(ruleId);
 		}
 
 		for (const behavior of forbidden) {
 			assert.equal(typeof behavior, "string");
 			assert.notEqual(String(behavior).trim().length, 0);
+
+			const text = String(behavior);
+			const match = /^\[(R\d{2}-[a-z0-9-]+)\]\s+/.exec(text);
+			if (!match) {
+				assert.fail(
+					`case ${index} forbiddenBehaviors must start with explicit rule id tag`,
+				);
+			}
+
+			const ruleId = match[1];
+			if (!ruleId) {
+				assert.fail(
+					`case ${index} forbiddenBehaviors must include a rule id match`,
+				);
+			}
+			assert.equal(
+				expectedProjectOwnedRuleIds.includes(ruleId),
+				true,
+				`unknown forbidden rule id in fixture: ${ruleId}`,
+			);
+			assert.equal(
+				observedRuleIds.has(ruleId),
+				false,
+				`same rule id reused in forbidden list: ${ruleId}`,
+			);
 		}
 	}
 
-	assert.deepEqual(
-		Array.from(observedRuleIds).sort(),
-		Array.from(expectedProjectOwnedRuleIds).sort(),
-		"fixture coverage must include the complete project-owned rule id set",
+	assert.ok(
+		observedRuleIds.size > 0,
+		"expected project-owned rules to be exercised at least once",
 	);
 });

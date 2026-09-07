@@ -55,7 +55,7 @@ When session-only storage is selected or implied, for example by a planning-only
 
 At creation, and after every material execution event, update the canonical plan before proceeding. Material events include step completion, validation, changed scope, a new decision, a blocker, a failed assumption, user feedback, and deferral of an issue.
 
-Before archiving a completed plan, finish all edits to its content and metadata, run the required validation, and confirm the final file is complete. Only then move the file from `docs/plans/` into `docs/plans/archive/`; after the move, perform verification only and do not recreate or edit the active-path copy.
+Before archiving a completed or abandoned repo-backed plan, finish all edits to its content and metadata at `docs/plans/<descriptive-slug>.md`, including terminal status and `canonical_location`. Relocate that file to `docs/plans/archive/<descriptive-slug>.md` with a filesystem move (`mv`) or by writing the archive file and then deleting the original. Treat archive as complete only when `docs/plans/archive/<descriptive-slug>.md` exists and `docs/plans/<descriptive-slug>.md` does not. After relocate, verify only; do not recreate or edit the active-path file. Never copy-and-keep. Never `git mv`, stage, commit, or otherwise mutate the Git index.
 
 ## Plan Design
 

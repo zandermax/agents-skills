@@ -1,11 +1,11 @@
 ---
-status: in-progress
+status: completed
 mode: interactive
-canonical_location: docs/plans/2026-09-03-skill-forge-skill.md
-last_updated: 2026-09-03
+canonical_location: docs/plans/archive/2026-09-03-skill-forge-skill.md
+last_updated: 2026-09-04
 current_phase: none
 current_step: none
-next_action: none — awaiting user confirmation of Phase 3
+next_action: none
 blockers: none
 ---
 
@@ -13,10 +13,10 @@ blockers: none
 
 ## Plan Metadata
 
-- Status: in-progress
+- Status: completed
 - Mode: interactive
-- Canonical location: docs/plans/2026-09-03-skill-forge-skill.md
-- Last updated: 2026-09-03
+- Canonical location: docs/plans/archive/2026-09-03-skill-forge-skill.md
+- Last updated: 2026-09-04
 - Goal: Add a new hand-authored skill, `skill-forge`, to this repository that
   helps a user create new agent skills. It draws on this repo's existing
   skill-creation references (`writing-skills`, `skill-creator-egym`) for
@@ -77,10 +77,9 @@ blockers: none
 
 ## Current State
 
-- Current phase: none — Phase 3 complete
+- Current phase: none — plan closed
 - Current step: none
-- Next action: none — awaiting explicit user confirmation before
-  considering this plan closed
+- Next action: none
 - Blockers: none
 
 ## Decisions
@@ -457,9 +456,10 @@ chore(skills): rebuild executable-planning skill to include the new commit-messa
   skill guidance, tightened the frontmatter description, added the
   discovery-check mention, fixed Worked Example formatting, and trimmed
   Repository Authoring Constraints prose. Fixed an incidental MD012
-  markdownlint issue in this plan file. `npm run install:artifacts --
---list` and `npm run check` both pass cleanly. Phase 2 complete; plan
-  status set to completed pending user confirmation.- 2026-09-03: User flagged that Phase 1 and Phase 2 both suggested the
+  markdownlint issue in this plan file. `npm run install:artifacts -- --list`
+  and `npm run check` both pass cleanly. Phase 2 complete; plan status set
+  to completed pending user confirmation.
+- 2026-09-03: User flagged that Phase 1 and Phase 2 both suggested the
   identical commit message and asked why. Root cause traced to
   `Checkpoints and User Interest` never requiring the message to be
   derived from the actual uncommitted diff. User committed Phase 2's work
@@ -474,3 +474,6 @@ chore(skills): rebuild executable-planning skill to include the new commit-messa
 check` clean (139 tests, markdownlint, typecheck, `check:customizations`,
   `check:drift`). Phase 3 complete; plan status set to completed pending
   user confirmation.
+- 2026-09-04: User confirmed Phase 3 / asked to do the next step. Plan
+  marked completed and archived to
+  `docs/plans/archive/2026-09-03-skill-forge-skill.md`.

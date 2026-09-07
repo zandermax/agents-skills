@@ -61,7 +61,9 @@
 		"Alignment",
 		"Design",
 		"Refinement",
-		"plan-review"
+		"plan-review",
+		"copy-and-keep",
+		"git mv"
 	],
 	"forbiddenPhrases": [
 		"#tool:vscode",

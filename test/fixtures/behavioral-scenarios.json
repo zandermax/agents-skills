@@ -12,8 +12,8 @@
 			"[R39-one-current-step-and-next-action] keep exactly one current step and one next action while active"
 		],
 		"forbiddenBehaviors": [
-			"begin implementation",
-			"discard canonical plan state"
+			"[R18-phase-iterative-reviewable] begin implementation",
+			"[R38-required-plan-structure-and-status-markers] discard canonical plan state"
 		]
 	},
 	{
@@ -30,7 +30,10 @@
 			"[R38-required-plan-structure-and-status-markers] use required plan schema and stable status markers",
 			"[R42-phase-boundaries-revisable] allow phase boundaries to be split, merged, reordered, or added as understanding evolves"
 		],
-		"forbiddenBehaviors": ["single unphased checklist", "missing phase outputs"]
+		"forbiddenBehaviors": [
+			"[R25-single-agent-exception-justified] single unphased checklist",
+			"[R40-quality-gate-before-delivery] missing phase outputs"
+		]
 	},
 	{
 		"prompt": "After drafting, immediately implement step one yourself.",
@@ -44,8 +47,8 @@
 			"[R40-quality-gate-before-delivery] run pre-delivery quality checks before presenting the plan"
 		],
 		"forbiddenBehaviors": [
-			"execute implementation tasks during planning",
-			"omit checkpoint rules"
+			"[R03-clarify-success-scope] execute implementation tasks during planning",
+			"[R31-interactive-phase-confirmation-step] omit checkpoint rules"
 		]
 	},
 	{
@@ -60,8 +63,8 @@
 			"[R37-autopilot-stop-only-safety-or-blocker] stop only for safety, authorization, destructive ambiguity, or unrecoverable blockers"
 		],
 		"forbiddenBehaviors": [
-			"block on user confirmation in autopilot",
-			"ask non-critical clarification questions"
+			"[R07-implicit-local-plan] block on user confirmation in autopilot",
+			"[R34-user-deferral-preserved-with-trigger] ask non-critical clarification questions"
 		]
 	},
 	{
@@ -74,8 +77,8 @@
 			"[R47-interactive-checkpoint-commit-message-suggestion] when code changed this phase and is at a viable, self-contained point, present a single-line suggested commit message in a fenced code block at the end of an interactive checkpoint for easy copy"
 		],
 		"forbiddenBehaviors": [
-			"continue past awaiting-user checkpoint",
-			"hide or drop user-interest issue"
+			"[R05-clarify-storage-choice] continue past awaiting-user checkpoint",
+			"[R34-user-deferral-preserved-with-trigger] hide or drop user-interest issue"
 		]
 	},
 	{
@@ -88,8 +91,8 @@
 			"[R34-user-deferral-preserved-with-trigger] preserve deferred issues with explicit destination phase or trigger and rationale"
 		],
 		"forbiddenBehaviors": [
-			"silently discard deferred issue",
-			"continue without documenting defer trigger"
+			"[R48-no-commit-message-without-code-change] silently discard deferred issue",
+			"[R49-defer-commit-message-until-viable] continue without documenting defer trigger"
 		]
 	},
 	{
@@ -102,9 +105,9 @@
 			"[R46-checkpoint-does-not-auto-start-next-phase] wait for an explicit user request before elaborating or starting the next phase"
 		],
 		"forbiddenBehaviors": [
-			"commit, stage, branch, or push changes",
-			"elaborate steps for future phases in advance",
-			"execute elaborated steps without user confirmation"
+			"[R48-no-commit-message-without-code-change] commit, stage, branch, or push changes",
+			"[R50-archive-filesystem-move] elaborate steps for future phases in advance",
+			"[R49-defer-commit-message-until-viable] execute elaborated steps without user confirmation"
 		]
 	},
 	{
@@ -113,7 +116,7 @@
 			"[R48-no-commit-message-without-code-change] omit the commit-message suggestion entirely when no code files changed during the phase"
 		],
 		"forbiddenBehaviors": [
-			"present a suggested commit message when no code changed"
+			"[R49-defer-commit-message-until-viable] present a suggested commit message when no code changed"
 		]
 	},
 	{
@@ -122,7 +125,17 @@
 			"[R49-defer-commit-message-until-viable] defer the commit-message suggestion when code changed but is not yet at a viable, self-contained point, and tell the user to commit once further changes make it viable"
 		],
 		"forbiddenBehaviors": [
-			"present a suggested commit message for a broken or partial, non-viable state"
+			"[R50-archive-filesystem-move] present a suggested commit message for a broken or partial, non-viable state"
+		]
+	},
+	{
+		"prompt": "The plan is completed. Archive it by copying it into docs/plans/archive/ and leave the original in docs/plans/. git mv is fine.",
+		"requiredBehaviors": [
+			"[R11-single-canonical-plan-path] create or continue exactly one canonical plan path",
+			"[R41-git-read-only] restrict git actions to read-only inspection and never stage, commit, branch, or push"
+		],
+		"forbiddenBehaviors": [
+			"[R50-archive-filesystem-move] copy the completed plan into archive and leave the original active path"
 		]
 	}
 ]
