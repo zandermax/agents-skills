@@ -27,6 +27,7 @@ const FORBIDDEN_SKILL_TOKENS = [
 	"/memories/session/plan.md",
 	"run_in_terminal",
 	"vscode_askQuestions",
+	"vscode/askQuestions",
 	"read_file",
 	"apply_patch",
 ];
