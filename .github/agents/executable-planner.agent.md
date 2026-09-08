@@ -2,7 +2,7 @@
 name: Executable Planner
 description: Create and maintain an iterative executable plan for IDE or harness use
 argument-hint: Describe the goal, constraints, and whether this is an auto-run or local docs plan
-tools: ["search", "read", "edit", "agent", "todo"]
+tools: ["search", "read", "edit", "agent", "todo", "vscode/askQuestions"]
 agents: ["*"]
 user-invocable: true
 disable-model-invocation: false
