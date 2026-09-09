@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readdir, readFile, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -45,18 +46,29 @@ async function discoverMemoryTopics(
 	}
 }
 
-test("memory directory resolution and topic discovery", async () => {
+const memoryDirIsExplicit = (process.env.MEMORY_DIR ?? "").trim().length > 0;
+
+// The personal memory store lives outside the repo, so CI runners have none.
+const skipWithoutMemoryStore =
+	memoryDirIsExplicit || existsSync(resolveMemoryDir())
+		? false
+		: "no memory store present; set MEMORY_DIR to enforce these gates";
+
+test("memory directory resolution and topic discovery", {
+	skip: skipWithoutMemoryStore,
+}, async () => {
 	const memoryDir = resolveMemoryDir();
 	const topics = await discoverMemoryTopics(memoryDir);
 
-	// In this environment, memory topics must exist and be discovered
 	assert.ok(
 		topics.length > 0,
 		`Expected at least one memory topic in ${memoryDir}, but found none`,
 	);
 });
 
-test("every memory topic has a dedicated test directory with at least one test file (1:1 gate)", async () => {
+test("every memory topic has a dedicated test directory with at least one test file (1:1 gate)", {
+	skip: skipWithoutMemoryStore,
+}, async () => {
 	const memoryDir = resolveMemoryDir();
 	const topics = await discoverMemoryTopics(memoryDir);
 
@@ -97,7 +109,9 @@ test("every memory topic has a dedicated test directory with at least one test f
 	);
 });
 
-test("every memory topic has valid SKILL.md structure and trigger frontmatter", async () => {
+test("every memory topic has valid SKILL.md structure and trigger frontmatter", {
+	skip: skipWithoutMemoryStore,
+}, async () => {
 	const memoryDir = resolveMemoryDir();
 	const topics = await discoverMemoryTopics(memoryDir);
 
@@ -146,7 +160,9 @@ test("every memory topic has valid SKILL.md structure and trigger frontmatter", 
 	}
 });
 
-test("behavioral evals: execute per-skill tests in all memory topics", async () => {
+test("behavioral evals: execute per-skill tests in all memory topics", {
+	skip: skipWithoutMemoryStore,
+}, async () => {
 	const memoryDir = resolveMemoryDir();
 	const topics = await discoverMemoryTopics(memoryDir);
 
