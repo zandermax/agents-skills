@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ScenarioResult, SupportedCli } from "../src/lib/agent-evals.js";
@@ -38,13 +39,22 @@ async function runScenarios(
 
 	const results: ScenarioResult[] = [];
 	for (const scenario of scenarios) {
-		const invocation = buildCliInvocation(cli, scenario.prompt);
-		const spawned = spawnSync(invocation.command, invocation.args, {
-			cwd: targetDir,
-			encoding: "utf8",
-		});
-		const transcript = parseCliTranscript(spawned.stdout ?? "");
-		results.push(evaluateScenario(scenario, transcript));
+		// Run in a throwaway sandbox, not targetDir itself: the CLI has file
+		// tools enabled and must not write into the real memory/skill folder.
+		const sandboxDir = await mkdtemp(
+			path.join(os.tmpdir(), "agent-evals-sandbox-"),
+		);
+		try {
+			const invocation = buildCliInvocation(cli, scenario.prompt);
+			const spawned = spawnSync(invocation.command, invocation.args, {
+				cwd: sandboxDir,
+				encoding: "utf8",
+			});
+			const transcript = parseCliTranscript(spawned.stdout ?? "");
+			results.push(evaluateScenario(scenario, transcript));
+		} finally {
+			await rm(sandboxDir, { recursive: true, force: true });
+		}
 	}
 	return results;
 }

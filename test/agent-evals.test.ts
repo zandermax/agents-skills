@@ -129,27 +129,99 @@ test("evaluateScenario passes when both gates pass", () => {
 	assert.equal(result.gate2.pass, true);
 });
 
-test("parseCliTranscript extracts file access and response text from a JSONL event stream (copilot-like)", () => {
+test("parseCliTranscript extracts skill access and final message text from a real Copilot CLI transcript shape", () => {
 	const raw = [
 		JSON.stringify({
-			type: "tool_call",
-			tool: "read_file",
-			input: { filePath: "/home/user/.memory/node-testing-notes/SKILL.md" },
+			type: "tool.execution_start",
+			data: {
+				toolCallId: "toolu_1",
+				toolName: "skill",
+				arguments: { skill: "node-testing-notes" },
+			},
 		}),
 		JSON.stringify({
-			type: "result",
-			result: "Prefer node:assert/strict over mock call inspection.",
+			type: "tool.execution_start",
+			data: {
+				toolCallId: "toolu_2",
+				toolName: "view",
+				arguments: { path: "/home/user/.memory/node-testing-notes/SKILL.md" },
+			},
 		}),
+		JSON.stringify({
+			type: "assistant.message",
+			data: {
+				messageId: "m1",
+				content:
+					"Per your node-testing-notes preference, avoid inspecting mock.calls directly (e.g. toHaveBeenCalledWith). Instead:\n\n```js\nconst assert = require('node:assert/strict');\nassert.strictEqual(receivedUsername, 'admin');\n```\n",
+				toolRequests: [],
+			},
+		}),
+		JSON.stringify({ type: "result", exitCode: 0 }),
 	].join("\n");
 
 	const transcript = parseCliTranscript(raw);
 
+	assert.ok(transcript.filesAccessed.includes("node-testing-notes"));
 	assert.ok(
 		transcript.filesAccessed.some((filePath) =>
 			filePath.includes("node-testing-notes/SKILL.md"),
 		),
 	);
 	assert.match(transcript.responseText, /node:assert\/strict/);
+});
+
+test("evaluateGate2 matches against fenced code blocks, ignoring forbidden patterns quoted only in explanatory prose", () => {
+	const transcript: Parameters<typeof evaluateGate2>[0] = {
+		filesAccessed: ["node-testing-notes"],
+		responseText:
+			"Per your node-testing-notes preference, I avoided inspecting mock.calls directly (e.g. toHaveBeenCalledWith) and instead:\n\n```js\nconst assert = require('node:assert/strict');\nassert.strictEqual(receivedUsername, 'admin');\n```\n",
+	};
+
+	const result = evaluateGate2(transcript, {
+		name: "refuse-mock-call-inspection",
+		prompt: "prompt",
+		expectedMemoryOrSkill: "node-testing-notes",
+		requiredOutput: ["node:assert"],
+		forbiddenOutput: ["toHaveBeenCalledWith", "/mock\\.calls/"],
+	});
+
+	assert.equal(result.pass, true);
+});
+
+test("evaluateGate2 ignores forbidden patterns documented only in a code comment", () => {
+	const transcript: Parameters<typeof evaluateGate2>[0] = {
+		filesAccessed: ["node-testing-notes"],
+		responseText:
+			"```js\nconst assert = require('node:assert/strict');\n// avoid mock.calls inspection here\nassert.strictEqual(receivedUsername, 'admin');\n```\n",
+	};
+
+	const result = evaluateGate2(transcript, {
+		name: "refuse-mock-call-inspection",
+		prompt: "prompt",
+		expectedMemoryOrSkill: "node-testing-notes",
+		requiredOutput: ["node:assert"],
+		forbiddenOutput: ["/mock\\.calls/"],
+	});
+
+	assert.equal(result.pass, true);
+});
+
+test("evaluateGate2 still fails when a forbidden pattern appears in actual code, not just a comment", () => {
+	const transcript: Parameters<typeof evaluateGate2>[0] = {
+		filesAccessed: ["node-testing-notes"],
+		responseText:
+			"```js\nexpect(authService.login).toHaveBeenCalledWith('admin');\n```\n",
+	};
+
+	const result = evaluateGate2(transcript, {
+		name: "refuse-mock-call-inspection",
+		prompt: "prompt",
+		expectedMemoryOrSkill: "node-testing-notes",
+		requiredOutput: [],
+		forbiddenOutput: ["toHaveBeenCalledWith"],
+	});
+
+	assert.equal(result.pass, false);
 });
 
 test("parseCliTranscript extracts file access and response text from a single JSON result object (claude-like)", () => {

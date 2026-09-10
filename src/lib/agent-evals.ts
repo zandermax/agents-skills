@@ -166,15 +166,44 @@ export function evaluateGate1(
 	};
 }
 
+/** Fenced code blocks, e.g. ```js\n...\n```; without the fence markers. */
+function extractCodeBlocks(text: string): readonly string[] {
+	const blocks: string[] = [];
+	for (const match of text.matchAll(/```[^\n]*\n([\s\S]*?)```/g)) {
+		if (match[1] !== undefined) {
+			blocks.push(match[1]);
+		}
+	}
+	return blocks;
+}
+
+/**
+ * Prefer matching against fenced code blocks so prose that quotes a forbidden
+ * pattern only to explain it was avoided doesn't trigger a false failure.
+ */
+function textForBehavioralMatching(transcript: EvalTranscript): string {
+	const codeBlocks = extractCodeBlocks(transcript.responseText);
+	return codeBlocks.length > 0
+		? codeBlocks.join("\n")
+		: transcript.responseText;
+}
+
+/** Strips // and /* *\/ comments so forbidden-pattern checks ignore anti-pattern documentation left in comments. */
+function stripCodeComments(code: string): string {
+	return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+}
+
 export function evaluateGate2(
 	transcript: EvalTranscript,
 	scenario: EvalScenario,
 ): GateResult {
+	const textToMatch = textForBehavioralMatching(transcript);
+	const forbiddenCheckText = stripCodeComments(textToMatch);
 	const missingRequired = scenario.requiredOutput.filter(
-		(pattern) => !matchesPattern(transcript.responseText, pattern),
+		(pattern) => !matchesPattern(textToMatch, pattern),
 	);
 	const presentForbidden = scenario.forbiddenOutput.filter((pattern) =>
-		matchesPattern(transcript.responseText, pattern),
+		matchesPattern(forbiddenCheckText, pattern),
 	);
 
 	const pass = missingRequired.length === 0 && presentForbidden.length === 0;
@@ -270,24 +299,57 @@ function extractJsonEvents(rawOutput: string): readonly unknown[] {
 	return events;
 }
 
-const FILE_PATH_PATTERN = /"[^"]*\.(?:md|ts|js|tsx|jsx|json)"/g;
+const FILE_ARGUMENT_KEYS = ["path", "filePath", "file_path"] as const;
 
+/**
+ * Extracts memory/skill access from tool-invocation events nested under an
+ * event's `data` field. Covers Copilot's `skill` tool (names the memory
+ * directly, no file path) and its `view` tool (a `path` argument), verified
+ * against a real captured transcript (2026-09-10, see plan Phase 2).
+ */
 function extractFilesAccessed(events: readonly unknown[]): readonly string[] {
 	const found = new Set<string>();
 	for (const event of events) {
-		const serialized = JSON.stringify(event);
-		if (serialized === undefined) {
+		if (typeof event !== "object" || event === null) {
 			continue;
 		}
-		for (const match of serialized.matchAll(FILE_PATH_PATTERN)) {
-			found.add(match[0].slice(1, -1));
+		const data = (event as Record<string, unknown>).data;
+		if (typeof data !== "object" || data === null) {
+			continue;
+		}
+		const dataRecord = data as Record<string, unknown>;
+
+		if (dataRecord.toolName === "skill") {
+			const args = dataRecord.arguments;
+			if (typeof args === "object" && args !== null) {
+				const skillName = (args as Record<string, unknown>).skill;
+				if (typeof skillName === "string") {
+					found.add(skillName);
+				}
+			}
+		}
+
+		const args = dataRecord.arguments ?? dataRecord.input;
+		if (typeof args === "object" && args !== null) {
+			const argsRecord = args as Record<string, unknown>;
+			for (const key of FILE_ARGUMENT_KEYS) {
+				const value = argsRecord[key];
+				if (typeof value === "string") {
+					found.add(value);
+				}
+			}
 		}
 	}
 	return Array.from(found);
 }
 
-const TEXT_FIELDS = ["result", "text", "message"] as const;
-
+/**
+ * Extracts the final response text. Handles Copilot's JSONL
+ * `assistant.message` events (`data.content` is a plain string) and Claude's
+ * `--output-format json` single-result object (top-level `result` string).
+ * The nested content-block scan is best-effort for Claude's stream-json mode
+ * and not yet verified against a real transcript.
+ */
 function extractResponseText(events: readonly unknown[]): string {
 	let combined = "";
 	for (const event of events) {
@@ -296,14 +358,25 @@ function extractResponseText(events: readonly unknown[]): string {
 		}
 		const record = event as Record<string, unknown>;
 
-		for (const field of TEXT_FIELDS) {
-			const value = record[field];
-			if (typeof value === "string" && value.length > 0) {
-				combined += `${value}\n`;
-			}
+		if (typeof record.result === "string" && record.result.length > 0) {
+			combined += `${record.result}\n`;
 		}
 
-		const content = record.content;
+		const data = record.data;
+		if (typeof data !== "object" || data === null) {
+			continue;
+		}
+		const dataRecord = data as Record<string, unknown>;
+
+		if (
+			record.type === "assistant.message" &&
+			typeof dataRecord.content === "string" &&
+			dataRecord.content.length > 0
+		) {
+			combined += `${dataRecord.content}\n`;
+		}
+
+		const content = dataRecord.content;
 		if (Array.isArray(content)) {
 			for (const block of content) {
 				if (typeof block !== "object" || block === null) {
@@ -323,9 +396,10 @@ function extractResponseText(events: readonly unknown[]): string {
 }
 
 /**
- * Best-effort, schema-tolerant transcript parser covering both a single JSON
- * result object and JSONL event streams. See docs/plans/2026-09-09-agent-behavioral-testing-paradigm.md
- * Phase 2 for validation against real CLI output and any needed refinement.
+ * Schema-tolerant transcript parser covering a single JSON result object and
+ * JSONL event streams. Validated against a real Copilot CLI transcript in
+ * docs/plans/2026-09-09-agent-behavioral-testing-paradigm.md Phase 2; Claude
+ * support remains best-effort pending a real captured transcript.
  */
 export function parseCliTranscript(rawOutput: string): EvalTranscript {
 	const events = extractJsonEvents(rawOutput);
