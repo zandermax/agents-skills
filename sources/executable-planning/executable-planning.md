@@ -1,11 +1,3 @@
----
-name: executable-planning
-description: Use when creating or maintaining a multi-step implementation plan
-  that must remain executable across agents, sessions, IDEs, or unattended
-  harnesses.
----
-# Executable Planning
-
 ## Invariants
 
 These hold in every mode and override anything below.
@@ -15,8 +7,6 @@ These hold in every mode and override anything below.
 - **Read before asking.** Never ask the user what the repository, its docs, or an existing plan can answer.
 - **Tool-agnostic plans.** Plans describe outcomes and checks, not IDE tool names or UI, so they run in any harness.
 
-
-
 ## Harness Mechanisms
 
 This skill names four abstract mechanisms; the invoking agent maps them to concrete tools.
@@ -25,8 +15,6 @@ This skill names four abstract mechanisms; the invoking agent maps them to concr
 - **Plan-review mechanism**: the harness's tool for reviewing a finished plan and starting execution. Use it whenever the plan, or a newly elaborated phase, is ready to begin. Without one, present in conversation; interactive mode then waits for an explicit start request, and autopilot begins.
 - **Subagent mechanism**: used for read-only discovery and, when the plan allows, parallel execution (see Delegation). If unavailable, record the limitation and proceed as a single agent.
 - **Persistence**: whatever writes the canonical plan (see step 3). Edit the changed sections; don't regenerate the whole plan.
-
-
 
 ## Workflow
 
@@ -120,8 +108,6 @@ These rules bind whoever executes, and the plan's Execution Protocol restates th
 
 When the last phase passes its gate, run final validation, finish every content and metadata edit, set Status to completed, and confirm the file is complete. For repo-backed plans, then move it to `docs/plans/archive/`; after the move, only verify, and never recreate or edit the active-path copy.
 
-
-
 ## Delegation
 
 Record one of two settings in the plan metadata:
@@ -132,8 +118,6 @@ Record one of two settings in the plan metadata:
 Choose from the work's structure, record the rationale, and let the user override at review. If the executing harness has no subagents, run as a single agent in dependency order and log the fallback; never fail for lack of them. In every case, keep writes to shared files single-threaded: parallelism is safest for reading, research, and independent components with clean interfaces.
 
 Discovery fan-out during planning (step 1) is separate from this setting and available in both modes.
-
-
 
 ## Plan Template
 
@@ -225,8 +209,6 @@ _Not yet elaborated. Populate immediately before this phase starts._
 ````
 
 Step identifiers stay stable so updates are easy to audit. Whenever work is active there is exactly one Next action; during parallel execution, Current step names the active group.
-
-
 
 ## Before Presenting
 
