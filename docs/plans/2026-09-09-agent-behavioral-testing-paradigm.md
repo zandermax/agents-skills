@@ -4,9 +4,9 @@ mode: autopilot
 canonical_location: docs/plans/2026-09-09-agent-behavioral-testing-paradigm.md
 last_updated: 2026-09-09
 current_phase: "Phase 1: Eval Framework Design & Infrastructure"
-current_step: not started
-next_action: "Design and implement the eval runner (discovery, CLI invocation, matcher assertions) plus its own fixture-based unit tests"
-blockers: none
+current_step: "Validate: run npm test / npm run check (blocked — no terminal tool available this turn)"
+next_action: "Run npm run check in agents-skills to confirm Phase 1's go/no-go gate before starting Phase 2"
+blockers: "No terminal-execution tool is available in this turn; static diagnostics (get_errors) are clean, but npm test/check have not actually been executed, so the Phase 1 gate is unverified"
 ---
 
 # Agent Behavioral Testing Paradigm (Starting with Memory)
@@ -33,9 +33,9 @@ blockers: none
 ## Current State
 
 - Current phase: Phase 1: Eval Framework Design & Infrastructure
-- Current step: not started
-- Next action: Design and implement the eval runner (discovery, CLI invocation, matcher assertions) plus its own fixture-based unit tests
-- Blockers: none
+- Current step: Validate: run `npm test`/`npm run check` (blocked — no terminal tool available this turn)
+- Next action: Run `npm run check` in `agents-skills` to confirm Phase 1's go/no-go gate before starting Phase 2
+- Blockers: No terminal-execution tool is available in this turn; static diagnostics (`get_errors`) are clean for all new files, but the test/check commands have not actually been executed, so the Phase 1 checkpoint is unverified
 
 ## Decisions
 
@@ -157,3 +157,4 @@ Autopilot go/no-go: this is the final phase. Mark the plan `completed` only once
 ## Progress Log
 
 - 2026-09-09: Plan created in autopilot mode, repo-backed storage, single-agent delegation. Not yet started.
+- 2026-09-09: Implemented Phase 1 tangible output: `src/lib/agent-evals.ts` (scenario parsing, pattern matching, gate1/gate2 evaluation, CLI detection/invocation, schema-tolerant transcript parsing), `scripts/run-agent-evals.ts` (CLI entry point), `test/agent-evals.test.ts` (fixture-based unit tests covering pass, gate1 failure, gate2 failure — both missing-required and present-forbidden — two transcript shapes, and the no-CLI-available skip path), and the `eval:memory` npm script. `get_errors` reports no static diagnostics on the new files. Unverified: `npm test`/`npm run check` have not been executed because no terminal-execution tool was available in this turn — this is the outstanding item before the Phase 1 checkpoint can be marked passed.
