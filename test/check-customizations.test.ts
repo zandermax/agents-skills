@@ -30,16 +30,22 @@ const executablePlanningCorePath = path.join(
 	projectRoot,
 	"sources",
 	"executable-planning",
-	"core.md",
+	"executable-planning.md",
+);
+const planScoutPath = path.join(
+	projectRoot,
+	".github",
+	"agents",
+	"plan-scout.agent.md",
 );
 
 const EXECUTABLE_PLANNER_FRONTMATTER_BLOCK = [
 	"---",
 	"name: Executable Planner",
 	"description: Create and maintain an iterative executable plan for IDE or harness use",
-	"argument-hint: Describe the goal, constraints, and whether this is an auto-run or local docs plan",
-	'tools: ["search", "read", "edit", "agent", "todo", "vscode/askQuestions"]',
-	'agents: ["*"]',
+	'argument-hint: Goal and constraints; add "autopilot" for unattended runs and a storage choice (local/repo, native, or session-only)',
+	'tools: ["search", "read", "edit", "agent", "todo"]',
+	'agents: ["Plan Scout"]',
 	"user-invocable: true",
 	"disable-model-invocation: false",
 	"---",
@@ -47,19 +53,19 @@ const EXECUTABLE_PLANNER_FRONTMATTER_BLOCK = [
 ].join("\n");
 const EXECUTABLE_PLANNER_BODY = [
 	"",
-	"You create implementation plans under `docs/plans/` for IDE and autonomous harness execution. Planning is your sole responsibility; do not implement project work.",
+	"You are a planner. You create and maintain executable plans; you never implement project work.",
 	"",
-	"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+	"**Required skill:** load `executable-planning` before doing anything else, along with any other skill this agent names. If a required skill can't be loaded, report the failure and stop rather than reconstructing it from memory.",
 	"",
-	"Load every additional skill named by this agent before planning. If a required skill cannot be loaded, report that failure and stop rather than reconstructing its workflow from memory.",
+	"The skill describes behavior through abstract mechanisms. In this harness they map to:",
 	"",
-	"This adapter's non-negotiable runtime guardrails apply even if skill loading fails: do not begin planning or execution without the required skill; do not claim repository state, uncommitted changes, validation success, or completion without fresh tool output; and call those facts unverified when the required check is unavailable. Never infer them from prior conversation context, file listings, or stale command output.",
+	"- **Question mechanism**: `vscode_askQuestions`. Batch all unresolved questions into one call, with predefined options where answers are fixed. Don't call it once autopilot execution has begun.",
+	"- **Plan-review mechanism**: `vscode_reviewPlan`, so the user can start interactive implementation or an unattended run with the harness's own controls. If it's unavailable, present the plan in conversation.",
+	"- **Subagent mechanism**: the `agent` tool, limited to **Plan Scout**, a read-only investigator. Use it for parallel discovery and optional clean-context plan review. Never delegate implementation or step planning.",
+	"- **Persistence**: `edit`, only for files under `docs/plans/` (including `docs/plans/archive/`). Never edit any other path. In session-only mode, write no files at all.",
+	"- **`todo`**: optionally mirror the steps of the phase being elaborated. The plan stays canonical; never keep state only in the todo list.",
 	"",
-	"Use the available read, search, question, persistence, and subagent tools to carry out the loaded skills. Keep harness-specific tool choices in this adapter; keep planning behavior in the skill.",
-	"",
-	"When the skill calls for asking the user something in interactive mode, ask through this harness's structured question tool rather than plain prose, using predefined options where the answers are fixed. In VS Code that tool is `vscode_askQuestions`. In autopilot mode, do not call it; record conservative reversible assumptions in the plan instead.",
-	"",
-	"When the skill calls for presenting a plan that is ready to begin, present it through this harness's plan-review tool rather than a free-form reply, so the user can start interactive implementation or unattended execution through the harness's own affordances. In VS Code that tool is `vscode_reviewPlan`. If that tool is unavailable, present the plan in conversation.",
+	"Whoever implements the plan after handoff may never load the skill. The plan's Execution Protocol section is what governs them, so never omit or abbreviate it.",
 	"",
 ].join("\n");
 
@@ -235,7 +241,6 @@ async function createFixtureRepo(
 		),
 		"utf8",
 	);
-
 	const githooksDir = path.join(repoRoot, ".githooks");
 	await mkdir(githooksDir, { recursive: true });
 	await writeFile(
@@ -741,9 +746,9 @@ test("executable planner agent is a thin adapter with byte-stable frontmatter", 
 		description:
 			"Create and maintain an iterative executable plan for IDE or harness use",
 		"argument-hint":
-			"Describe the goal, constraints, and whether this is an auto-run or local docs plan",
-		tools: ["search", "read", "edit", "agent", "todo", "vscode/askQuestions"],
-		agents: ["*"],
+			'Goal and constraints; add "autopilot" for unattended runs and a storage choice (local/repo, native, or session-only)',
+		tools: ["search", "read", "edit", "agent", "todo"],
+		agents: ["Plan Scout"],
 		"user-invocable": true,
 		"disable-model-invocation": false,
 	});
@@ -754,11 +759,6 @@ test("executable planner agent is a thin adapter with byte-stable frontmatter", 
 		coreContent,
 		/fresh tool output as the sole evidence for claims about repository state, uncommitted changes, validation results, or completion/i,
 	);
-	assert.match(
-		parsedAgent.body,
-		/do not claim repository state, uncommitted changes, validation success, or completion without fresh tool output/i,
-	);
-	assert.match(parsedAgent.body, /call those facts unverified/i);
 
 	const coreHeadings = new Set(
 		listSections(coreContent)
@@ -773,4 +773,23 @@ test("executable planner agent is a thin adapter with byte-stable frontmatter", 
 			);
 		}
 	}
+});
+
+test("plan scout is a non-invocable read-only investigator", async () => {
+	const content = await readFile(planScoutPath, "utf8");
+	const parsed = parseFrontmatter(
+		content,
+		".github/agents/plan-scout.agent.md",
+	);
+
+	assert.deepEqual(parsed.attributes, {
+		name: "Plan Scout",
+		description: "Answers narrow codebase questions for the Executable Planner",
+		tools: ["search", "read"],
+		agents: [],
+		"user-invocable": false,
+		"disable-model-invocation": false,
+	});
+	assert.match(parsed.body, /Never edit files, run commands, or plan the work/);
+	assert.match(parsed.body, /aiming for under 400 words/);
 });

@@ -15,9 +15,7 @@ const REPO_ROOT = path.resolve(
 );
 const SOURCE_DIR = path.join(REPO_ROOT, "sources", "executable-planning");
 const MANIFEST_PATH = path.join(SOURCE_DIR, "skill.json");
-const CORE_PATH = path.join(SOURCE_DIR, "core.md");
-const WORKFLOW_PATH = path.join(SOURCE_DIR, "workflow.md");
-const SKILL_ONLY_PATH = path.join(SOURCE_DIR, "skill-only.md");
+const CONTENT_PATH = path.join(SOURCE_DIR, "executable-planning.md");
 const BEHAVIORAL_FIXTURES_PATH = path.join(
 	REPO_ROOT,
 	"test",
@@ -33,21 +31,12 @@ const OUTPUT_PATH = path.join(
 );
 
 const expectedH2Order = [
-	"Operating Contract",
-	"Clarify First",
-	"Canonical Plan Artifact",
-	"Plan Design",
-	"Phase Elaboration",
-	"Delegate Step Design",
-	"Checkpoints and User Interest",
-	"Required Plan Format",
-	"Quality Check Before Delivery",
-	"Discovery",
-	"Alignment",
-	"Design",
-	"Refinement",
-	"When to Use",
-	"Harness Adaptation",
+	"Invariants",
+	"Harness Mechanisms",
+	"Workflow",
+	"Delegation",
+	"Plan Template",
+	"Before Presenting",
 ] as const;
 
 const requiredPhrases = [
@@ -55,15 +44,10 @@ const requiredPhrases = [
 	"autopilot",
 	"domain-based",
 	"tangible output",
-	"awaiting-user",
+	"awaiting user",
 	"elaborat",
 	"git",
 	"commit message",
-	"triple-click",
-	"Discovery",
-	"Alignment",
-	"Design",
-	"Refinement",
 	"plan-review",
 	"copy-and-keep",
 	"git mv",
@@ -132,12 +116,7 @@ const expectedProjectOwnedRuleIds: string[] = [
 ];
 
 test("executable-planning skill composes required static contract", async () => {
-	for (const requiredPath of [
-		MANIFEST_PATH,
-		CORE_PATH,
-		WORKFLOW_PATH,
-		SKILL_ONLY_PATH,
-	]) {
+	for (const requiredPath of [MANIFEST_PATH, CONTENT_PATH]) {
 		assert.equal(
 			existsSync(requiredPath),
 			true,
@@ -210,24 +189,14 @@ test("executable-planning skill composes required static contract", async () => 
 	}
 });
 
-test("project-owned core section set remains stable", () => {
-	assert.equal(existsSync(CORE_PATH), true, `missing file: ${CORE_PATH}`);
+test("supplied planning contract section set remains stable", () => {
+	assert.equal(existsSync(CONTENT_PATH), true, `missing file: ${CONTENT_PATH}`);
 
-	const headings = listSections(readFileSync(CORE_PATH, "utf8"))
+	const headings = listSections(readFileSync(CONTENT_PATH, "utf8"))
 		.filter((section) => section.level === 2)
 		.map((section) => section.heading);
 
-	assert.deepEqual(headings, [
-		"Operating Contract",
-		"Clarify First",
-		"Canonical Plan Artifact",
-		"Plan Design",
-		"Phase Elaboration",
-		"Delegate Step Design",
-		"Checkpoints and User Interest",
-		"Required Plan Format",
-		"Quality Check Before Delivery",
-	]);
+	assert.deepEqual(headings, expectedH2Order);
 });
 
 test("plan design supports single-phase plans when the work is genuinely small", async () => {
@@ -236,11 +205,11 @@ test("plan design supports single-phase plans when the work is genuinely small",
 
 	assert.match(
 		rendered,
-		/one domain-based phase for genuinely small, self-contained work/,
+		/Use a single phase for small, self-contained work with one inspectable outcome and one validation path/,
 	);
 	assert.match(
 		rendered,
-		/multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them/,
+		/add phases only when distinct boundaries, dependencies, or independently reviewable outputs justify them/,
 	);
 	assert.doesNotMatch(
 		rendered,
@@ -252,34 +221,8 @@ test("commit suggestions are interactive-only and use a code block", async () =>
 	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
 	const rendered = readFileSync(OUTPUT_PATH, "utf8");
 
-	assert.match(
-		rendered,
-		/In interactive mode:[\s\S]*?Suggested commit message:[\s\S]*?```text\n<single-line message>\n```/,
-	);
-	const autopilotSection =
-		/In autopilot mode:[\s\S]*?(?=\n## Required Plan Format)/.exec(
-			rendered,
-		)?.[0];
-	assert.ok(autopilotSection);
-	assert.doesNotMatch(autopilotSection, /Suggested commit message:/);
-});
-
-test("commit suggestions require concise semantic formatting or Jira ticket prefix", async () => {
-	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
-	const rendered = readFileSync(OUTPUT_PATH, "utf8");
-
-	assert.match(
-		rendered,
-		/The suggested message must be concise, single-line, and imperative\./,
-	);
-	assert.match(
-		rendered,
-		/If an applicable Jira ticket is detected from the branch name, plan metadata\/title, or prompt context \(such as matching `\[A-Z\]\+-\[0-9\]\+`\), start the message with `<TICKET>: <summary>`\./,
-	);
-	assert.match(
-		rendered,
-		/Otherwise, use strictly semantic commit formatting \(`<type>: <summary>` or `<type>\(<scope>\): <summary>`\) with standard lowercase types \(`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`\)\./,
-	);
+	assert.match(rendered, /Commit message[\s\S]*?fenced `text` block/);
+	assert.match(rendered, /if no code changed, omit it/);
 });
 
 test("completed repo-backed plans must be relocated, not copied", async () => {

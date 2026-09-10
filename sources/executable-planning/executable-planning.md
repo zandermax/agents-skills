@@ -1,9 +1,3 @@
----
-name: executable-planning
-description: Creates or maintains a multi-step executable implementation plan.
----
-# Executable Planning
-
 ## Invariants
 
 These hold in every mode and override anything below.
@@ -14,8 +8,6 @@ These hold in every mode and override anything below.
 - **Read before asking.** Never ask the user what the repository, its docs, or an existing plan can answer.
 - **Tool-agnostic plans.** Plans describe outcomes and checks, not IDE tool names or UI, so they run in any harness.
 
-
-
 ## Harness Mechanisms
 
 This skill names four abstract mechanisms; the invoking agent maps them to concrete tools.
@@ -24,8 +16,6 @@ This skill names four abstract mechanisms; the invoking agent maps them to concr
 - **Plan-review mechanism**: the harness's tool for reviewing a finished plan and starting execution. Use it whenever the plan, or a newly elaborated phase, is ready to begin. Without one, present in conversation; interactive mode then waits for an explicit start request, and autopilot begins.
 - **Subagent mechanism**: used for read-only discovery and, when the plan allows, parallel execution (see Delegation). If unavailable, record the limitation and proceed as a single agent.
 - **Persistence**: whatever writes the canonical plan (see step 3). Edit the changed sections; don't regenerate the whole plan.
-
-
 
 ## Workflow
 
@@ -119,8 +109,6 @@ These rules bind whoever executes, and the plan's Execution Protocol restates th
 
 When the last phase passes its gate, run final validation, finish every content and metadata edit, set Status to completed, and confirm the file is complete. For repo-backed plans, relocate that file to `docs/plans/archive/<descriptive-slug>.md` with a filesystem move (`mv`) or by writing the archive file and then deleting the original. Treat archive as complete only when `docs/plans/archive/<descriptive-slug>.md` exists and `docs/plans/<descriptive-slug>.md` does not. After relocate, verify only; do not recreate or edit the active-path file. Never copy-and-keep. Never `git mv`, stage, commit, or otherwise mutate the Git index.
 
-
-
 ## Delegation
 
 Record one of two settings in the plan metadata:
@@ -131,8 +119,6 @@ Record one of two settings in the plan metadata:
 Choose from the work's structure, record the rationale, and let the user override at review. If the executing harness has no subagents, run as a single agent in dependency order and log the fallback; never fail for lack of them. In every case, keep writes to shared files single-threaded: parallelism is safest for reading, research, and independent components with clean interfaces.
 
 Discovery fan-out during planning (step 1) is separate from this setting and available in both modes.
-
-
 
 ## Plan Template
 
@@ -224,8 +210,6 @@ _Not yet elaborated. Populate immediately before this phase starts._
 ````
 
 Step identifiers stay stable so updates are easy to audit. Whenever work is active there is exactly one Next action; during parallel execution, Current step names the active group.
-
-
 
 ## Before Presenting
 

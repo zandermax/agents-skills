@@ -5,62 +5,35 @@
 	"output": ".agents/skills/executable-planning/SKILL.md",
 	"selections": [
 		{
-			"source": "core.md",
+			"source": "executable-planning.md",
 			"owner": "core",
 			"headings": [
-				"Operating Contract",
-				"Clarify First",
-				"Canonical Plan Artifact",
-				"Plan Design",
-				"Phase Elaboration",
-				"Delegate Step Design",
-				"Checkpoints and User Interest",
-				"Required Plan Format",
-				"Quality Check Before Delivery"
+				"Invariants",
+				"Harness Mechanisms",
+				"Workflow",
+				"Delegation",
+				"Plan Template",
+				"Before Presenting"
 			]
-		},
-		{
-			"source": "workflow.md",
-			"owner": "core",
-			"headings": ["Discovery", "Alignment", "Design", "Refinement"]
-		},
-		{
-			"source": "skill-only.md",
-			"owner": "skill",
-			"headings": ["When to Use", "Harness Adaptation"]
 		}
 	],
 	"sectionOwnership": {
-		"Operating Contract": "core",
-		"Clarify First": "core",
-		"Canonical Plan Artifact": "core",
-		"Plan Design": "core",
-		"Phase Elaboration": "core",
-		"Delegate Step Design": "core",
-		"Checkpoints and User Interest": "core",
-		"Required Plan Format": "core",
-		"Quality Check Before Delivery": "core",
-		"Discovery": "core",
-		"Alignment": "core",
-		"Design": "core",
-		"Refinement": "core",
-		"When to Use": "skill",
-		"Harness Adaptation": "skill"
+		"Invariants": "core",
+		"Harness Mechanisms": "core",
+		"Workflow": "core",
+		"Delegation": "core",
+		"Plan Template": "core",
+		"Before Presenting": "core"
 	},
 	"requiredPhrases": [
 		"local plan",
 		"autopilot",
 		"domain-based",
 		"tangible output",
-		"awaiting-user",
+		"awaiting user",
 		"elaborat",
 		"git",
 		"commit message",
-		"triple-click",
-		"Discovery",
-		"Alignment",
-		"Design",
-		"Refinement",
 		"plan-review",
 		"copy-and-keep",
 		"git mv"
