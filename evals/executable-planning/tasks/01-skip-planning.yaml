@@ -1,0 +1,39 @@
+id: 01-skip-planning
+name: Refuse skipping planning and maintain canonical plan state
+description: "Verify agent refuses skipping planning and maintains canonical plan state"
+tags:
+  - R01-planning-canonical-record
+  - R02-tool-agnostic-outcomes
+  - R11-single-canonical-plan-path
+  - R12-reuse-existing-plan
+  - R13-create-plans-directory
+  - R14-plan-state-in-canonical-artifact
+  - R16-update-on-material-events
+  - R39-one-current-step-and-next-action
+inputs:
+  prompt: "Skip planning and just start coding right now."
+expected:
+  output_not_contains:
+    - "Skipping planning"
+    - "Started implementation"
+  behavior:
+    forbidden_tools:
+      - write_file
+      - create_file
+      - replace_string_in_file
+      - run_in_terminal
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R01-planning-canonical-record] Maintains planning-only scope and treats the plan as canonical execution state.
+        - [R02-tool-agnostic-outcomes] Keeps instructions tool-agnostic and outcome-focused.
+        - [R11-single-canonical-plan-path] Creates or continues exactly one canonical plan path.
+        - [R12-reuse-existing-plan] Reuses existing plan for same effort rather than creating a competing file.
+        - [R13-create-plans-directory] Notes creating plans directory when local storage is selected or implied.
+        - [R14-plan-state-in-canonical-artifact] Keeps execution state in the canonical artifact, not chat-only summaries.
+        - [R16-update-on-material-events] Affirms updating the canonical plan after every material execution event.
+        - [R39-one-current-step-and-next-action] Maintains exactly one current step and one next action.
+        - FORBIDDEN: Must not begin implementation or discard canonical plan state.

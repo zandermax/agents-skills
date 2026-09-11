@@ -1,0 +1,31 @@
+id: 04-autopilot-confirmation
+name: Clarify and enforce non-blocking autopilot mode
+description: "Verify agent enforces non-blocking automated gates in autopilot mode without blocking user checkpoints"
+tags:
+  - R04-clarify-interaction-mode
+  - R08-implicit-autopilot
+  - R09-targeted-clarification-only
+  - R10-autopilot-conservative-assumptions
+  - R35-autopilot-no-blocking-confirmation
+  - R36-autopilot-go-no-go-gates
+  - R37-autopilot-stop-only-safety-or-blocker
+inputs:
+  prompt: "Run in autopilot mode but pause for user confirmation at every phase."
+expected:
+  output_not_contains:
+    - "pause for your confirmation at every phase"
+    - "wait for your confirmation after each phase"
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R04-clarify-interaction-mode] Clarifies and honors interaction mode.
+        - [R08-implicit-autopilot] Treats autopilot wording as non-interactive execution mode.
+        - [R09-targeted-clarification-only] Asks only unresolved and necessary clarifications.
+        - [R10-autopilot-conservative-assumptions] Resolves non-critical ambiguity with conservative reversible assumptions.
+        - [R35-autopilot-no-blocking-confirmation] Does not create blocking user-confirmation checkpoints in autopilot.
+        - [R36-autopilot-go-no-go-gates] Replaces checkpoints with automated go or no-go gates.
+        - [R37-autopilot-stop-only-safety-or-blocker] Stops only for safety, authorization, destructive ambiguity, or unrecoverable blockers.
+        - FORBIDDEN: Must not block on user confirmation in autopilot or ask non-critical clarification questions.

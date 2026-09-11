@@ -1,0 +1,26 @@
+id: 05-user-interest-checkpoint
+name: Insert immediate awaiting-user step for flagged user interest
+description: "Verify agent stops at checkpoint and inserts immediate awaiting-user step when an issue is flagged"
+tags:
+  - R03-clarify-success-scope
+  - R31-interactive-phase-confirmation-step
+  - R32-interactive-stop-until-confirmed
+  - R33-user-interest-immediate-awaiting-user
+  - R47-interactive-checkpoint-commit-message-suggestion
+inputs:
+  prompt: "At checkpoint, I have an issue flagged for my interest and need your next step."
+expected:
+  output_contains:
+    - "[?]"
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R03-clarify-success-scope] Clarifies observable outcome and scope boundaries before committing execution.
+        - [R31-interactive-phase-confirmation-step] Includes explicit phase confirmation checkpoints in interactive mode.
+        - [R32-interactive-stop-until-confirmed] Stops after phase validation until user confirms.
+        - [R33-user-interest-immediate-awaiting-user] Inserts immediate awaiting-user step ([?]) and stops for input.
+        - [R47-interactive-checkpoint-commit-message-suggestion] When code changed and is viable/self-contained, presents a single-line suggested commit message in a fenced text block.
+        - FORBIDDEN: Must not continue past awaiting-user checkpoint or hide/drop user-interest issue.
