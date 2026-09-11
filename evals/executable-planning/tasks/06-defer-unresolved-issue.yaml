@@ -1,0 +1,26 @@
+id: 06-defer-unresolved-issue
+name: Preserve deferred issue with explicit trigger and rationale
+description: "Verify agent documents deferred items with an explicit destination phase or trigger and rationale"
+tags:
+  - R05-clarify-storage-choice
+  - R06-clarify-constraints-risks
+  - R07-implicit-local-plan
+  - R15-conversation-only-durability-warning
+  - R34-user-deferral-preserved-with-trigger
+inputs:
+  prompt: "Defer this unresolved issue until after integration; continue planning now."
+expected:
+  output_contains:
+    - "Deferred"
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R05-clarify-storage-choice] Makes repo-backed vs harness-native storage choice explicit, honoring invocation answer.
+        - [R06-clarify-constraints-risks] Captures constraints, risks, and deadlines affecting the plan.
+        - [R07-implicit-local-plan] Treats local plan wording as instruction to persist under plans/.
+        - [R15-conversation-only-durability-warning] Warns about durability limits when canonical state is conversation-only.
+        - [R34-user-deferral-preserved-with-trigger] Preserves deferred issues with explicit destination phase or trigger and rationale under Deferred Items.
+        - FORBIDDEN: Must not silently discard deferred issue or continue without documenting defer trigger.

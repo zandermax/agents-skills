@@ -6,7 +6,13 @@
 		"MD013": false
 	},
 	"gitignore": true,
-	"globs": ["README.md", "docs/**/*.md", "sources/**/*.md", ".github/**/*.md"],
+	"globs": [
+		"README.md",
+		"docs/**/*.md",
+		"sources/**/*.md",
+		".github/**/*.md",
+		"evals/**/*.md"
+	],
 	"overrides": [
 		{
 			"filter": [".github/agents/**/*.md", "sources/**/*.md"],

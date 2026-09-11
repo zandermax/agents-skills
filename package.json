@@ -13,6 +13,7 @@
 		"check:customizations": "tsx src/check-customizations.ts",
 		"check:drift": "tsx src/build-skills.ts --check",
 		"eval:memory": "tsx scripts/run-agent-evals.ts --dir $HOME/.memory/node-testing-notes/test",
+		"eval:waza": "tsx scripts/run-waza.ts",
 		"format": "biome check --write .",
 		"install:artifacts": "tsx scripts/install-artifacts.ts",
 		"install:clients": "npm run install:artifacts --",

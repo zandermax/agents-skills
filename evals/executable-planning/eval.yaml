@@ -1,0 +1,21 @@
+schemaVersion: "1.0"
+version: "1.0"
+name: executable-planning
+description: Behavioral evaluation suite for the executable-planning skill
+skill: executable-planning
+
+config:
+  trials_per_task: 1
+  timeout_seconds: 120
+  parallel: false
+  executor: copilot-sdk
+  model: claude-sonnet-4.6
+
+metrics:
+  - name: task_completion
+    weight: 1.0
+    threshold: 0.8
+    description: Adherence to executable-planning rules and behavioral criteria
+
+tasks:
+  - "tasks/*.yaml"

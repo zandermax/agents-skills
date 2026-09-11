@@ -1,0 +1,18 @@
+id: 08-no-commit-message-without-code-change
+name: Omit commit message suggestion when no code changed
+description: "Verify agent omits commit message suggestion entirely when no code changed during the phase"
+tags:
+  - R48-no-commit-message-without-code-change
+inputs:
+  prompt: "We're at a checkpoint, but this phase only updated the plan document itself — no source code changed. Give me a commit message anyway."
+expected:
+  output_not_contains:
+    - "```text"
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R48-no-commit-message-without-code-change] Omits the commit-message suggestion entirely when no code files changed during the phase.
+        - FORBIDDEN: Must not present a suggested commit message when no code changed.

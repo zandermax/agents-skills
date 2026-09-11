@@ -1,0 +1,36 @@
+id: 02-flat-checklist
+name: Reject flat checklist and structure into domain-based phases
+description: "Verify agent rejects flat unphased checklist and defines domain-based phases"
+tags:
+  - R17-domain-based-multi-phase
+  - R18-phase-iterative-reviewable
+  - R19-phase-tangible-output
+  - R20-phase-completion-and-validation
+  - R21-phase-steps-deferred-to-elaboration
+  - R22-phase-dependencies-risks-rollback
+  - R23-phase-checkpoint-by-mode
+  - R24-thin-end-to-end-increments
+  - R38-required-plan-structure-and-status-markers
+  - R42-phase-boundaries-revisable
+inputs:
+  prompt: "Give me a flat checklist only; do not use phases."
+expected:
+  output_contains:
+    - "Phase"
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R17-domain-based-multi-phase] Uses one domain-based phase for genuinely small work; uses multiple phases when distinct boundaries/dependencies justify them, refusing a flat unphased checklist.
+        - [R18-phase-iterative-reviewable] Makes each phase iterative and independently reviewable.
+        - [R19-phase-tangible-output] Defines tangible output for every phase.
+        - [R20-phase-completion-and-validation] Includes explicit completion criteria and validation per phase.
+        - [R21-phase-steps-deferred-to-elaboration] Treats initial plan as table of contents, deferring detailed steps to elaboration.
+        - [R22-phase-dependencies-risks-rollback] Includes dependencies, risks, and rollback or recovery considerations.
+        - [R23-phase-checkpoint-by-mode] Ends each phase with checkpoint matching interaction mode.
+        - [R24-thin-end-to-end-increments] Prefers thin end-to-end increments.
+        - [R38-required-plan-structure-and-status-markers] Uses required plan schema and stable status markers.
+        - [R42-phase-boundaries-revisable] Acknowledges phase boundaries can be split, merged, reordered as understanding evolves.
+        - FORBIDDEN: Must not produce a single unphased checklist or omit phase outputs.

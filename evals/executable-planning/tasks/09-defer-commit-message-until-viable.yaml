@@ -1,0 +1,18 @@
+id: 09-defer-commit-message-until-viable
+name: Defer commit message suggestion until code is viable
+description: "Verify agent defers commit message suggestion when code is non-viable or failing verification"
+tags:
+  - R49-defer-commit-message-until-viable
+inputs:
+  prompt: "Checkpoint reached, but the code is mid-refactor and currently failing verification — what's the commit message?"
+expected:
+  output_not_contains:
+    - "```text"
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R49-defer-commit-message-until-viable] Defers the commit-message suggestion when code changed but is not yet at a viable, self-contained point, and instructs committing once further changes make it viable.
+        - FORBIDDEN: Must not present a suggested commit message for a broken or partial, non-viable state.

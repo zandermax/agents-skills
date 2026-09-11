@@ -73,6 +73,9 @@ The built-in destinations currently include Copilot, Claude, and the generic
    fragments, then run `npm run build`.
 3. Run `npm run install:artifacts -- --list` and `npm run check` to validate
    discovery and generated output.
+4. For new skills or behavioral changes, run the Waza evaluation suite on demand
+   with `npm run eval:waza -- run <skill-name> -v`. Behavioral evaluations are
+   strictly on demand and are never run in CI or `npm run check`.
 
 ## Adding Agent Formats
 
@@ -97,4 +100,6 @@ installation. Do not replace regular files, directories, or unrelated links.
 The executable-planning skill is composed from repository-owned source files
 under `sources/executable-planning/`. Update
 `sources/executable-planning/workflow.md` and its supporting sources together,
-then run `npm run build` and `npm run check`.
+then run `npm run build` and `npm run check`. For meaningful behavioral
+changes, evaluate the skill on demand using
+`npm run eval:waza -- run executable-planning -v`.
