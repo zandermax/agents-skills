@@ -1,9 +1,9 @@
 ---
-name: memory
+name: remember-that
 description: Captures and routes personal preferences and conventions into private memory.
 ---
 
-# Memory
+# Remember That
 
 ## Purpose
 

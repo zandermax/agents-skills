@@ -2,10 +2,16 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const skillPath = new URL("../.agents/skills/memory/SKILL.md", import.meta.url);
-const agentPath = new URL("../.github/agents/memory.agent.md", import.meta.url);
+const skillPath = new URL(
+	"../.agents/skills/remember-that/SKILL.md",
+	import.meta.url,
+);
+const agentPath = new URL(
+	"../.github/agents/remember-that.agent.md",
+	import.meta.url,
+);
 
-test("memory skill consults ctx only when capturing", async () => {
+test("remember-that skill consults ctx only when capturing", async () => {
 	const skill = await readFile(skillPath, "utf8");
 
 	assert.match(skill, /## Prior Context Lookup \(Optional\)/);
@@ -14,7 +20,7 @@ test("memory skill consults ctx only when capturing", async () => {
 	assert.match(skill, /never run it\s+while retrieving/i);
 });
 
-test("memory skill skips ctx silently when unavailable", async () => {
+test("remember-that skill skips ctx silently when unavailable", async () => {
 	const skill = await readFile(skillPath, "utf8");
 
 	assert.match(skill, /ctx status/);
@@ -23,7 +29,7 @@ test("memory skill skips ctx silently when unavailable", async () => {
 	assert.match(skill, /never run\s+`ctx setup`/i);
 });
 
-test("memory skill treats ctx findings as suggestions only", async () => {
+test("remember-that skill treats ctx findings as suggestions only", async () => {
 	const skill = await readFile(skillPath, "utf8");
 
 	assert.match(skill, /suggestion for the human, never\s+content/i);
@@ -33,7 +39,7 @@ test("memory skill treats ctx findings as suggestions only", async () => {
 	assert.match(skill, /no `ctx`-derived content was written/i);
 });
 
-test("memory skill does not instruct ctx pro or blame usage", async () => {
+test("remember-that skill does not instruct ctx pro or blame usage", async () => {
 	const skill = await readFile(skillPath, "utf8");
 
 	assert.match(
@@ -42,7 +48,7 @@ test("memory skill does not instruct ctx pro or blame usage", async () => {
 	);
 });
 
-test("memory agent notes the optional suggestion-only ctx lookup", async () => {
+test("remember-that agent notes the optional suggestion-only ctx lookup", async () => {
 	const agent = await readFile(agentPath, "utf8");
 
 	assert.match(agent, /optionally consult the `ctx` CLI/i);

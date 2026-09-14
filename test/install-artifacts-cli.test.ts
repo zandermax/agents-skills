@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { lstat, mkdtemp, rm } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -94,7 +94,9 @@ test("artifact CLI installs all compatible catalog artifacts by default", async 
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(
 			result.stdout,
-			new RegExp(`summary created=${defaultLinkCount} repaired=0 existing=0`),
+			new RegExp(
+				`summary created=${defaultLinkCount} repaired=0 removed=0 existing=0`,
+			),
 		);
 	} finally {
 		await fixture.cleanup();
@@ -112,7 +114,9 @@ test("artifact CLI accepts the deprecated test-home variable", async () => {
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(
 			result.stdout,
-			new RegExp(`summary created=${defaultLinkCount} repaired=0 existing=0`),
+			new RegExp(
+				`summary created=${defaultLinkCount} repaired=0 removed=0 existing=0`,
+			),
 		);
 	} finally {
 		await fixture.cleanup();
@@ -138,7 +142,9 @@ test("artifact CLI installs a selected skill and selected agent", async () => {
 		assert.equal(skill.status, 0, skill.stderr);
 		assert.match(
 			skill.stdout,
-			new RegExp(`summary created=${skillLinkCount} repaired=0 existing=0`),
+			new RegExp(
+				`summary created=${skillLinkCount} repaired=0 removed=0 existing=0`,
+			),
 		);
 
 		const agent = runCli(
@@ -148,7 +154,9 @@ test("artifact CLI installs a selected skill and selected agent", async () => {
 		assert.equal(agent.status, 0, agent.stderr);
 		assert.match(
 			agent.stdout,
-			new RegExp(`summary created=${agentLinkCount} repaired=0 existing=0`),
+			new RegExp(
+				`summary created=${agentLinkCount} repaired=0 removed=0 existing=0`,
+			),
 		);
 	} finally {
 		await fixture.cleanup();
@@ -177,7 +185,9 @@ test("artifact CLI installs into mixed custom skill and agent targets", async ()
 		assert.equal(result.status, 0, result.stderr);
 		assert.match(
 			result.stdout,
-			new RegExp(`summary created=${customLinkCount} repaired=0 existing=0`),
+			new RegExp(
+				`summary created=${customLinkCount} repaired=0 removed=0 existing=0`,
+			),
 		);
 		assert.equal(
 			(
@@ -195,6 +205,29 @@ test("artifact CLI installs into mixed custom skill and agent targets", async ()
 			).isSymbolicLink(),
 			true,
 		);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("artifact CLI removes the legacy memory skill link", async () => {
+	const fixture = await createFixture("install-artifacts-cli-memory-migration");
+	const legacyLink = path.join(fixture.customSkillsDirectory, "memory");
+	try {
+		await mkdir(fixture.customSkillsDirectory, { recursive: true });
+		await symlink(
+			path.join(fixture.homeDirectory, "legacy-memory"),
+			legacyLink,
+			"dir",
+		);
+
+		const result = runCli(
+			["--skills-dir", `skills=${fixture.customSkillsDirectory}`],
+			fixture.homeDirectory,
+		);
+		assert.equal(result.status, 0, result.stderr);
+		assert.match(result.stdout, new RegExp(`removed ${legacyLink}`));
+		await assert.rejects(lstat(legacyLink), /ENOENT/);
 	} finally {
 		await fixture.cleanup();
 	}

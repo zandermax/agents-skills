@@ -23,11 +23,14 @@ function printResult(
 	for (const destination of result.repaired) {
 		console.log(`repaired ${destination}`);
 	}
+	for (const destination of result.removed) {
+		console.log(`removed ${destination}`);
+	}
 	for (const destination of result.existing) {
 		console.log(`existing ${destination}`);
 	}
 	console.log(
-		`summary created=${result.created.length} repaired=${result.repaired.length} existing=${result.existing.length}`,
+		`summary created=${result.created.length} repaired=${result.repaired.length} removed=${result.removed.length} existing=${result.existing.length}`,
 	);
 }
 
@@ -50,7 +53,12 @@ export async function runCli(arguments_: readonly string[]): Promise<void> {
 			process.env.EXECUTABLE_PLANNING_HOME ??
 			os.homedir(),
 	});
-	printResult(await installArtifacts(buildArtifactLinks(request)));
+	const legacyMemoryLinks = request.targets
+		.filter((target) => target.collection === "skills")
+		.map((target) => path.join(target.directory, "memory"));
+	printResult(
+		await installArtifacts(buildArtifactLinks(request), legacyMemoryLinks),
+	);
 }
 
 if (

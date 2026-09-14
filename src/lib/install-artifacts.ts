@@ -20,6 +20,7 @@ export interface InstallResult {
 	readonly created: readonly string[];
 	readonly existing: readonly string[];
 	readonly repaired: readonly string[];
+	readonly removed: readonly string[];
 }
 
 type DestinationAction = "create" | "existing" | "repair";
@@ -127,6 +128,30 @@ function symlinkType(kind: ResolvedLink["kind"]): "file" | "dir" {
 	return kind === "directory" ? "dir" : "file";
 }
 
+async function removeLegacyLinks(
+	destinationPaths: readonly string[],
+): Promise<readonly string[]> {
+	const removed: string[] = [];
+	for (const destinationPath of new Set(destinationPaths.map(normalizePath))) {
+		const stats = await lstat(destinationPath).catch((error: unknown) => {
+			if (
+				typeof error === "object" &&
+				error !== null &&
+				"code" in error &&
+				error.code === "ENOENT"
+			) {
+				return undefined;
+			}
+			throw error;
+		});
+		if (stats?.isSymbolicLink()) {
+			await rm(destinationPath);
+			removed.push(destinationPath);
+		}
+	}
+	return Object.freeze(removed);
+}
+
 export function buildArtifactLinks(
 	request: ArtifactRequest,
 ): readonly ResolvedLink[] {
@@ -153,6 +178,7 @@ export function buildArtifactLinks(
 
 export async function installArtifacts(
 	links: readonly ResolvedLink[],
+	legacyDestinationPaths: readonly string[] = [],
 ): Promise<InstallResult> {
 	const deduplicatedLinks = deduplicateLinks(links);
 	const errors: string[] = [];
@@ -170,6 +196,7 @@ export async function installArtifacts(
 		throw new Error(`Install validation failed:\n- ${errors.join("\n- ")}`);
 	}
 
+	const removed = await removeLegacyLinks(legacyDestinationPaths);
 	const created: string[] = [];
 	const existing: string[] = [];
 	const repaired: string[] = [];
@@ -213,5 +240,6 @@ export async function installArtifacts(
 		created: Object.freeze(created),
 		existing: Object.freeze(existing),
 		repaired: Object.freeze(repaired),
+		removed,
 	});
 }

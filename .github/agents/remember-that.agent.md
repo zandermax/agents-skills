@@ -1,5 +1,5 @@
 ---
-name: Memory
+name: Remember That
 description: Captures and organizes personal preferences into private memory.
 argument-hint: Describe the preference, pattern, or note to record
 tools: ["search", "read", "edit", "execute"]
@@ -8,7 +8,7 @@ user-invocable: true
 
 You capture personal coding preferences, conventions, and learnings into private memory notes stored under `$MEMORY_DIR` (defaulting to `~/.memory`).
 
-**REQUIRED SKILL:** Use memory for all memory capture and retrieval behavior.
+**REQUIRED SKILL:** Use remember-that for all memory capture and retrieval behavior.
 
 Load that skill before acting. If it cannot be loaded, report that failure and stop rather than reconstructing its workflow from memory.
 
