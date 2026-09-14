@@ -19,7 +19,8 @@ while referencing public skills as read-only topic anchors.
     create, edit, or delete any file in `agents-skills`.
   - Private memory notes reside in the directory specified by `$MEMORY_DIR`
     (defaulting to `~/.memory`). All captured notes, conventions, and personal
-    preferences must be written to this location only.
+    preferences must be written to this location only, except for symlinks
+    created in tool skill directories as required by the Lazy Loading Invariant.
 - **Curated Instruction Immutability**:
   - Never write to `AGENTS.md` or `agents.local.md`. Universal paradigms are
     curated manually by the human operator, never auto-appended to.
@@ -54,8 +55,9 @@ When presented with a preference or note to capture:
    - **Case A: Matches an existing public skill `<topic>`**:
      - Check if a paired private notes directory exists:
        `<resolved-memory-dir>/<topic>-notes/SKILL.md`.
-     - If it exists, append the preference under the `## Preferences` or
-       `## Notes` section and update its behavioral test suite.
+     - If it exists, append the entry under `## Preferences` (for personal
+       preferences) or `## Conventions` (for team/project conventions), creating
+       the section if it does not yet exist, and update its behavioral test suite.
      - If absent, create `<resolved-memory-dir>/<topic>-notes/SKILL.md`
        paired to that public skill and scaffold its test suite.
    - **Case B: Matches an existing private notes topic with no public skill**:
@@ -65,6 +67,37 @@ When presented with a preference or note to capture:
      - Formulate a concise kebab-case topic identifier `<topic>-notes`.
      - Create `<resolved-memory-dir>/<topic>-notes/SKILL.md` and scaffold
        its test suite.
+
+## Interactive Clarification (Case-by-Case)
+
+Before writing anything, judge whether the preference as stated is ambiguous
+or underspecified. Clarification is not always needed — for a clear,
+self-contained preference, skip straight to routing.
+
+Ask clarifying questions when any of these hold:
+
+- **Ambiguous topic/scope**: the preference could plausibly belong to more
+  than one existing `<topic>-notes` file, or it's unclear whether it's a
+  narrow one-off note versus a new topic.
+- **Conflicts with an existing note**: the new preference appears to
+  contradict content already captured under a matching topic.
+- **Missing key detail**: the preference references a tool, format, or
+  condition ("do X when Y") without specifying Y clearly enough to write an
+  unambiguous rule.
+- **Uncertain durability**: it's unclear whether the note is a lasting
+  preference (belongs in memory) or a one-off instruction for the current
+  task only.
+
+When clarification is warranted and the harness exposes an interactive
+question-asking tool (e.g. an `askQuestions`-style tool), use it to ask
+concise, targeted questions before writing the note — do not proceed on
+assumptions. If no such interactive tool is available, ask the clarifying
+question directly in the response and wait for the user's next message before
+capturing anything. Never fabricate an answer to a clarifying question on the
+user's behalf.
+
+Skip this step silently (no questions, no mention of skipping) whenever the
+preference is already unambiguous.
 
 ## Prior Context Lookup (Optional)
 
@@ -89,10 +122,16 @@ while retrieving or loading an existing note.
 
 This lookup is best effort. Never block or delay capture on it.
 
-## Post-Capture Customization Evaluation (Optional)
+## Post-Capture Customization Evaluation
 
 Runs once, after the memory note (and its test suite) has been written or
 appended to, against the resulting `SKILL.md` file.
+
+Do not prompt for confirmation before this step. Once the capture decision is
+made and any required clarification has already been resolved, write or update
+the memory files, run the memory topic's test suite, and then run this
+evaluation automatically whenever an evaluation skill is available. Skip this
+step silently only when no customization-evaluation skill is available.
 
 1. **Probe availability**: check whether a customization-evaluation skill is
    installed — look for `fix-customization-evaluation-diagnostics` or, absent
@@ -101,17 +140,17 @@ appended to, against the resulting `SKILL.md` file.
    or any other skill whose purpose is analyzing/fixing chat customization
    diagnostics). If neither is present, skip this section silently: emit no
    message and take no action.
-2. **Invoke the skill**: if `fix-customization-evaluation-diagnostics` is
-   available, invoke it against the written memory `SKILL.md` file to surface
-   and apply suggested fixes to any reported diagnostics. If only
-   `analyze-prompt` is available, invoke it against the file to report
-   findings, then apply any resulting fixes manually.
+2. **Evaluate and fix the file**: if `fix-customization-evaluation-diagnostics`
+    is available, invoke it against the written memory `SKILL.md` file and
+    complete any fixes it applies or recommends. If only `analyze-prompt` is
+    available, invoke it against the file to report findings, then apply any
+    resulting fixes manually before continuing.
 3. **Re-verify after fixes**: if the evaluation skill modified the memory
    note, re-run the memory topic's test suite to confirm it still passes, and
    include the additional changes in the diff shown to the user.
 
-This step is best effort. Never block or delay capture on it, and never
-invoke it against files outside the memory note just written.
+Never block or delay capture when no evaluation skill is available, and never
+invoke evaluation against files outside the memory note just written.
 
 ## Memory Skill Format
 
@@ -160,7 +199,9 @@ When creating a new memory topic:
 When appending preferences to an existing memory topic:
 1. Update `<resolved-memory-dir>/<topic>-notes/test/<topic>-notes.test.ts`
    with corresponding behavioral assertions for the newly added preferences.
-2. Execute the test using the native test runner to confirm it passes.
+2. Execute the test with `node --test --experimental-strip-types <path>` (or the
+   runner configured in `<resolved-memory-dir>/package.json` if one exists) and
+   confirm it passes.
 
 ## Lazy Loading Invariant
 
@@ -171,17 +212,24 @@ context lean.
 
 Whenever a new memory note directory is created, ensure it is symlinked into
 the tool skill directories (`~/.copilot/skills/<topic>-notes` and
-`~/.claude/skills/<topic>-notes`) so it becomes available immediately.
+`~/.claude/skills/<topic>-notes`) so it becomes available immediately. Create
+the parent skills directory if it does not exist. If a symlink already points
+to the memory note, leave it. If a different file or directory already occupies
+the target path, do not overwrite it; report the conflict to the user instead.
 
 ## Verification and Reporting
 
 1. Verify that the written content accurately reflects the preference without
    unnecessary commentary.
 2. Run the memory topic's test suite to verify that all behavioral tests pass.
+   If any test fails, do not report the capture as complete; fix the note or the
+   test so both accurately reflect the preference, re-run, and if it still fails
+   after two attempts, report the failing assertions to the user and ask how to
+   proceed.
 3. Run the Post-Capture Customization Evaluation step against the memory note,
    if an evaluation skill is available.
 4. Verify that no changes were introduced into `agents-skills` or any global
-   instruction file.
+   instruction file (symlinks in tool skill directories are expected).
 5. Verify that no `ctx`-derived content was written into the memory note or its
    tests.
 6. Report the full path of the modified or created memory note and test file.
