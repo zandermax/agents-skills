@@ -39,6 +39,17 @@ test("remember-that skill treats ctx findings as suggestions only", async () => 
 	assert.match(skill, /no `ctx`-derived content was written/i);
 });
 
+test("remember-that skill runs customization evaluation after capture when available", async () => {
+	const skill = await readFile(skillPath, "utf8");
+
+	assert.match(skill, /## Post-Capture Customization Evaluation \(Optional\)/);
+	assert.match(skill, /fix-customization-evaluation-diagnostics/);
+	assert.match(skill, /analyze-prompt/);
+	assert.match(skill, /skip this section silently/i);
+	assert.match(skill, /never block or delay capture on it/i);
+	assert.match(skill, /Run the Post-Capture Customization Evaluation step/i);
+});
+
 test("remember-that skill does not instruct ctx pro or blame usage", async () => {
 	const skill = await readFile(skillPath, "utf8");
 

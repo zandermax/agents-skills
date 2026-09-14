@@ -89,6 +89,30 @@ while retrieving or loading an existing note.
 
 This lookup is best effort. Never block or delay capture on it.
 
+## Post-Capture Customization Evaluation (Optional)
+
+Runs once, after the memory note (and its test suite) has been written or
+appended to, against the resulting `SKILL.md` file.
+
+1. **Probe availability**: check whether a customization-evaluation skill is
+   installed — look for `fix-customization-evaluation-diagnostics` or, absent
+   that, `analyze-prompt` among the agent's available skills (e.g. under
+   `.vscode/extensions/ms-vscode.vscode-chat-customizations-evaluations-*/skills/`
+   or any other skill whose purpose is analyzing/fixing chat customization
+   diagnostics). If neither is present, skip this section silently: emit no
+   message and take no action.
+2. **Invoke the skill**: if `fix-customization-evaluation-diagnostics` is
+   available, invoke it against the written memory `SKILL.md` file to surface
+   and apply suggested fixes to any reported diagnostics. If only
+   `analyze-prompt` is available, invoke it against the file to report
+   findings, then apply any resulting fixes manually.
+3. **Re-verify after fixes**: if the evaluation skill modified the memory
+   note, re-run the memory topic's test suite to confirm it still passes, and
+   include the additional changes in the diff shown to the user.
+
+This step is best effort. Never block or delay capture on it, and never
+invoke it against files outside the memory note just written.
+
 ## Memory Skill Format
 
 Every private memory note must be written as a valid, self-contained skill so
@@ -154,12 +178,14 @@ the tool skill directories (`~/.copilot/skills/<topic>-notes` and
 1. Verify that the written content accurately reflects the preference without
    unnecessary commentary.
 2. Run the memory topic's test suite to verify that all behavioral tests pass.
-3. Verify that no changes were introduced into `agents-skills` or any global
+3. Run the Post-Capture Customization Evaluation step against the memory note,
+   if an evaluation skill is available.
+4. Verify that no changes were introduced into `agents-skills` or any global
    instruction file.
-4. Verify that no `ctx`-derived content was written into the memory note or its
+5. Verify that no `ctx`-derived content was written into the memory note or its
    tests.
-5. Report the full path of the modified or created memory note and test file.
-6. Present the diff of the changes.
+6. Report the full path of the modified or created memory note and test file.
+7. Present the diff of the changes.
 
 ## When to Use
 
