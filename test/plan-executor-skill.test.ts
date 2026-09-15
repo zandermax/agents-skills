@@ -1,18 +1,18 @@
-import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import test from 'node:test';
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
 
 const skillPath = new URL(
-	'../.agents/skills/plan-executor/SKILL.md',
+	"../.agents/skills/plan-executor/SKILL.md",
 	import.meta.url,
 );
 const agentPath = new URL(
-	'../.github/agents/plan-executor.agent.md',
+	"../.github/agents/plan-executor.agent.md",
 	import.meta.url,
 );
 
-test('plan-executor skill frontmatter and core structure', async () => {
-	const skill = await readFile(skillPath, 'utf8');
+test("plan-executor skill frontmatter and core structure", async () => {
+	const skill = await readFile(skillPath, "utf8");
 
 	assert.match(skill, /^name:\s*plan-executor$/m);
 	assert.match(
@@ -31,8 +31,8 @@ test('plan-executor skill frontmatter and core structure', async () => {
 	assert.match(skill, /missing, incomplete, or malformed|canonical plan/i);
 });
 
-test('plan-executor agent frontmatter and required skill reference', async () => {
-	const agent = await readFile(agentPath, 'utf8');
+test("plan-executor agent frontmatter and required skill reference", async () => {
+	const agent = await readFile(agentPath, "utf8");
 
 	assert.match(agent, /^name:\s*Plan Executor$/m);
 	assert.match(
