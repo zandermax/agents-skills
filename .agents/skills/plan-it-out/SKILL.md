@@ -6,7 +6,9 @@ disable-model-invocation: true
 
 Call the Skill tool with "executable-planning", then apply these overrides
 for the whole session; do not ask the user about interaction mode or storage,
-they are fixed by this skill.
+they are fixed by this skill. If the executable-planning skill cannot be loaded,
+tell the user and stop; do not attempt to plan without it, since the referenced
+sections define the required format.
 
 ## Fixed Mode and Storage
 
@@ -21,10 +23,10 @@ they are fixed by this skill.
 
 ## Table of Contents First
 
-Ask the Alignment questions before anything else, framed to establish the
-plan's overall parts: the outcome, scope, and the natural domain-based phase
-boundaries that will become the table of contents. Do not ask any phase's
-specific elaboration questions yet.
+Ask the Clarify First questions (outcome, scope, success criteria, constraints)
+as the first turn; fold the Alignment questions about phase boundaries into that
+same turn so the user answers one combined set before the table of contents is
+proposed. Do not ask any phase's specific elaboration questions yet.
 
 Once the outcome and scope are clear, propose the table of contents of
 scoped, named phases with tangible outputs, following Plan Design. Get the
@@ -51,3 +53,9 @@ the user only asked about part of the plan. Resolve every open question or
 record it as an explicit assumption or decision first, so a brand-new agent
 session with no access to this conversation can execute the plan end to end
 without further clarification.
+
+If the user asks to stop before all phases are elaborated, still present the full
+plan document, marking unelaborated phases with a 'Not yet elaborated' note and
+listing their open questions as assumptions. If the user requests changes to a
+confirmed phase or the table of contents, apply them, re-confirm, and continue
+from the current phase.
