@@ -16,27 +16,27 @@ sections define the required format.
 - Storage is always session-only: never create or update a file under
   `docs/plans/`, and never rely on a harness-native plan artifact either.
   Hold the canonical plan only in this conversation, per the session-only
-  rules in Canonical Plan Artifact.
-- Still ask the Clarify First questions about outcome, scope, success
+  rules in Choose storage.
+- Still ask the Clarify at outline level questions about outcome, scope, success
   criteria, and constraints; only the interaction-mode and storage questions
   are skipped, since they are fixed above.
 
 ## Table of Contents First
 
-Ask the Clarify First questions (outcome, scope, success criteria, constraints)
-as the first turn; fold the Alignment questions about phase boundaries into that
-same turn so the user answers one combined set before the table of contents is
-proposed. Do not ask any phase's specific elaboration questions yet.
+Follow Discover before asking questions. Then ask the Clarify at outline level
+questions that discovery could not answer, folding unresolved phase-boundary
+questions into the same prompt. Do not ask any phase's specific elaboration
+questions yet.
 
 Once the outcome and scope are clear, propose the table of contents of
-scoped, named phases with tangible outputs, following Plan Design. Get the
+scoped, named phases with tangible outputs, following Design the outline. Get the
 user's confirmation of the table of contents before elaborating any phase.
 
 ## Elaborate Every Phase in This Session
 
 After the table of contents is confirmed, elaborate every phase in order,
-in this same conversation, using the session-only exception in Phase
-Elaboration: do not wait for a separate later request to start each phase,
+in this same conversation, using the Interactive + session-only handoff rule in
+Workflow step 5: do not wait for a separate later request to start each phase,
 since there is no later session to return to for this plan. For each phase:
 
 1. Ask that phase's focused clarifying questions, scoped only to what it
@@ -48,14 +48,14 @@ since there is no later session to return to for this plan. For each phase:
 
 Once every phase is elaborated and confirmed, always close the session by
 presenting one complete, self-contained markdown plan document in the
-Required Plan Format, in full, in the conversation. Do not skip this even if
+Plan Template format, in full, in the conversation. Do not skip this even if
 the user only asked about part of the plan. Resolve every open question or
 record it as an explicit assumption or decision first, so a brand-new agent
 session with no access to this conversation can execute the plan end to end
 without further clarification.
 
-If the user asks to stop before all phases are elaborated, still present the full
-plan document, marking unelaborated phases with a 'Not yet elaborated' note and
-listing their open questions as assumptions. If the user requests changes to a
+If the user asks to stop before all phases are elaborated, present the current
+partial plan, mark unelaborated phases as such, and preserve unresolved questions
+without converting them into assumptions. If the user requests changes to a
 confirmed phase or the table of contents, apply them, re-confirm, and continue
 from the current phase.

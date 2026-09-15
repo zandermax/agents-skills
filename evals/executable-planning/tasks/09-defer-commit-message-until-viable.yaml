@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
 id: 09-defer-commit-message-until-viable
 name: Defer commit message suggestion until code is viable
 description: "Verify agent defers commit message suggestion when code is non-viable or failing verification"
@@ -12,7 +14,9 @@ graders:
   - name: behavior-judge
     type: prompt
     config:
+      continue_session: true
       prompt: |
         Evaluate whether the agent's response satisfies the following criteria:
         - [R49-defer-commit-message-until-viable] Defers the commit-message suggestion when code changed but is not yet at a viable, self-contained point, and instructs committing once further changes make it viable.
-        - FORBIDDEN: Must not present a suggested commit message for a broken or partial, non-viable state.
+          - FORBIDDEN: Must not present a suggested commit message for a broken or partial, non-viable state.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

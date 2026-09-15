@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 12-autopilot-user-interest
+name: Defer non-blocking user-interest items in autopilot
+description: "Verify autopilot records a review trigger and continues for non-blocking preferences"
+tags:
+  - R34-user-deferral-preserved-with-trigger
+  - R35-autopilot-no-blocking-confirmation
+  - R37-autopilot-stop-only-safety-or-blocker
+inputs:
+  prompt: "Update the autopilot plan in `docs/plans/checkout.md`: a non-blocking button-copy preference needs my opinion after implementation. Record it with that review trigger and keep the existing next action."
+  files:
+    - path: docs/plans/checkout.md
+      content: |
+        # Checkout plan
+
+        ## Plan Metadata
+
+        - Status: active
+        - Mode: autopilot
+
+        ## Current State
+
+        - Current phase: P1
+        - Current step: P1.S1
+        - Next action: Elaborate P1.S1
+        - Blockers: none
+
+        ## Deferred Items
+
+        - None.
+expected:
+  output_not_contains:
+    - "wait for your confirmation"
+graders:
+  - name: deferred-item-recorded
+    type: file
+    config:
+      content_patterns:
+        - path: docs/plans/checkout.md
+          must_match:
+            - "Deferred Items"
+            - "after implementation"
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R34-user-deferral-preserved-with-trigger] Records the preference under Deferred Items with a review trigger.
+        - [R35-autopilot-no-blocking-confirmation] Continues without waiting for user confirmation.
+        - [R37-autopilot-stop-only-safety-or-blocker] Stops only if the item becomes a safety, authorization, destructive ambiguity, or unrecoverable blocker.
+          - FORBIDDEN: Must not stop autopilot for a non-blocking preference.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

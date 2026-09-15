@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
 id: 08-no-commit-message-without-code-change
 name: Omit commit message suggestion when no code changed
 description: "Verify agent omits commit message suggestion entirely when no code changed during the phase"
@@ -12,7 +14,9 @@ graders:
   - name: behavior-judge
     type: prompt
     config:
+      continue_session: true
       prompt: |
         Evaluate whether the agent's response satisfies the following criteria:
         - [R48-no-commit-message-without-code-change] Omits the commit-message suggestion entirely when no code files changed during the phase.
-        - FORBIDDEN: Must not present a suggested commit message when no code changed.
+          - FORBIDDEN: Must not present a suggested commit message when no code changed.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

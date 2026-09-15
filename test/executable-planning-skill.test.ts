@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -21,6 +21,19 @@ const BEHAVIORAL_FIXTURES_PATH = path.join(
 	"test",
 	"fixtures",
 	"behavioral-scenarios.json",
+);
+const EVAL_TASKS_DIR = path.join(
+	REPO_ROOT,
+	"evals",
+	"executable-planning",
+	"tasks",
+);
+const PLAN_IT_OUT_PATH = path.join(
+	REPO_ROOT,
+	".agents",
+	"skills",
+	"plan-it-out",
+	"SKILL.md",
 );
 const OUTPUT_PATH = path.join(
 	REPO_ROOT,
@@ -78,7 +91,7 @@ const expectedProjectOwnedRuleIds: string[] = [
 	"R13-create-plans-directory",
 	"R14-plan-state-in-canonical-artifact",
 	"R15-conversation-only-durability-warning",
-	"R16-update-on-material-events",
+	"R16-update-on-durable-state-transitions",
 	"R17-domain-based-multi-phase",
 	"R18-phase-iterative-reviewable",
 	"R19-phase-tangible-output",
@@ -87,11 +100,11 @@ const expectedProjectOwnedRuleIds: string[] = [
 	"R22-phase-dependencies-risks-rollback",
 	"R23-phase-checkpoint-by-mode",
 	"R24-thin-end-to-end-increments",
-	"R25-single-agent-exception-justified",
-	"R26-subagent-phase-step-outlines",
-	"R27-subagent-no-implementation",
-	"R28-parallelize-independent-phase-planning",
-	"R29-synthesize-and-resolve-conflicts",
+	"R25-single-agent-default",
+	"R26-planner-owns-step-authoring",
+	"R27-subagent-read-only-discovery",
+	"R28-parallelize-independent-discovery",
+	"R29-synthesize-discovery-results",
 	"R30-record-subagent-unavailable-fallback",
 	"R31-interactive-phase-confirmation-step",
 	"R32-interactive-stop-until-confirmed",
@@ -113,6 +126,7 @@ const expectedProjectOwnedRuleIds: string[] = [
 	"R48-no-commit-message-without-code-change",
 	"R49-defer-commit-message-until-viable",
 	"R50-archive-filesystem-move",
+	"R51-compaction-preserves-evidence",
 ];
 
 test("executable-planning skill composes required static contract", async () => {
@@ -222,7 +236,10 @@ test("commit suggestions are interactive-only and use a code block", async () =>
 	const rendered = readFileSync(OUTPUT_PATH, "utf8");
 
 	assert.match(rendered, /Commit message[\s\S]*?fenced `text` block/);
-	assert.match(rendered, /if no code changed, omit it/);
+	assert.match(
+		rendered,
+		/if no source code changed, provide no commit message or commit-like text/,
+	);
 });
 
 test("completed repo-backed plans must be relocated, not copied", async () => {
@@ -241,6 +258,52 @@ test("completed repo-backed plans must be relocated, not copied", async () => {
 	assert.match(rendered, /Never `git mv`/);
 });
 
+test("workflow defines mode combinations and durable state updates precisely", async () => {
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
+
+	assert.match(rendered, /Interactive \+ session-only handoff/);
+	assert.match(rendered, /never implement project work/);
+	assert.match(rendered, /Invariant precedence/);
+	assert.match(rendered, /durable state transition/);
+	assert.match(
+		rendered,
+		/Autopilot:[\s\S]*user-interest item[\s\S]*Deferred Items/,
+	);
+	assert.match(
+		rendered,
+		/three or more phases|security-sensitive|data migration/,
+	);
+	assert.match(
+		rendered,
+		/The compacted step is the sole owner of that evidence/,
+	);
+	assert.match(
+		rendered,
+		/Progress Log records only the transition without restating the command or outcome/,
+	);
+	assert.match(
+		rendered,
+		/verify each evidence pair appears only on its owning step/,
+	);
+});
+
+test("plan-it-out references the current executable-planning workflow", () => {
+	const content = readFileSync(PLAN_IT_OUT_PATH, "utf8");
+
+	for (const staleHeading of [
+		"Canonical Plan Artifact",
+		"Clarify First",
+		"Plan Design",
+		"Phase Elaboration",
+		"Required Plan Format",
+	]) {
+		assert.doesNotMatch(content, new RegExp(staleHeading));
+	}
+	assert.match(content, /Discover/);
+	assert.match(content, /Clarify at outline level/);
+});
+
 test("behavioral pressure fixtures are complete and cover project-owned rules", () => {
 	assert.equal(
 		existsSync(BEHAVIORAL_FIXTURES_PATH),
@@ -257,8 +320,13 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
 		assert.fail("behavioral fixtures must be an array");
 	}
 
-	const expectedScenarioCount = parsed.length;
-	assert.equal(parsed.length, expectedScenarioCount);
+	assert.equal(parsed.length, 14);
+	assert.equal(
+		readdirSync(EVAL_TASKS_DIR).filter((entry) => entry.endsWith(".yaml"))
+			.length,
+		parsed.length,
+		"every behavioral fixture must have a Waza task",
+	);
 
 	const seenPrompts = new Set<string>();
 	const observedRuleIds = new Set<string>();
@@ -347,16 +415,12 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
 				true,
 				`unknown forbidden rule id in fixture: ${ruleId}`,
 			);
-			assert.equal(
-				observedRuleIds.has(ruleId),
-				false,
-				`same rule id reused in forbidden list: ${ruleId}`,
-			);
 		}
 	}
 
-	assert.ok(
-		observedRuleIds.size > 0,
-		"expected project-owned rules to be exercised at least once",
+	assert.deepEqual(
+		[...observedRuleIds].sort(),
+		[...expectedProjectOwnedRuleIds].sort(),
+		"every project-owned rule must be required by at least one scenario",
 	);
 });

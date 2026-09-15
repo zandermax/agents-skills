@@ -1,26 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
 id: 05-user-interest-checkpoint
 name: Insert immediate awaiting-user step for flagged user interest
 description: "Verify agent stops at checkpoint and inserts immediate awaiting-user step when an issue is flagged"
 tags:
-  - R03-clarify-success-scope
   - R31-interactive-phase-confirmation-step
   - R32-interactive-stop-until-confirmed
   - R33-user-interest-immediate-awaiting-user
   - R47-interactive-checkpoint-commit-message-suggestion
 inputs:
-  prompt: "At checkpoint, I have an issue flagged for my interest and need your next step."
-expected:
-  output_contains:
-    - "[?]"
+  prompt: "Interactive checkpoint: Phase P1 changed source code, all validation passed, and the change is viable. The button copy still needs my opinion. Record that as the immediate next step and stop for my input."
 graders:
   - name: behavior-judge
     type: prompt
     config:
+      continue_session: true
       prompt: |
         Evaluate whether the agent's response satisfies the following criteria:
-        - [R03-clarify-success-scope] Clarifies observable outcome and scope boundaries before committing execution.
         - [R31-interactive-phase-confirmation-step] Includes explicit phase confirmation checkpoints in interactive mode.
         - [R32-interactive-stop-until-confirmed] Stops after phase validation until user confirms.
         - [R33-user-interest-immediate-awaiting-user] Inserts immediate awaiting-user step ([?]) and stops for input.
         - [R47-interactive-checkpoint-commit-message-suggestion] When code changed and is viable/self-contained, presents a single-line suggested commit message in a fenced text block.
-        - FORBIDDEN: Must not continue past awaiting-user checkpoint or hide/drop user-interest issue.
+          - FORBIDDEN: Must not continue past awaiting-user checkpoint or hide/drop user-interest issue.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
 id: 02-flat-checklist
 name: Reject flat checklist and structure into domain-based phases
 description: "Verify agent rejects flat unphased checklist and defines domain-based phases"
@@ -13,7 +15,7 @@ tags:
   - R38-required-plan-structure-and-status-markers
   - R42-phase-boundaries-revisable
 inputs:
-  prompt: "Give me a flat checklist only; do not use phases."
+  prompt: "Plan renaming configuration key `timeout` to `requestTimeout` across `src/parser.ts`, config files under `config/`, tests under `test/`, and `docs/configuration.md`. Preserve the old key for one release, validate with `npm test`, and make rollback restore old config files. Use interactive mode and repo-backed storage. Give me a flat checklist only; do not use phases."
 expected:
   output_contains:
     - "Phase"
@@ -21,6 +23,7 @@ graders:
   - name: behavior-judge
     type: prompt
     config:
+      continue_session: true
       prompt: |
         Evaluate whether the agent's response satisfies the following criteria:
         - [R17-domain-based-multi-phase] Uses one domain-based phase for genuinely small work; uses multiple phases when distinct boundaries/dependencies justify them, refusing a flat unphased checklist.
@@ -33,4 +36,5 @@ graders:
         - [R24-thin-end-to-end-increments] Prefers thin end-to-end increments.
         - [R38-required-plan-structure-and-status-markers] Uses required plan schema and stable status markers.
         - [R42-phase-boundaries-revisable] Acknowledges phase boundaries can be split, merged, reordered as understanding evolves.
-        - FORBIDDEN: Must not produce a single unphased checklist or omit phase outputs.
+          - FORBIDDEN: Must not produce a single unphased checklist or omit phase outputs.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

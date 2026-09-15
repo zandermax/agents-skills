@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 11-small-single-phase
+name: Keep a small change in one domain-based phase
+description: "Verify genuinely small work is not inflated into multiple generic phases"
+tags:
+  - R17-domain-based-multi-phase
+  - R19-phase-tangible-output
+  - R20-phase-completion-and-validation
+  - R24-thin-end-to-end-increments
+inputs:
+  prompt: "Plan a small rename of configuration key `timeout` to `requestTimeout` in `src/config.ts` and its existing focused test in `test/config.test.ts`. Validate with `npm test -- config`. Keep it appropriately small."
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R17-domain-based-multi-phase] Uses exactly one domain-based phase for this genuinely small self-contained change.
+        - [R19-phase-tangible-output] Defines the renamed configuration behavior as an inspectable output.
+        - [R20-phase-completion-and-validation] Includes completion criteria and the focused test command.
+        - [R24-thin-end-to-end-increments] Keeps implementation and its focused test in the same increment.
+          - FORBIDDEN: Must not invent separate generic coding and testing phases.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

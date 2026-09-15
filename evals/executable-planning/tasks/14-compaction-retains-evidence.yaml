@@ -1,0 +1,60 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 14-compaction-retains-evidence
+name: Preserve check evidence while compacting a completed phase
+description: "Verify compaction removes duplicate narrative without losing the exact check and outcome"
+tags:
+  - R16-update-on-durable-state-transitions
+  - R51-compaction-preserves-evidence
+inputs:
+  prompt: "Compact completed Phase P1 in `docs/plans/compaction.md`; preserve its check evidence without duplicating it."
+  files:
+    - path: docs/plans/compaction.md
+      content: |
+        # Compaction plan
+
+        ## Plan Metadata
+
+        - Status: active
+
+        ## Current State
+
+        - Current phase: P1
+        - Current step: complete
+        - Next action: Compact P1
+        - Blockers: none
+
+        ## Phase 1: Configuration behavior
+
+        ### Steps
+
+        - [x] P1.S1: Updated the configuration behavior.
+          - Check: `npm test -- config`
+          - Outcome: 12 passed, 0 failed
+
+        ### Validation
+
+        Run `npm test -- config`.
+
+        ## Progress Log
+
+        - P1.S1 completed: `npm test -- config`; 12 passed, 0 failed.
+graders:
+  - name: preserved-check-evidence
+    type: file
+    config:
+      content_patterns:
+        - path: docs/plans/compaction.md
+          must_match:
+            - "npm test -- config"
+            - "12 passed, 0 failed"
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Inspect `docs/plans/compaction.md` and evaluate whether the agent's work satisfies the following criteria:
+        - [R16-update-on-durable-state-transitions] Updates the canonical plan for the completed phase without duplicating the result.
+        - [R51-compaction-preserves-evidence] Retains the exact check command and outcome in the compacted step result.
+          - FORBIDDEN: Must not discard the command or outcome while compacting.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

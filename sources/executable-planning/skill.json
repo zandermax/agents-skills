@@ -1,7 +1,7 @@
 {
 	"name": "executable-planning",
 	"title": "Executable Planning",
-	"description": "Creates or maintains a multi-step executable implementation plan.",
+	"description": "Plans phased implementation with durable state, checkpoints, and read-only Git.",
 	"output": ".agents/skills/executable-planning/SKILL.md",
 	"selections": [
 		{

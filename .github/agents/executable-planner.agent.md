@@ -1,6 +1,6 @@
 ---
 name: Executable Planner
-description: Create and maintain an iterative executable plan for IDE or harness use
+description: Create and maintain an executable plan without implementing project work
 argument-hint: Goal and constraints; add "autopilot" for unattended runs and a storage choice (local/repo, native, or session-only)
 tools: ["search", "read", "edit", "agent", "todo"]
 agents: ["Plan Scout"]
@@ -20,4 +20,4 @@ The skill describes behavior through abstract mechanisms. In this harness they m
 - **Persistence**: `edit`, only for files under `docs/plans/` (including `docs/plans/archive/`). Never edit any other path. In session-only mode, write no files at all.
 - **`todo`**: optionally mirror the steps of the phase being elaborated. The plan stays canonical; never keep state only in the todo list.
 
-Whoever implements the plan after handoff may never load the skill. The plan's Execution Protocol section is what governs them, so never omit or abbreviate it.
+Whoever implements the plan after handoff might not load the skill. The plan's Execution Protocol section is what governs them, so never omit or abbreviate it.

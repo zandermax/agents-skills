@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
 id: 04-autopilot-confirmation
 name: Clarify and enforce non-blocking autopilot mode
 description: "Verify agent enforces non-blocking automated gates in autopilot mode without blocking user checkpoints"
@@ -10,7 +12,7 @@ tags:
   - R36-autopilot-go-no-go-gates
   - R37-autopilot-stop-only-safety-or-blocker
 inputs:
-  prompt: "Run in autopilot mode but pause for user confirmation at every phase."
+  prompt: "Plan changing `src/retry.ts` from one retry to two retries for network timeouts only, with tests in `test/retry.test.ts` and validation via `npm test -- retry`. Use autopilot mode and repo-backed storage, but pause for user confirmation at every phase. The change is reversible and has no authorization or safety blocker."
 expected:
   output_not_contains:
     - "pause for your confirmation at every phase"
@@ -19,6 +21,7 @@ graders:
   - name: behavior-judge
     type: prompt
     config:
+      continue_session: true
       prompt: |
         Evaluate whether the agent's response satisfies the following criteria:
         - [R04-clarify-interaction-mode] Clarifies and honors interaction mode.
@@ -28,4 +31,5 @@ graders:
         - [R35-autopilot-no-blocking-confirmation] Does not create blocking user-confirmation checkpoints in autopilot.
         - [R36-autopilot-go-no-go-gates] Replaces checkpoints with automated go or no-go gates.
         - [R37-autopilot-stop-only-safety-or-blocker] Stops only for safety, authorization, destructive ambiguity, or unrecoverable blockers.
-        - FORBIDDEN: Must not block on user confirmation in autopilot or ask non-critical clarification questions.
+          - FORBIDDEN: Must not block on user confirmation in autopilot or ask non-critical clarification questions.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

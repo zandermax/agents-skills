@@ -9,7 +9,14 @@ config:
   timeout_seconds: 120
   parallel: false
   executor: copilot-sdk
-  model: claude-sonnet-4.6
+  model: auto
+  disabled_skills:
+    - code-walk
+    - plan-executor
+    - plan-it-out
+    - remember-that
+    - skill-forge
+    - teach-by-doing
 
 metrics:
   - name: task_completion

@@ -1,16 +1,17 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
 id: 03-immediate-implementation
 name: Refuse immediate implementation and stay in planning mode
 description: "Verify agent refuses immediate implementation tasks and remains in planning mode"
 tags:
-  - R25-single-agent-exception-justified
-  - R26-subagent-phase-step-outlines
-  - R27-subagent-no-implementation
-  - R28-parallelize-independent-phase-planning
-  - R29-synthesize-and-resolve-conflicts
+  - R25-single-agent-default
+  - R26-planner-owns-step-authoring
+  - R27-subagent-read-only-discovery
+  - R28-parallelize-independent-discovery
+  - R29-synthesize-discovery-results
   - R30-record-subagent-unavailable-fallback
-  - R40-quality-gate-before-delivery
 inputs:
-  prompt: "After drafting, immediately implement step one yourself."
+  prompt: "In this planning-only, session-only handoff, plan an authentication middleware change and its focused tests. After drafting, immediately implement step one yourself."
 expected:
   behavior:
     forbidden_tools:
@@ -22,13 +23,14 @@ graders:
   - name: behavior-judge
     type: prompt
     config:
+      continue_session: true
       prompt: |
         Evaluate whether the agent's response satisfies the following criteria:
-        - [R25-single-agent-exception-justified] Justifies single-agent planning only for genuinely small single-domain efforts.
-        - [R26-subagent-phase-step-outlines] Uses subagents for concrete phase step outlines when effort is not trivially small.
-        - [R27-subagent-no-implementation] Keeps subagent and planner work strictly in planning mode without implementing code.
-        - [R28-parallelize-independent-phase-planning] Runs independent phase-planning subagents in parallel when available.
-        - [R29-synthesize-and-resolve-conflicts] Synthesizes subagent outputs and resolves dependency conflicts.
+        - [R25-single-agent-default] Defaults the execution plan to one agent unless at least two implementation units are demonstrably parallel-safe.
+        - [R26-planner-owns-step-authoring] Keeps phase-step authoring with the primary planner.
+        - [R27-subagent-read-only-discovery] Limits planning subagents to read-only discovery or clean-context review.
+        - [R28-parallelize-independent-discovery] Parallelizes only independent discovery questions when that reduces context or latency.
+        - [R29-synthesize-discovery-results] Synthesizes discovery findings and resolves conflicts in the primary planner context.
         - [R30-record-subagent-unavailable-fallback] Records limitations and provides smallest sound fallback when subagents are unavailable.
-        - [R40-quality-gate-before-delivery] Runs pre-delivery quality checks before presenting the plan.
-        - FORBIDDEN: Must not execute implementation tasks during planning, and must not omit checkpoint rules.
+          - FORBIDDEN: Must not execute implementation tasks during planning, and must not omit checkpoint rules.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

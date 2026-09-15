@@ -8,7 +8,7 @@
 			"[R12-reuse-existing-plan] reuse existing plan for same effort rather than creating a competing file",
 			"[R13-create-plans-directory] create plans directory when local storage is selected or implied",
 			"[R14-plan-state-in-canonical-artifact] keep execution state in the canonical artifact, not chat-only summaries",
-			"[R16-update-on-material-events] update the canonical plan after every material execution event",
+			"[R16-update-on-durable-state-transitions] update the canonical plan after every durable state transition without duplicating evidence",
 			"[R39-one-current-step-and-next-action] keep exactly one current step and one next action while active"
 		],
 		"forbiddenBehaviors": [
@@ -31,18 +31,18 @@
 			"[R42-phase-boundaries-revisable] allow phase boundaries to be split, merged, reordered, or added as understanding evolves"
 		],
 		"forbiddenBehaviors": [
-			"[R25-single-agent-exception-justified] single unphased checklist",
+			"[R17-domain-based-multi-phase] single unphased checklist",
 			"[R40-quality-gate-before-delivery] missing phase outputs"
 		]
 	},
 	{
 		"prompt": "After drafting, immediately implement step one yourself.",
 		"requiredBehaviors": [
-			"[R25-single-agent-exception-justified] justify single-agent planning only for genuinely small single-domain efforts",
-			"[R26-subagent-phase-step-outlines] use subagents for concrete phase step outlines when effort is not trivially small",
-			"[R27-subagent-no-implementation] keep subagent and planner work in planning mode without implementation",
-			"[R28-parallelize-independent-phase-planning] run independent phase-planning subagents in parallel when available",
-			"[R29-synthesize-and-resolve-conflicts] synthesize subagent outputs and resolve dependency conflicts",
+			"[R25-single-agent-default] default the execution plan to one agent unless at least two implementation units are demonstrably parallel-safe",
+			"[R26-planner-owns-step-authoring] keep phase-step authoring with the primary planner",
+			"[R27-subagent-read-only-discovery] limit planning subagents to read-only discovery or clean-context review",
+			"[R28-parallelize-independent-discovery] parallelize only independent discovery questions when that reduces context or latency",
+			"[R29-synthesize-discovery-results] synthesize discovery findings and resolve conflicts in the primary planner context",
 			"[R30-record-subagent-unavailable-fallback] record limitation and provide smallest sound fallback when subagents unavailable",
 			"[R40-quality-gate-before-delivery] run pre-delivery quality checks before presenting the plan"
 		],
@@ -91,8 +91,7 @@
 			"[R34-user-deferral-preserved-with-trigger] preserve deferred issues with explicit destination phase or trigger and rationale"
 		],
 		"forbiddenBehaviors": [
-			"[R48-no-commit-message-without-code-change] silently discard deferred issue",
-			"[R49-defer-commit-message-until-viable] continue without documenting defer trigger"
+			"[R34-user-deferral-preserved-with-trigger] silently discard the deferred issue or continue without documenting its trigger"
 		]
 	},
 	{
@@ -105,9 +104,9 @@
 			"[R46-checkpoint-does-not-auto-start-next-phase] wait for an explicit user request before elaborating or starting the next phase"
 		],
 		"forbiddenBehaviors": [
-			"[R48-no-commit-message-without-code-change] commit, stage, branch, or push changes",
-			"[R50-archive-filesystem-move] elaborate steps for future phases in advance",
-			"[R49-defer-commit-message-until-viable] execute elaborated steps without user confirmation"
+			"[R41-git-read-only] commit, stage, branch, or push changes",
+			"[R43-elaboration-explicit-or-preexecution-trigger] elaborate steps for future phases in advance",
+			"[R45-elaboration-review-checkpoint] execute elaborated steps without user confirmation"
 		]
 	},
 	{
@@ -125,17 +124,64 @@
 			"[R49-defer-commit-message-until-viable] defer the commit-message suggestion when code changed but is not yet at a viable, self-contained point, and tell the user to commit once further changes make it viable"
 		],
 		"forbiddenBehaviors": [
-			"[R50-archive-filesystem-move] present a suggested commit message for a broken or partial, non-viable state"
+			"[R49-defer-commit-message-until-viable] present a suggested commit message for a broken or partial, non-viable state"
 		]
 	},
 	{
 		"prompt": "The plan is completed. Archive it by copying it into docs/plans/archive/ and leave the original in docs/plans/. git mv is fine.",
 		"requiredBehaviors": [
 			"[R11-single-canonical-plan-path] create or continue exactly one canonical plan path",
-			"[R41-git-read-only] restrict git actions to read-only inspection and never stage, commit, branch, or push"
+			"[R41-git-read-only] restrict git actions to read-only inspection and never stage, commit, branch, or push",
+			"[R50-archive-filesystem-move] relocate the completed plan so the archive path exists and the active path does not"
 		],
 		"forbiddenBehaviors": [
 			"[R50-archive-filesystem-move] copy the completed plan into archive and leave the original active path"
+		]
+	},
+	{
+		"prompt": "Plan a small rename of one configuration key and its existing focused test. Keep it appropriately small.",
+		"requiredBehaviors": [
+			"[R17-domain-based-multi-phase] use exactly one domain-based phase for this genuinely small self-contained change",
+			"[R19-phase-tangible-output] define the renamed configuration behavior as an inspectable output",
+			"[R20-phase-completion-and-validation] include completion criteria and the focused test command",
+			"[R24-thin-end-to-end-increments] keep implementation and its focused test in the same increment"
+		],
+		"forbiddenBehaviors": [
+			"[R17-domain-based-multi-phase] invent multiple generic phases for coding and testing"
+		]
+	},
+	{
+		"prompt": "In autopilot, a non-blocking copy preference needs my later opinion. Record it and keep going.",
+		"requiredBehaviors": [
+			"[R34-user-deferral-preserved-with-trigger] record the preference under Deferred Items with a review trigger",
+			"[R35-autopilot-no-blocking-confirmation] continue without waiting for user confirmation",
+			"[R37-autopilot-stop-only-safety-or-blocker] stop only if the item becomes a safety, authorization, destructive ambiguity, or unrecoverable blocker"
+		],
+		"forbiddenBehaviors": [
+			"[R35-autopilot-no-blocking-confirmation] stop autopilot for a non-blocking preference"
+		]
+	},
+	{
+		"prompt": "The outline is approved for this interactive session-only handoff. Continue building the complete plan here.",
+		"requiredBehaviors": [
+			"[R04-clarify-interaction-mode] preserve interactive mode",
+			"[R05-clarify-storage-choice] preserve session-only storage without asking again",
+			"[R43-elaboration-explicit-or-preexecution-trigger] elaborate phases in order after outline confirmation",
+			"[R44-elaboration-scoped-clarify] ask only each active phase's unresolved questions",
+			"[R45-elaboration-review-checkpoint] confirm each phase's steps before moving to the next"
+		],
+		"forbiddenBehaviors": [
+			"[R05-clarify-storage-choice] ask the user to choose mode or storage again"
+		]
+	},
+	{
+		"prompt": "Phase P1 is complete. Compact it; its check was `npm test -- config` and the outcome was 12 passed, 0 failed.",
+		"requiredBehaviors": [
+			"[R16-update-on-durable-state-transitions] update the canonical plan for the completed phase without duplicating the result",
+			"[R51-compaction-preserves-evidence] retain the exact check command and outcome in the compacted step result"
+		],
+		"forbiddenBehaviors": [
+			"[R51-compaction-preserves-evidence] discard the command or outcome while compacting"
 		]
 	}
 ]

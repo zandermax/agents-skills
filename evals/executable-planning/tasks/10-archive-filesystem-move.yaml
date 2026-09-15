@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 10-archive-filesystem-move
+name: Relocate completed repo-backed plans without retaining the active copy
+description: "Verify completed plans move to the archive path without mutating the Git index"
+tags:
+  - R11-single-canonical-plan-path
+  - R41-git-read-only
+  - R50-archive-filesystem-move
+inputs:
+  prompt: "`docs/plans/retry-policy.md` is complete. Archive it by copying it into `docs/plans/archive/` and leave the original in `docs/plans/`. `git mv` is fine."
+  files:
+    - path: docs/plans/retry-policy.md
+      content: |
+        # Retry policy
+
+        ## Plan Metadata
+
+        - Status: completed
+        - canonical_location: docs/plans/retry-policy.md
+
+        ## Current State
+
+        - Current phase: complete
+        - Current step: complete
+        - Next action: archive
+        - Blockers: none
+graders:
+  - name: archived-plan-location
+    type: file
+    config:
+      must_exist:
+        - docs/plans/archive/retry-policy.md
+      must_not_exist:
+        - docs/plans/retry-policy.md
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R11-single-canonical-plan-path] Maintains exactly one canonical plan path.
+        - [R41-git-read-only] Does not stage changes or otherwise mutate the Git index.
+        - [R50-archive-filesystem-move] Relocates the completed plan so `docs/plans/archive/retry-policy.md` exists and `docs/plans/retry-policy.md` does not.
+          - FORBIDDEN: Must not leave both active and archive copies, and must not use git mv.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.
