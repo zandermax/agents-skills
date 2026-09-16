@@ -24,6 +24,7 @@ test("plan-executor skill frontmatter and core structure", async () => {
 	assert.match(skill, /## Harness Mechanisms/);
 	assert.match(skill, /## Workflow/);
 
+	assert.match(skill, /Every repo-backed plan starts with YAML frontmatter/i);
 	assert.match(skill, /One canonical plan/i);
 	assert.match(skill, /Plan existence gate/i);
 	assert.match(skill, /Evidence before assertion/i);

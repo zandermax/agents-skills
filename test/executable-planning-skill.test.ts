@@ -231,6 +231,17 @@ test("plan design supports single-phase plans when the work is genuinely small",
 	);
 });
 
+test("repo-backed plans require lifecycle frontmatter on creation and updates", async () => {
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
+
+	assert.match(rendered, /Start every repo-backed plan with YAML frontmatter/);
+	assert.match(
+		rendered,
+		/When creating or modifying a plan, preserve the frontmatter delimiters/,
+	);
+});
+
 test("commit suggestions are interactive-only and use a code block", async () => {
 	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
 	const rendered = readFileSync(OUTPUT_PATH, "utf8");

@@ -53,6 +53,8 @@ In autopilot, resolve everything else with conservative, reversible assumptions 
 The three options are equally valid; use the one chosen or inferred.
 
 - **Repo-backed**: one plan at `docs/plans/<descriptive-slug>.md`, creating the directory if needed. Continue an existing plan for the same effort instead of creating a competing file. If no git repository exists but this was chosen explicitly, create it anyway and note in the plan that it is not version-controlled.
+- Start every repo-backed plan with YAML frontmatter. At minimum, set `status`, `mode`, `canonical_location`, `last_updated`, and the current-state fields required by the plan template.
+- When creating or modifying a plan, preserve the frontmatter delimiters and update metadata whenever lifecycle state, interaction mode, canonical path, current phase, current step, next action, or blockers change. Do not record those fields only in the Markdown body.
 - **Harness-native**: the harness's own persistent plan artifact. Some harness plan stores are session-scoped; if so, warn that the plan may not outlive the session. If the harness has no plan store, keep one clearly labeled canonical plan in conversation with the same warning.
 - **Session-only**: write no file anywhere during planning. Warn once, up front, that conversation state may not survive and that the plan will be delivered as one final document. After each material event, show the changed sections and updated Current State rather than reprinting the whole plan. When planning concludes, deliver the complete plan as one self-contained markdown document a fresh agent could execute with no access to this conversation; every open question is resolved or recorded as an explicit assumption first.
 

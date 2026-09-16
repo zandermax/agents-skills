@@ -7,6 +7,8 @@ description: Executes implementation plans with step verification and tracking
 
 ## Invariants
 
+Every repo-backed plan starts with YAML frontmatter containing the required plan metadata and current-state fields. When creating or modifying the plan, preserve the frontmatter and update it whenever status, mode, canonical path, current phase, current step, next action, or blockers change; do not keep those values only in the Markdown body.
+
 These hold in every mode and override anything below.
 
 - **One canonical plan.** Maintain status, evidence, decisions, and blockers directly in the canonical plan artifact. Update it after every material event: step completion, check result, blocker, or scope change. If the plan is held only in conversation, first write it to a file (e.g., `docs/plans/<slug>.md`) and treat that file as the canonical artifact for all subsequent updates.
