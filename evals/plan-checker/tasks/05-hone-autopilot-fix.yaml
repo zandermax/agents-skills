@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 05-hone-autopilot-fix
+name: Hone a plan automatically
+description: "Verify that hone-the-plan applies safe fixes in autopilot mode"
+inputs:
+  prompt: "Use hone-the-plan to improve docs/plans/cache.md automatically."
+  files:
+    - path: docs/plans/cache.md
+      content: |
+        ---
+        status: drafting
+        mode: autopilot
+        canonical_location: docs/plans/cache.md
+        last_updated: 2026-09-16
+        ---
+
+        # Cache migration
+
+        ## Goal
+        Migrate the cache.
+
+        ## Steps
+        1. Change it.
+        2. Test it.
+
+graders:
+  - name: honed-plan
+    type: file
+    config:
+      content_patterns:
+        - path: docs/plans/cache.md
+          must_match:
+            - "Success criteria"
+            - "Check:"
+            - "Assumptions"
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the agent:
+        - used plan-checker through the hone-the-plan autopilot path;
+        - applied safe, concrete improvements to the supplied plan;
+        - recorded assumptions rather than inventing user decisions;
+        - did not modify implementation files;
+        - reported the final verdict and applied fixes.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

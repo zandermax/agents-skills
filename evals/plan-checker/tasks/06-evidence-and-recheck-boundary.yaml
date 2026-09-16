@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 06-evidence-and-recheck-boundary
+name: Keep evidence and repair bounded
+description: "Verify that unsupported repository claims are marked unverified and review does not loop"
+inputs:
+  prompt: |
+    Review this plan. You may suggest fixes, but do not claim to inspect files that are not provided.
+
+    Goal: update the billing API.
+    Assumption: the repository already has a retry helper and a staging smoke test.
+    Steps:
+    1. Reuse the retry helper.
+    2. Run the staging smoke test.
+    3. Deploy immediately if it passes.
+    Validation: everything should work.
+
+    Keep reviewing until the plan is perfect.
+
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - labels the unprovided retry helper and staging test as `unverified`;
+        - identifies weak validation and the unsafe immediate deployment as findings;
+        - does not claim to have inspected the repository or run tests;
+        - refuses the unbounded "until perfect" loop and reports a maximum of two repair cycles;
+        - distinguishes blocking errors from warnings.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 01-ready-arbitrary-plan
+name: Review a coherent ordinary plan
+description: "Verify that a complete ordinary plan receives a ready verdict without requiring executable-planning metadata"
+inputs:
+  prompt: |
+    Review this plan for readiness. Do not edit it.
+
+    # Add export filters
+
+    Goal: Add an export filter for inactive accounts.
+    Success criteria: inactive accounts are excluded, active accounts remain, and the filter has regression coverage.
+    Steps:
+    1. Confirm the account status field and current query behavior. Check: query fixtures show the existing behavior.
+    2. Add the filter in the account repository. Depends: step 1. Check: unit tests cover active and inactive accounts.
+    3. Run the focused tests and document the result. Depends: step 2. Check: tests pass.
+    Risks: status values may be missing; treat missing values as active and add a fixture.
+    Recovery: revert the filter if the focused tests expose incompatible callers.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - returns a `ready` verdict;
+        - does not require executable-planning metadata for this ordinary plan;
+        - identifies the concrete goal, checks, dependency, risk, and recovery evidence;
+        - does not claim tests were actually run;
+        - does not edit or invent the plan.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.
