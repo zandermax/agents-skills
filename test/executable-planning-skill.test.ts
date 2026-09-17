@@ -127,6 +127,9 @@ const expectedProjectOwnedRuleIds: string[] = [
 	"R49-defer-commit-message-until-viable",
 	"R50-archive-filesystem-move",
 	"R51-compaction-preserves-evidence",
+	"R52-plan-checker-risk-screen",
+	"R53-plan-checker-ownership",
+	"R54-plan-checker-unavailable",
 ];
 
 test("executable-planning skill composes required static contract", async () => {
@@ -165,7 +168,11 @@ test("executable-planning skill composes required static contract", async () => 
 
 	const rendered = readFileSync(OUTPUT_PATH, "utf8");
 	const parsed = parseFrontmatter(rendered, OUTPUT_PATH);
-	assert.deepEqual(Object.keys(parsed.attributes), ["name", "description"]);
+	assert.deepEqual(Object.keys(parsed.attributes), [
+		"name",
+		"description",
+		"disable-model-invocation",
+	]);
 	assert.ok(
 		!/^(?:use|run|call)\b/i.test(String(parsed.attributes.description ?? "")),
 	);
@@ -285,6 +292,16 @@ test("workflow defines mode combinations and durable state updates precisely", a
 		rendered,
 		/three or more phases|security-sensitive|data migration/,
 	);
+	assert.match(rendered, /shared `plan-checker` risk screen/);
+	assert.match(
+		rendered,
+		/After the complete plan has been assembled[\s\S]*before presenting it through the plan-review mechanism or beginning autopilot execution/,
+	);
+	assert.match(
+		rendered,
+		/If the checker is unavailable, continue only as `unchecked`[\s\S]*do not claim that the plan passed review/,
+	);
+	assert.doesNotMatch(rendered, /run a clean-context review/);
 	assert.match(
 		rendered,
 		/The compacted step is the sole owner of that evidence/,
@@ -331,7 +348,7 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
 		assert.fail("behavioral fixtures must be an array");
 	}
 
-	assert.equal(parsed.length, 14);
+	assert.equal(parsed.length, 15);
 	assert.equal(
 		readdirSync(EVAL_TASKS_DIR).filter((entry) => entry.endsWith(".yaml"))
 			.length,

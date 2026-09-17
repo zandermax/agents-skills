@@ -13,6 +13,9 @@ These hold in every mode and override anything below.
 
 - **One canonical plan.** Maintain status, evidence, decisions, and blockers directly in the canonical plan artifact. Update it after every material event: step completion, check result, blocker, or scope change. If the plan is held only in conversation, first write it to a file (e.g., `docs/plans/<slug>.md`) and treat that file as the canonical artifact for all subsequent updates.
 - **Plan existence gate.** Never start execution without a canonical plan artifact or a valid in-session plan. If the plan is missing, incomplete, or malformed, stop immediately and request the missing plan or the corrected artifact before making any code changes.
+- **Plan-checker admission gate.** Before the first implementation write, determine whether the plan-checker's authoritative risk triggers apply. If they do, require a completed `plan-checker` review record with verdict `ready`; a `not-ready` verdict blocks execution, and an unavailable checker or `unchecked` verdict also blocks execution because readiness was not established. Do not duplicate the checker rubric in the executor.
+- A blocked admission must explicitly state that execution requires a fresh `ready` verdict and a matching content fingerprint from `plan-checker` before any implementation write.
+- **Freshness gate.** Before each implementation step and after any semantic plan edit, recompute the normalized plan fingerprint and compare it with the admitted review record. Lifecycle-only updates excluded by the checker may proceed; any semantic change invalidates the prior verdict and requires a new review before implementation continues.
 - **Evidence before assertion.** Treat fresh execution output as the sole evidence for claims about repository state or step completion. Do not claim success or a passing step without running the specified check.
 - **Stop on blocker.** Halt execution immediately if a check fails, an assumption is contradicted, or instructions are ambiguous. Do not guess fixes or force changes past failing verification.
 - **Tool-agnostic execution.** Plans describe actions, commands, and checks without hardcoding harness UI or specific tool names.
@@ -37,6 +40,7 @@ Inspect the canonical plan and current workspace state before changing any code.
 3. Verify git branch and workspace state against the plan's prerequisite context.
 4. Confirm that dependencies, referenced files, and initial assumptions match reality.
 5. If discrepancies or unresolvable gaps exist, raise a blocker before executing any steps.
+6. Run the plan-checker admission gate before any implementation write. Record the checker verdict and matching fingerprint in the execution context; stop on `not-ready`, `unchecked`, missing review metadata, or fingerprint mismatch.
 
 ### 2. Elaborate Phase Steps Just-in-Time
 
@@ -52,9 +56,10 @@ If a phase's steps are already elaborated and recorded in the plan, skip elabora
 Execute the current phase's elaborated steps one at a time in the order listed. A step is executable only if it specifies both an action and a check; if a step lacks either, raise a blocker via the question mechanism instead of guessing. If the plan already contains steps marked `[x]`, verify their recorded evidence is present and resume from the first incomplete step; do not re-execute completed steps unless their check is re-run and fails.
 
 1. **Mark in-progress**: Update the canonical plan to reflect the active step.
-2. **Perform action**: Apply the code, configuration, or file changes specified for the step.
-3. **Run check**: Execute the exact check command or verification procedure given in the step. If a step specifies no check, treat this as a plan defect: halt and raise a blocker requesting a verification procedure; do not invent one or mark the step complete.
-4. **Evaluate outcome**:
+2. **Recheck freshness**: Recompute the normalized plan fingerprint. If it differs from the admitted review record, stop and require the plan-checker to review the changed plan before any implementation write.
+3. **Perform action**: Apply the code, configuration, or file changes specified for the step.
+4. **Run check**: Execute the exact check command or verification procedure given in the step. If a step specifies no check, treat this as a plan defect: halt and raise a blocker requesting a verification procedure; do not invent one or mark the step complete.
+5. **Evaluate outcome**:
    - **Pass**: Record the evidence in the plan, mark the step completed (`[x]`), and proceed to the next step.
    - **Fail**: Halt immediately. Record the failure output and error state in the plan, and present the blocker.
 

@@ -10,7 +10,7 @@ tags:
   - R44-elaboration-scoped-clarify
   - R45-elaboration-review-checkpoint
 inputs:
-  prompt: "The outline is approved for this interactive session-only handoff: Phase 1 updates the config parser; Phase 2 migrates callers. Continue building the complete plan here, starting with Phase 1."
+  prompt: "The outline is approved for this interactive session-only handoff: Phase 1 updates the config parser; Phase 2 migrates callers. Continue building the complete plan here, starting with Phase 1. This is a behavior-only evaluation with no repository context: do not call tools or inspect files. Infer conservative Phase 1 steps and stop at its confirmation checkpoint; do not elaborate Phase 2 yet."
 expected:
   output_not_contains:
     - "choose a storage"

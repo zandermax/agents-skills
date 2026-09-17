@@ -16,6 +16,8 @@ The plan is the authoritative source of work. If no canonical plan exists, the s
 
 Load that skill before acting. If it cannot be loaded, report that failure and stop rather than reconstructing its workflow from memory.
 
+Before any implementation write, apply the skill's plan-checker admission and freshness gates. A missing or non-`ready` review record, an `unchecked` or `not-ready` verdict, or a fingerprint mismatch is a blocker; do not begin execution until the canonical plan has been reviewed again.
+
 The skill describes execution behavior through abstract mechanisms. In this harness they map to:
 
 - **Execution mechanism**: `execute`, used to run build, test, and verification check commands.

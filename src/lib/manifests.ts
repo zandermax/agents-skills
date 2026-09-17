@@ -14,6 +14,7 @@ export interface SkillManifest {
 	readonly name: string;
 	readonly title: string;
 	readonly description: string;
+	readonly disableModelInvocation?: boolean;
 	readonly output: string;
 	readonly selections: readonly SourceSelection[];
 	readonly sectionOwnership: Readonly<Record<string, SectionOwner>>;
@@ -25,6 +26,7 @@ const MANIFEST_KEYS = new Set([
 	"name",
 	"title",
 	"description",
+	"disable-model-invocation",
 	"output",
 	"selections",
 	"sectionOwnership",
@@ -207,6 +209,23 @@ export function parseSkillManifest(
 		throw createManifestError(
 			manifestPath,
 			"description must not mention the user or users",
+		);
+	}
+
+	const disableModelInvocation = value["disable-model-invocation"];
+	if (
+		disableModelInvocation !== undefined &&
+		typeof disableModelInvocation !== "boolean"
+	) {
+		throw createManifestError(
+			manifestPath,
+			"disable-model-invocation must be a boolean",
+		);
+	}
+	if (disableModelInvocation !== undefined && disableModelInvocation !== true) {
+		throw createManifestError(
+			manifestPath,
+			"disable-model-invocation must be true when present",
 		);
 	}
 
@@ -403,6 +422,7 @@ export function parseSkillManifest(
 		name,
 		title,
 		description,
+		...(disableModelInvocation !== undefined ? { disableModelInvocation } : {}),
 		output,
 		selections: parsedSelections,
 		sectionOwnership,

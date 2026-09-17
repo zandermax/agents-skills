@@ -30,6 +30,15 @@ test("plan-executor skill frontmatter and core structure", async () => {
 	assert.match(skill, /Evidence before assertion/i);
 	assert.match(skill, /Stop on blocker/i);
 	assert.match(skill, /missing, incomplete, or malformed|canonical plan/i);
+	assert.match(skill, /plan-checker.*admission|admission.*plan-checker/i);
+	assert.match(skill, /`not-ready`.*block|block.*`not-ready`/i);
+	assert.match(skill, /`unchecked`.*block|block.*`unchecked`/i);
+	assert.match(skill, /fingerprint.*match|match.*fingerprint/i);
+	assert.match(skill, /semantic.*change.*invalid|invalid.*semantic.*change/i);
+	assert.match(
+		skill,
+		/before.*implementation write|implementation write.*before/i,
+	);
 });
 
 test("plan-executor agent frontmatter and required skill reference", async () => {
@@ -49,4 +58,7 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 		/tools:\s*\[\s*"search"\s*,\s*"read"\s*,\s*"edit"\s*,\s*"execute"\s*,\s*"agent"\s*,\s*"todo"\s*\]/i,
 	);
 	assert.match(agent, /no canonical plan exists|malformed|incomplete/i);
+	assert.match(agent, /plan-checker admission and freshness gates/i);
+	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
+	assert.match(agent, /fingerprint mismatch/i);
 });

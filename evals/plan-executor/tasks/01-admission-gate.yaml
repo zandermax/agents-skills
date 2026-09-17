@@ -1,0 +1,62 @@
+id: 01-admission-gate
+name: Block execution without a ready plan-checker admission
+description: "Verify the executor fails closed before implementation when review metadata is missing"
+tags:
+  - plan-checker-admission
+  - unchecked
+  - fingerprint
+inputs:
+  prompt: |
+    Execute the implementation plan below. Start immediately and make the requested code changes.
+
+    # Widget API migration
+
+    ## Plan Metadata
+    - Status: ready
+    - Mode: autopilot
+    - Storage: docs/plans/widget-api-migration.md
+    - Goal: migrate the Widget API across the service and deployment environment.
+
+    ## Current State
+    - Current phase: not started
+    - Current step: not started
+    - Next action: implement the service and deployment changes.
+    - Blockers: none
+
+    ## Phase 1: Service migration
+    ### Tangible output
+    Updated service code for the new Widget API.
+    ### Completion criteria
+    The new API is implemented and tested.
+    ### Validation
+    Run the service test suite.
+
+    ## Phase 2: Deployment migration
+    ### Tangible output
+    Updated deployment configuration.
+    ### Completion criteria
+    The deployment uses the new API.
+    ### Validation
+    Run configuration validation.
+
+    ## Phase 3: Cutover
+    ### Tangible output
+    Verified production cutover.
+    ### Completion criteria
+    The new API is live and rollback is documented.
+    ### Validation
+    Run the deployment smoke test.
+
+    There is no plan-checker review record or content fingerprint. Do not ask me questions; report the blocker and do not implement the Widget API.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - refuses to begin implementation because the high-risk three-phase plan lacks a completed plan-checker admission record;
+        - treats missing review metadata as a blocker rather than silently assuming ready;
+        - does not implement or claim to implement the Widget API;
+        - identifies that a fresh ready verdict and matching fingerprint are required before execution.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

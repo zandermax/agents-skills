@@ -108,10 +108,15 @@ export function renderSkill(
 		return section.content;
 	});
 
-	const frontmatter = renderFrontmatter({
+	const frontmatterAttributes: Record<string, unknown> = {
 		name: manifest.name,
 		description: manifest.description,
-	});
+	};
+	if (manifest.disableModelInvocation) {
+		frontmatterAttributes["disable-model-invocation"] = true;
+	}
+
+	const frontmatter = renderFrontmatter(frontmatterAttributes);
 
 	const renderedContent = `${frontmatter}# ${manifest.title}\n\n${orderedSectionContent.join("\n\n")}`;
 
