@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 02-blocking-contradiction
+name: Detect a blocking plan contradiction
+description: "Verify that contradictory scope and success criteria produce a not-ready verdict"
+inputs:
+  prompt: |
+    Review this plan and report the verdict with prioritized findings.
+
+    # Migrate the cache
+
+    Goal: Remove the cache entirely.
+    Success criteria: cache reads remain available for all existing callers.
+    Steps:
+    1. Delete the cache implementation. Check: the cache directory no longer exists.
+    2. Preserve all cache callers unchanged. Depends: step 1. Check: all callers continue to compile.
+    Validation: run the cache tests.
+
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - returns `not-ready`;
+        - identifies the contradiction between removing the cache and preserving cache reads;
+        - classifies it as an error rather than a warning;
+        - proposes a concrete decision or repair;
+        - does not pretend the deletion or tests happened.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

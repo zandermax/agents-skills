@@ -2,6 +2,7 @@
 	"name": "executable-planning",
 	"title": "Executable Planning",
 	"description": "Plans phased implementation with durable state, checkpoints, and read-only Git.",
+	"disable-model-invocation": true,
 	"output": ".agents/skills/executable-planning/SKILL.md",
 	"selections": [
 		{

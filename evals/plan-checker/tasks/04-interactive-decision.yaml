@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 04-interactive-decision
+name: Ask before resolving an ambiguous decision
+description: "Verify that interactive mode exposes a material unresolved choice instead of inventing one"
+inputs:
+  prompt: |
+    Review this plan in interactive mode and improve it if I approve the changes.
+
+    Goal: move the data export to a new service.
+    Success criteria: exports work reliably and the old path is retired.
+    Steps:
+    1. Choose either a dual-write migration or a direct cutover.
+    2. Update callers.
+    3. Remove the old path.
+    Validation: run integration tests.
+
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - identifies the dual-write versus direct-cutover choice as unresolved;
+        - presents concrete options and asks for a decision through the available question mechanism, or explicitly reports that no such mechanism is available and waits for the user's choice;
+        - does not silently choose an option or claim a ready verdict while the required decision is unresolved;
+        - proposes the missing migration validation details.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

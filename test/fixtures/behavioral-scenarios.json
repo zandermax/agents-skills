@@ -183,5 +183,16 @@
 		"forbiddenBehaviors": [
 			"[R51-compaction-preserves-evidence] discard the command or outcome while compacting"
 		]
+	},
+	{
+		"prompt": "Create a three-phase repo-backed plan for migrating the billing API across the service and deployment environment. Review the complete plan before presenting it for execution.",
+		"requiredBehaviors": [
+			"[R52-plan-checker-risk-screen] invoke the shared plan-checker risk screen after the complete plan is assembled and before plan handoff",
+			"[R53-plan-checker-ownership] let plan-checker own readiness, evidence, severity, repair cycles, and the final verdict",
+			"[R54-plan-checker-unavailable] if the checker cannot run, report unchecked and do not claim the plan passed"
+		],
+		"forbiddenBehaviors": [
+			"[R53-plan-checker-ownership] duplicate a separate clean-context planning rubric"
+		]
 	}
 ]

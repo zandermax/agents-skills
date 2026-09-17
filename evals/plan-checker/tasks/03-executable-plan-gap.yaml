@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 03-executable-plan-gap
+name: Apply stricter checks to an executable plan
+description: "Verify that executable-planning conventions are checked when the format is present"
+inputs:
+  prompt: |
+    Review this executable plan.
+
+    ---
+    status: ready
+    mode: interactive
+    canonical_location: docs/plans/cache.md
+    last_updated: 2026-09-16
+    ---
+
+    # Cache migration
+
+    ## Current State
+    - Current phase: Phase 1
+    - Current step: P1.S1
+    - Next action: implement
+    - Blockers: none
+
+    ## Phase 1: Migrate cache
+    ### Steps
+    - [ ] P1.S1: Change the cache implementation.
+
+    ## Validation
+    Run the tests.
+
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - recognizes executable-planning conventions from the frontmatter and headings;
+        - returns `not-ready` or otherwise identifies blocking missing execution evidence;
+        - flags the missing step Check and missing phase output/completion criteria as errors;
+        - does not falsely call the plan ready merely because the metadata exists.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

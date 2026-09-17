@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 15-plan-checker-risk-gate
+name: Apply the shared plan-checker risk gate before handoff
+description: "Verify that high-risk executable plans use plan-checker as the readiness gate"
+tags:
+  - plan-checker-risk-screen
+  - plan-checker-ownership
+  - plan-checker-unavailable
+inputs:
+  prompt: |
+    Review the following complete three-phase repo-backed plan for migrating the billing API across the service and deployment environment. Do not scan the repository, create files, or implement changes. Independently delegate this complete plan to the shared `plan-checker` review task, wait for its structured result, and present the required post-review handoff status before offering it for execution.
+
+    # Billing API migration
+
+    ## Plan Metadata
+    - Status: ready
+    - Mode: autopilot
+    - Storage: docs/plans/billing-api-migration.md
+    - Goal: migrate the billing API across service and deployment environments.
+
+    ## Current State
+    - Current phase: not started
+    - Current step: not started
+    - Next action: review this plan, then begin Phase 1 only if admitted.
+    - Blockers: none
+
+    ## Phase 1: Service migration
+    ### Tangible output
+    Updated billing service contract and compatibility tests.
+    ### Completion criteria
+    Service behavior matches the new API contract and legacy behavior remains covered.
+    ### Validation
+    Run the billing service test suite.
+    ### Dependencies and risks
+    Requires preserving compatibility during rollout; rollback keeps the legacy path available.
+
+    ## Phase 2: Deployment migration
+    ### Tangible output
+    Updated deployment manifests, environment configuration, and rollout controls.
+    ### Completion criteria
+    All target environments reference the migrated API and support reversible rollout.
+    ### Validation
+    Run rendered-manifest and deployment configuration checks.
+    ### Dependencies and risks
+    Depends on the service contract; environment drift and secret misconfiguration are risks.
+
+    ## Phase 3: Cutover
+    ### Tangible output
+    Validated cutover and rollback record.
+    ### Completion criteria
+    Staged smoke validation passes and rollback remains documented and usable.
+    ### Validation
+    Run the deployment smoke test and rollback-readiness check.
+    ### Dependencies and risks
+    Depends on Phases 1 and 2; production cutover is irreversible without rollback controls.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - invokes or explicitly delegates to the shared `plan-checker` risk screen after the complete plan is assembled and before presenting it for execution;
+        - states that plan-checker owns readiness, evidence labeling, severity, bounded repair cycles, and the final verdict rather than duplicating a second clean-context rubric;
+        - preserves the distinction between a checker verdict of `not-ready` (block handoff) and checker unavailable (`unchecked`, record the limitation, do not claim review passed);
+        - does not implement the billing API.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

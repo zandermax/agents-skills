@@ -1,0 +1,28 @@
+schemaVersion: "1.0"
+version: "1.0"
+name: plan-checker
+description: Behavioral evaluation suite for the plan-checker and hone-the-plan skills
+skill: plan-checker
+
+config:
+  trials_per_task: 1
+  timeout_seconds: 120
+  parallel: false
+  executor: copilot-sdk
+  model: auto
+  disabled_skills:
+    - executable-planning
+    - plan-executor
+    - plan-it-out
+    - remember-that
+    - skill-forge
+    - teach-by-doing
+
+metrics:
+  - name: task_completion
+    weight: 1.0
+    threshold: 0.8
+    description: Correct, evidence-based plan review and bounded improvement behavior
+
+tasks:
+  - "tasks/*.yaml"
