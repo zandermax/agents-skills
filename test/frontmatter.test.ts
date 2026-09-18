@@ -139,6 +139,7 @@ test("all skill and agent frontmatter entries are valid", async () => {
 		"agents",
 		"user-invocable",
 		"disable-model-invocation",
+		"handoffs",
 	]);
 
 	for (const directory of await readdir(skillRoot, { withFileTypes: true })) {
@@ -226,6 +227,9 @@ test("all skill and agent frontmatter entries are valid", async () => {
 				typeof parsed.attributes["disable-model-invocation"],
 				"boolean",
 			);
+		}
+		if (parsed.attributes.handoffs !== undefined) {
+			assert.ok(Array.isArray(parsed.attributes.handoffs));
 		}
 	}
 });
