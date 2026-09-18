@@ -76,4 +76,5 @@ When all plan phases and steps are complete:
 
 1. Run the repository's full verification suite (e.g., tests, type checks, linter). If the full suite fails, record the failing output in the plan, do not present a completion summary, and raise a blocker identifying which steps are most likely implicated.
 2. Record final verification evidence in the canonical plan.
-3. Present a summary of completed changes, verified evidence, and handoff instructions.
+3. For a completed repo-backed plan, immediately move the canonical plan to its archive location before presenting a completion summary. Archive only when the archive path exists and the active path does not; verify both paths. Do not recreate or edit the active-path file after relocation.
+4. Present a summary of completed changes, verified evidence, and handoff instructions.

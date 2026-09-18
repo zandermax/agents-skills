@@ -76,3 +76,15 @@ test("plan executor collects user-test evidence before phase continuation", asyn
 	assert.match(agent, /User Test.*free-text observation/i);
 	assert.match(agent, /must not.*expected result/i);
 });
+
+test("plan executor archives completed repo-backed plans before handoff", async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readFile(agentPath, "utf8"),
+	]);
+
+	assert.match(skill, /all plan phases and steps are complete[\s\S]*archive/i);
+	assert.match(skill, /completed repo-backed plan.*immediately.*move/i);
+	assert.match(skill, /archive path.*exists.*active path.*does not/i);
+	assert.match(agent, /completed repo-backed plan[\s\S]*archive/i);
+});
