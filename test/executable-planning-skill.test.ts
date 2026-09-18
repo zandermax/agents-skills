@@ -326,6 +326,7 @@ test("interactive checkpoints require independent user-test evidence", async () 
 	assert.match(rendered, /independent.*executor.*validation/i);
 	assert.match(rendered, /unavailable.*reason|reason.*unavailable/i);
 	assert.match(rendered, /Autopilot[\s\S]*no user-test checkpoint/i);
+	assert.match(rendered, /No checkpoint tests yet\./);
 	assert.doesNotMatch(rendered, /User Test[\s\S]*suggested answer/i);
 });
 
@@ -353,6 +354,7 @@ test("executable planner agent requests free-text user-test observations", () =>
 
 	assert.match(agent, /User Test.*free-text.*observation/i);
 	assert.match(agent, /must not.*expected result/i);
+	assert.match(agent, /No checkpoint tests yet\./);
 });
 
 test("behavioral pressure fixtures are complete and cover project-owned rules", () => {

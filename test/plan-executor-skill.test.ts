@@ -73,8 +73,10 @@ test("plan executor collects user-test evidence before phase continuation", asyn
 	assert.match(skill, /user-provided evidence/i);
 	assert.match(skill, /insufficient.*blocker|blocker.*insufficient/i);
 	assert.match(skill, /Autopilot[\s\S]*no.*User Test/i);
+	assert.match(skill, /No checkpoint tests yet\./);
 	assert.match(agent, /User Test.*free-text observation/i);
 	assert.match(agent, /must not.*expected result/i);
+	assert.match(agent, /No checkpoint tests yet\./);
 });
 
 test("plan executor archives completed repo-backed plans before handoff", async () => {

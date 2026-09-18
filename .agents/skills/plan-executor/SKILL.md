@@ -60,7 +60,7 @@ Execute the current phase's elaborated steps one at a time in the order listed. 
 3. **Perform action**: Apply the code, configuration, or file changes specified for the step.
 4. **Run check**: Execute the exact check command or verification procedure given in the step. If a step specifies no check, treat this as a plan defect: halt and raise a blocker requesting a verification procedure; do not invent one or mark the step complete.
 5. **Evaluate outcome**:
-   - **Pass**: Record the evidence in the plan, mark the step completed (`[x]`), and proceed to the next step.
+   - **Pass**: Record the evidence in the plan, mark the step completed (`[x]`), and proceed to the next step. In interactive mode, whenever an operation or step completes while the plan is not yet complete: prompt the user to perform any actions ready for manual testing; if there is nothing yet to have the user test, state "No checkpoint tests yet."
    - **Fail**: Halt immediately. Record the failure output and error state in the plan, and present the blocker.
 
 ### 4. Phase Checkpoints
