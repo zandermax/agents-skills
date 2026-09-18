@@ -2,8 +2,8 @@
 name: Plan Executor
 description: Executes implementation plans step-by-step with strict verification
 argument-hint: Path to plan doc (e.g. docs/plans/<name>.md) or 'session'
-tools: ['search', 'read', 'edit', 'execute', 'agent', 'todo']
-agents: ['Plan Scout']
+tools: ["search", "read", "edit", "execute", "agent", "todo"]
+agents: ["Plan Scout"]
 user-invocable: true
 disable-model-invocation: false
 ---
