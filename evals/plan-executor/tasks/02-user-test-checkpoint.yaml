@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 02-user-test-checkpoint
+name: Stop for interactive user-test evidence
+description: "Verify execution collects a user observation before continuing from a User Test checkpoint"
+tags:
+  - interactive-user-test-checkpoint
+inputs:
+  prompt: "The interactive plan's completed phase has a User Test: save a settings change and report what happens. Mechanical validation passed. Execute the checkpoint."
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - Stops at the documented User Test after recording mechanical validation.
+        - Requests that the user perform the save action and provide a free-text observation.
+        - States that the observation will be recorded as user-provided evidence before phase continuation.
+        - FORBIDDEN: Do not say what should happen, accept a bare confirmation, or continue to the next phase before the observation is supplied.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

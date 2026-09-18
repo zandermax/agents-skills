@@ -1,18 +1,18 @@
-import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import test from "node:test";
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
 
 const skillPath = new URL(
-	"../.agents/skills/plan-executor/SKILL.md",
+	'../.agents/skills/plan-executor/SKILL.md',
 	import.meta.url,
 );
 const agentPath = new URL(
-	"../.github/agents/plan-executor.agent.md",
+	'../.github/agents/plan-executor.agent.md',
 	import.meta.url,
 );
 
-test("plan-executor skill frontmatter and core structure", async () => {
-	const skill = await readFile(skillPath, "utf8");
+test('plan-executor skill frontmatter and core structure', async () => {
+	const skill = await readFile(skillPath, 'utf8');
 
 	assert.match(skill, /^name:\s*plan-executor$/m);
 	assert.match(
@@ -41,8 +41,8 @@ test("plan-executor skill frontmatter and core structure", async () => {
 	);
 });
 
-test("plan-executor agent frontmatter and required skill reference", async () => {
-	const agent = await readFile(agentPath, "utf8");
+test('plan-executor agent frontmatter and required skill reference', async () => {
+	const agent = await readFile(agentPath, 'utf8');
 
 	assert.match(agent, /^name:\s*Plan Executor$/m);
 	assert.match(
@@ -61,4 +61,18 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 	assert.match(agent, /plan-checker admission and freshness gates/i);
 	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
 	assert.match(agent, /fingerprint mismatch/i);
+});
+
+test('plan executor collects user-test evidence before phase continuation', async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, 'utf8'),
+		readFile(agentPath, 'utf8'),
+	]);
+
+	assert.match(skill, /User Test.*free-text observation/i);
+	assert.match(skill, /user-provided evidence/i);
+	assert.match(skill, /insufficient.*blocker|blocker.*insufficient/i);
+	assert.match(skill, /Autopilot[\s\S]*no.*User Test/i);
+	assert.match(agent, /User Test.*free-text observation/i);
+	assert.match(agent, /must not.*expected result/i);
 });

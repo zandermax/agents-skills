@@ -194,5 +194,14 @@
 		"forbiddenBehaviors": [
 			"[R53-plan-checker-ownership] duplicate a separate clean-context planning rubric"
 		]
+	},
+	{
+		"prompt": "Create an interactive plan for a settings page change. At the phase checkpoint, have me verify the visible save workflow myself.",
+		"requiredBehaviors": [
+			"[R55-interactive-user-test-checkpoint] define a user-invoked test with a concrete action and a free-text prompt asking what the user observes, distinguish it from executor validation, and do not include it in autopilot"
+		],
+		"forbiddenBehaviors": [
+			"[R55-interactive-user-test-checkpoint] suggest an expected UI result, use only a yes/no confirmation, or repeat the executor's test or lint command as the user test"
+		]
 	}
 ]

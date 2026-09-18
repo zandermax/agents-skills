@@ -67,8 +67,8 @@ Execute the current phase's elaborated steps one at a time in the order listed. 
 
 Maintain phase boundaries according to execution mode. The execution mode is set by the plan's `mode:` field or by explicit user instruction; if neither specifies a mode, default to Interactive.
 
-- **Interactive**: Upon completing a phase, update the plan, present the phase outputs and verification evidence, and pause for explicit confirmation before starting the next phase (and, per step 2, before elaborating its steps).
-- **Autopilot**: Update the plan at phase boundaries and proceed automatically to elaborating and executing the next phase as long as all step checks pass without blockers.
+- **Interactive**: Upon completing a phase, update the plan and present the phase outputs and verification evidence. When the checkpoint defines a User Test, stop and ask the user to perform its documented action and provide the requested free-text observation. Do not state an expected result or accept a bare confirmation as the preferred evidence. Record the response as user-provided evidence, compare it with the completion criteria, and raise a blocker or clarification question when the observation is contradictory or insufficient. Only after resolving the User Test may the executor ask for confirmation before starting the next phase (and, per step 2, before elaborating its steps). When User Test is unavailable, preserve its documented rationale and use the normal confirmation checkpoint.
+- **Autopilot**: Update the plan at phase boundaries and proceed automatically to elaborating and executing the next phase as long as all step checks pass without blockers. Do not stop for a User Test or request user evidence.
 
 ### 5. Final Verification and Handoff
 

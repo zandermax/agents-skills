@@ -130,6 +130,7 @@ const expectedProjectOwnedRuleIds: string[] = [
 	"R52-plan-checker-risk-screen",
 	"R53-plan-checker-ownership",
 	"R54-plan-checker-unavailable",
+	"R55-interactive-user-test-checkpoint",
 ];
 
 test("executable-planning skill composes required static contract", async () => {
@@ -316,6 +317,18 @@ test("workflow defines mode combinations and durable state updates precisely", a
 	);
 });
 
+test("interactive checkpoints require independent user-test evidence", async () => {
+	await buildSkills({ repoRoot: REPO_ROOT, mode: "write" });
+	const rendered = readFileSync(OUTPUT_PATH, "utf8");
+
+	assert.match(rendered, /User Test/);
+	assert.match(rendered, /free-text observation/i);
+	assert.match(rendered, /independent.*executor.*validation/i);
+	assert.match(rendered, /unavailable.*reason|reason.*unavailable/i);
+	assert.match(rendered, /Autopilot[\s\S]*no user-test checkpoint/i);
+	assert.doesNotMatch(rendered, /User Test[\s\S]*suggested answer/i);
+});
+
 test("plan-it-out references the current executable-planning workflow", () => {
 	const content = readFileSync(PLAN_IT_OUT_PATH, "utf8");
 
@@ -330,6 +343,16 @@ test("plan-it-out references the current executable-planning workflow", () => {
 	}
 	assert.match(content, /Discover/);
 	assert.match(content, /Clarify at outline level/);
+});
+
+test("executable planner agent requests free-text user-test observations", () => {
+	const agent = readFileSync(
+		path.join(REPO_ROOT, ".github", "agents", "executable-planner.agent.md"),
+		"utf8",
+	);
+
+	assert.match(agent, /User Test.*free-text.*observation/i);
+	assert.match(agent, /must not.*expected result/i);
 });
 
 test("behavioral pressure fixtures are complete and cover project-owned rules", () => {
@@ -348,7 +371,7 @@ test("behavioral pressure fixtures are complete and cover project-owned rules", 
 		assert.fail("behavioral fixtures must be an array");
 	}
 
-	assert.equal(parsed.length, 15);
+	assert.equal(parsed.length, 16);
 	assert.equal(
 		readdirSync(EVAL_TASKS_DIR).filter((entry) => entry.endsWith(".yaml"))
 			.length,

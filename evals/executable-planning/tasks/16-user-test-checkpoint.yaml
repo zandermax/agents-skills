@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 16-user-test-checkpoint
+name: Add independent user-test evidence at interactive checkpoints
+description: "Verify interactive plans request user-observed evidence without suggesting its result"
+tags:
+  - R55-interactive-user-test-checkpoint
+inputs:
+  prompt: "Create an interactive plan for a settings page change. At the phase checkpoint, have me verify the visible save workflow myself."
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the agent's response satisfies the following criteria:
+        - [R55-interactive-user-test-checkpoint] Includes a user-invoked test for the visible workflow with a concrete action and a free-text question asking what the user observed.
+        - [R55-interactive-user-test-checkpoint] Explains that the test supplies evidence independent of executor-run validation and does not add a blocking user test to autopilot behavior.
+        - FORBIDDEN: Do not state what the user should see, offer a yes/no-only confirmation, or prescribe the executor's test, lint, typecheck, or build command as the user test.
+          If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.
