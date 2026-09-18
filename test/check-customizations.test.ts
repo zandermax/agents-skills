@@ -1,90 +1,90 @@
-import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import os from 'node:os';
-import path from 'node:path';
-import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-import { checkCustomizations } from '../src/check-customizations.js';
-import { parseFrontmatter } from '../src/lib/frontmatter.js';
-import { listSections } from '../src/lib/markdown-sections.js';
+import { checkCustomizations } from "../src/check-customizations.js";
+import { parseFrontmatter } from "../src/lib/frontmatter.js";
+import { listSections } from "../src/lib/markdown-sections.js";
 
 const testFilePath = fileURLToPath(import.meta.url);
-const projectRoot = path.resolve(path.dirname(testFilePath), '..');
+const projectRoot = path.resolve(path.dirname(testFilePath), "..");
 const tsxCliPath = path.join(
 	projectRoot,
-	'node_modules',
-	'tsx',
-	'dist',
-	'cli.mjs',
+	"node_modules",
+	"tsx",
+	"dist",
+	"cli.mjs",
 );
-const checkerCliPath = path.join(projectRoot, 'src', 'check-customizations.ts');
+const checkerCliPath = path.join(projectRoot, "src", "check-customizations.ts");
 const executablePlannerPath = path.join(
 	projectRoot,
-	'.github',
-	'agents',
-	'executable-planner.agent.md',
+	".github",
+	"agents",
+	"executable-planner.agent.md",
 );
 const executablePlanningCorePath = path.join(
 	projectRoot,
-	'sources',
-	'executable-planning',
-	'executable-planning.md',
+	"sources",
+	"executable-planning",
+	"executable-planning.md",
 );
 const planScoutPath = path.join(
 	projectRoot,
-	'.github',
-	'agents',
-	'plan-scout.agent.md',
+	".github",
+	"agents",
+	"plan-scout.agent.md",
 );
 
 const EXECUTABLE_PLANNER_FRONTMATTER_BLOCK = [
-	'---',
-	'name: Executable Planner',
-	'description: Create and maintain an executable plan without implementing project work',
+	"---",
+	"name: Executable Planner",
+	"description: Create and maintain an executable plan without implementing project work",
 	'argument-hint: Goal and constraints; add "autopilot" for unattended runs and a storage choice (local/repo, native, or session-only)',
-	'tools:',
-	'  [',
-	'    vscode/askQuestions,',
-	'    vscode/toolSearch,',
-	'    read,',
-	'    agent,',
-	'    vscodeGeneral/rename,',
-	'    vscodeGeneral/usages,',
-	'    vscodeGeneral/toolSearch,',
-	'    edit,',
-	'    search,',
-	'    todo,',
-	'  ]',
+	"tools:",
+	"  [",
+	"    vscode/askQuestions,",
+	"    vscode/toolSearch,",
+	"    read,",
+	"    agent,",
+	"    vscodeGeneral/rename,",
+	"    vscodeGeneral/usages,",
+	"    vscodeGeneral/toolSearch,",
+	"    edit,",
+	"    search,",
+	"    todo,",
+	"  ]",
 	"agents: ['Plan Scout']",
-	'user-invocable: true',
-	'disable-model-invocation: false',
-	'handoffs:',
-	'  - label: Start Implementation',
-	'    agent: agent',
-	'    prompt: Start implementation',
-	'    send: true',
-	'---',
-	'',
-].join('\n');
+	"user-invocable: true",
+	"disable-model-invocation: false",
+	"handoffs:",
+	"  - label: Start Implementation",
+	"    agent: agent",
+	"    prompt: Start implementation",
+	"    send: true",
+	"---",
+	"",
+].join("\n");
 const EXECUTABLE_PLANNER_BODY = [
-	'',
-	'You are a planner. You create and maintain executable plans; you never implement project work.',
-	'',
+	"",
+	"You are a planner. You create and maintain executable plans; you never implement project work.",
+	"",
 	"**Required skill:** load `executable-planning` before doing anything else, along with any other skill this agent names. If a required skill can't be loaded, report the failure and stop rather than reconstructing it from memory.",
-	'',
-	'The skill describes behavior through abstract mechanisms. In this harness they map to:',
-	'',
+	"",
+	"The skill describes behavior through abstract mechanisms. In this harness they map to:",
+	"",
 	"- **Question mechanism**: `vscode_askQuestions`. Batch all unresolved questions into one call, with predefined options where answers are fixed. For a User Test, request a free-text observation and must not suggest an expected result. Don't call it once autopilot execution has begun. Autopilot mode is active only when the user's request includes the word 'autopilot'. In autopilot mode, resolve any open question by choosing the most conservative option, record it under an 'Assumptions' heading in the plan, and continue; never block waiting for input.",
 	"- **Plan-review mechanism**: the `handoffs` frontmatter starts implementation through VS Code's native UI. This declarative adapter mapping applies after each response; the skill decides when a plan is ready. Other harnesses use their equivalent transition mechanism or present the plan in conversation.",
-	'- **Subagent mechanism**: the `agent` tool, limited to **Plan Scout**, a read-only investigator. Use it for parallel discovery and optional clean-context plan review. Never delegate implementation or step planning.',
-	'- **Persistence**: `edit`, only for files under `docs/plans/` (including `docs/plans/archive/`). Never edit any other path. In session-only mode, write no files at all.',
-	'- **`todo`**: optionally mirror the steps of the phase being elaborated. The plan stays canonical; never keep state only in the todo list.',
-	'',
+	"- **Subagent mechanism**: the `agent` tool, limited to **Plan Scout**, a read-only investigator. Use it for parallel discovery and optional clean-context plan review. Never delegate implementation or step planning.",
+	"- **Persistence**: `edit`, only for files under `docs/plans/` (including `docs/plans/archive/`). Never edit any other path. In session-only mode, write no files at all.",
+	"- **`todo`**: optionally mirror the steps of the phase being elaborated. The plan stays canonical; never keep state only in the todo list.",
+	"",
 	"Whoever implements the plan after handoff might not load the skill. The plan's Execution Protocol section is what governs them, so never omit or abbreviate it.",
-	'',
-].join('\n');
+	"",
+].join("\n");
 
 type FixtureOptions = {
 	skillFolderName?: string;
@@ -102,107 +102,107 @@ async function createFixtureRepo(
 	options: FixtureOptions = {},
 ): Promise<string> {
 	const repoRoot = await mkdtemp(
-		path.join(os.tmpdir(), 'check-customizations-'),
+		path.join(os.tmpdir(), "check-customizations-"),
 	);
-	const skillFolderName = options.skillFolderName ?? 'executable-planning';
+	const skillFolderName = options.skillFolderName ?? "executable-planning";
 	const skillFrontmatterName =
-		options.skillFrontmatterName ?? 'executable-planning';
+		options.skillFrontmatterName ?? "executable-planning";
 	const skillFrontmatter = {
 		name: skillFrontmatterName,
-		description: 'Creates deterministic planning checkpoints.',
+		description: "Creates deterministic planning checkpoints.",
 		...(options.skillExtraFrontmatter ?? {}),
 	};
 	const skillFrontmatterYaml = Object.entries(skillFrontmatter)
 		.map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-		.join('\n');
+		.join("\n");
 
-	const skillDir = path.join(repoRoot, '.agents', 'skills', skillFolderName);
+	const skillDir = path.join(repoRoot, ".agents", "skills", skillFolderName);
 	await mkdir(skillDir, { recursive: true });
 	await writeFile(
-		path.join(skillDir, 'SKILL.md'),
+		path.join(skillDir, "SKILL.md"),
 		[
-			'---',
+			"---",
 			skillFrontmatterYaml,
-			'---',
-			'# Executable Planning',
-			'',
-			'## Scope',
-			'Keep a canonical state record for each phase.',
-			'',
-			'## Usage',
-			'Apply iterative plan checkpoints before execution.',
-			options.skillBodyExtra ?? '',
-		].join('\n'),
-		'utf8',
+			"---",
+			"# Executable Planning",
+			"",
+			"## Scope",
+			"Keep a canonical state record for each phase.",
+			"",
+			"## Usage",
+			"Apply iterative plan checkpoints before execution.",
+			options.skillBodyExtra ?? "",
+		].join("\n"),
+		"utf8",
 	);
 
-	const agentDir = path.join(repoRoot, '.github', 'agents');
+	const agentDir = path.join(repoRoot, ".github", "agents");
 	await mkdir(agentDir, { recursive: true });
 	await writeFile(
-		path.join(agentDir, 'executable-planner.agent.md'),
+		path.join(agentDir, "executable-planner.agent.md"),
 		options.agentBodyOverride ??
 			[
-				'---',
-				'name: Executable Planner',
-				'description: Planning-only orchestrator.',
-				'---',
-				'# Executable Planner',
-				'',
-				'**REQUIRED SKILL:** Use executable-planning for all planning behavior.',
-				'',
-				'Keep this agent thin and delegate planning workflow to the skill.',
-			].join('\n'),
-		'utf8',
+				"---",
+				"name: Executable Planner",
+				"description: Planning-only orchestrator.",
+				"---",
+				"# Executable Planner",
+				"",
+				"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+				"",
+				"Keep this agent thin and delegate planning workflow to the skill.",
+			].join("\n"),
+		"utf8",
 	);
 
-	const sourceDir = path.join(repoRoot, 'sources', 'executable-planning');
+	const sourceDir = path.join(repoRoot, "sources", "executable-planning");
 	await mkdir(sourceDir, { recursive: true });
 	await writeFile(
-		path.join(sourceDir, 'core.md'),
-		'## Scope\nCore scope content.\n',
-		'utf8',
+		path.join(sourceDir, "core.md"),
+		"## Scope\nCore scope content.\n",
+		"utf8",
 	);
 	await writeFile(
-		path.join(sourceDir, 'official.md'),
-		'## Discovery\nOfficial discovery content.\n',
-		'utf8',
+		path.join(sourceDir, "official.md"),
+		"## Discovery\nOfficial discovery content.\n",
+		"utf8",
 	);
 	await writeFile(
-		path.join(sourceDir, 'skill-only.md'),
-		'## Usage\nSkill-only usage content.\n',
-		'utf8',
+		path.join(sourceDir, "skill-only.md"),
+		"## Usage\nSkill-only usage content.\n",
+		"utf8",
 	);
-	await writeFile(path.join(sourceDir, 'transforms.json'), '[]\n', 'utf8');
+	await writeFile(path.join(sourceDir, "transforms.json"), "[]\n", "utf8");
 	await writeFile(
-		path.join(sourceDir, 'skill.json'),
+		path.join(sourceDir, "skill.json"),
 		JSON.stringify(
 			{
-				name: 'executable-planning',
-				title: 'Executable Planning',
-				description: 'Creates deterministic planning checkpoints.',
-				output: '.agents/skills/executable-planning/SKILL.md',
+				name: "executable-planning",
+				title: "Executable Planning",
+				description: "Creates deterministic planning checkpoints.",
+				output: ".agents/skills/executable-planning/SKILL.md",
 				selections: [
 					{
-						source: options.manifestSourceOverride ?? 'core.md',
-						owner: 'core',
-						headings: ['Scope'],
+						source: options.manifestSourceOverride ?? "core.md",
+						owner: "core",
+						headings: ["Scope"],
 					},
 					{
-						source: 'official.md',
-						owner: 'official',
-						headings: ['Discovery'],
-						transforms: 'transforms.json',
+						source: "official.md",
+						owner: "official",
+						headings: ["Discovery"],
+						transforms: "transforms.json",
 					},
 					{
-						source: 'skill-only.md',
-						owner: 'skill',
-						headings: ['Usage'],
+						source: "skill-only.md",
+						owner: "skill",
+						headings: ["Usage"],
 					},
 				],
 				sectionOwnership: {
-					Scope: 'core',
-					Discovery: 'official',
-					Usage: 'skill',
+					Scope: "core",
+					Discovery: "official",
+					Usage: "skill",
 				},
 				requiredPhrases: [],
 				forbiddenPhrases: [],
@@ -210,45 +210,45 @@ async function createFixtureRepo(
 			null,
 			2,
 		),
-		'utf8',
+		"utf8",
 	);
 
 	await writeFile(
-		path.join(repoRoot, 'README.md'),
+		path.join(repoRoot, "README.md"),
 		options.readmeOverride ??
 			[
-				'# Executable Planning',
-				'',
-				'Run npm run build and npm run check to validate outputs.',
-				'Run npm run install:artifacts to install for copilot, claude, and .agents/skills consumers.',
-			].join('\n'),
-		'utf8',
+				"# Executable Planning",
+				"",
+				"Run npm run build and npm run check to validate outputs.",
+				"Run npm run install:artifacts to install for copilot, claude, and .agents/skills consumers.",
+			].join("\n"),
+		"utf8",
 	);
 	await writeFile(
-		path.join(repoRoot, 'install-catalog.json'),
+		path.join(repoRoot, "install-catalog.json"),
 		JSON.stringify(
 			{
 				collections: [
 					{
-						name: 'skills',
-						artifactKind: 'skill',
-						source: '.agents/skills',
-						entry: { kind: 'directory', marker: 'SKILL.md' },
+						name: "skills",
+						artifactKind: "skill",
+						source: ".agents/skills",
+						entry: { kind: "directory", marker: "SKILL.md" },
 					},
 					{
-						name: 'copilot',
-						artifactKind: 'agent',
-						source: '.github/agents',
-						entry: { kind: 'file', suffix: '.agent.md' },
-						validation: 'copilot-agent',
+						name: "copilot",
+						artifactKind: "agent",
+						source: ".github/agents",
+						entry: { kind: "file", suffix: ".agent.md" },
+						validation: "copilot-agent",
 					},
 				],
 				clients: [
 					{
-						name: 'copilot',
+						name: "copilot",
 						destinations: [
-							{ collection: 'skills', path: '~/.copilot/skills' },
-							{ collection: 'copilot', path: '~/.copilot/agents' },
+							{ collection: "skills", path: "~/.copilot/skills" },
+							{ collection: "copilot", path: "~/.copilot/agents" },
 						],
 					},
 				],
@@ -256,50 +256,50 @@ async function createFixtureRepo(
 			null,
 			2,
 		),
-		'utf8',
+		"utf8",
 	);
-	const githooksDir = path.join(repoRoot, '.githooks');
+	const githooksDir = path.join(repoRoot, ".githooks");
 	await mkdir(githooksDir, { recursive: true });
 	await writeFile(
-		path.join(githooksDir, 'pre-push'),
-		'#!/bin/sh\nnpm run check\n',
-		'utf8',
+		path.join(githooksDir, "pre-push"),
+		"#!/bin/sh\nnpm run check\n",
+		"utf8",
 	);
 
 	await writeFile(
-		path.join(repoRoot, 'package.json'),
+		path.join(repoRoot, "package.json"),
 		JSON.stringify(
 			{
-				name: 'fixture',
+				name: "fixture",
 				scripts: {
-					prepare: 'git config core.hooksPath .githooks',
+					prepare: "git config core.hooksPath .githooks",
 				},
 			},
 			null,
 			2,
 		),
-		'utf8',
+		"utf8",
 	);
 
 	if (options.planStatus !== undefined) {
 		const planDirectory = path.join(
 			repoRoot,
-			'docs',
-			'plans',
-			options.planArchived ? 'archive' : '',
+			"docs",
+			"plans",
+			options.planArchived ? "archive" : "",
 		);
 		await mkdir(planDirectory, { recursive: true });
 		await writeFile(
-			path.join(planDirectory, 'fixture.md'),
+			path.join(planDirectory, "fixture.md"),
 			`---\nstatus: ${options.planStatus}\n---\n# Fixture Plan\n`,
-			'utf8',
+			"utf8",
 		);
 	}
 
 	return repoRoot;
 }
 
-test('checkCustomizations accepts valid repository fixtures', async () => {
+test("checkCustomizations accepts valid repository fixtures", async () => {
 	const repoRoot = await createFixtureRepo();
 
 	try {
@@ -309,8 +309,8 @@ test('checkCustomizations accepts valid repository fixtures', async () => {
 	}
 });
 
-test('checkCustomizations requires completed plans to be archived', async () => {
-	const repoRoot = await createFixtureRepo({ planStatus: 'completed' });
+test("checkCustomizations requires completed plans to be archived", async () => {
+	const repoRoot = await createFixtureRepo({ planStatus: "completed" });
 	try {
 		await assert.rejects(
 			checkCustomizations(repoRoot),
@@ -321,9 +321,9 @@ test('checkCustomizations requires completed plans to be archived', async () => 
 	}
 });
 
-test('checkCustomizations requires archived plans to be terminal', async () => {
+test("checkCustomizations requires archived plans to be terminal", async () => {
 	const repoRoot = await createFixtureRepo({
-		planStatus: 'in-progress',
+		planStatus: "in-progress",
 		planArchived: true,
 	});
 	try {
@@ -336,10 +336,10 @@ test('checkCustomizations requires archived plans to be terminal', async () => {
 	}
 });
 
-test('checkCustomizations rejects skill folder and frontmatter name mismatches', async () => {
+test("checkCustomizations rejects skill folder and frontmatter name mismatches", async () => {
 	const repoRoot = await createFixtureRepo({
-		skillFolderName: 'different-name',
-		skillFrontmatterName: 'executable-planning',
+		skillFolderName: "different-name",
+		skillFrontmatterName: "executable-planning",
 	});
 
 	try {
@@ -357,9 +357,9 @@ test('checkCustomizations rejects skill folder and frontmatter name mismatches',
 	}
 });
 
-test('checkCustomizations rejects forbidden agent-only skill frontmatter', async () => {
+test("checkCustomizations rejects forbidden agent-only skill frontmatter", async () => {
 	const repoRoot = await createFixtureRepo({
-		skillExtraFrontmatter: { tools: ['run_in_terminal'] },
+		skillExtraFrontmatter: { tools: ["run_in_terminal"] },
 	});
 
 	try {
@@ -377,9 +377,9 @@ test('checkCustomizations rejects forbidden agent-only skill frontmatter', async
 	}
 });
 
-test('checkCustomizations accepts a manual-invocation-only skill', async () => {
+test("checkCustomizations accepts a manual-invocation-only skill", async () => {
 	const repoRoot = await createFixtureRepo({
-		skillExtraFrontmatter: { 'disable-model-invocation': true },
+		skillExtraFrontmatter: { "disable-model-invocation": true },
 	});
 
 	try {
@@ -389,9 +389,9 @@ test('checkCustomizations accepts a manual-invocation-only skill', async () => {
 	}
 });
 
-test('checkCustomizations rejects disable-model-invocation set to a non-true value', async () => {
+test("checkCustomizations rejects disable-model-invocation set to a non-true value", async () => {
 	const repoRoot = await createFixtureRepo({
-		skillExtraFrontmatter: { 'disable-model-invocation': false },
+		skillExtraFrontmatter: { "disable-model-invocation": false },
 	});
 
 	try {
@@ -408,41 +408,41 @@ test('checkCustomizations rejects disable-model-invocation set to a non-true val
 	}
 });
 
-test('checkCustomizations reports skill-file errors in code-point lexical order', async () => {
+test("checkCustomizations reports skill-file errors in code-point lexical order", async () => {
 	const repoRoot = await createFixtureRepo();
 
-	const upperSkillDir = path.join(repoRoot, '.agents', 'skills', 'B-skill');
+	const upperSkillDir = path.join(repoRoot, ".agents", "skills", "B-skill");
 	await mkdir(upperSkillDir, { recursive: true });
 	await writeFile(
-		path.join(upperSkillDir, 'SKILL.md'),
+		path.join(upperSkillDir, "SKILL.md"),
 		[
-			'---',
+			"---",
 			'name: "B-skill"',
 			'description: "Uppercase sort probe"',
-			'---',
-			'# B Skill',
-			'',
-			'## Scope',
-			'Contains run_in_terminal token for deterministic ordering checks.',
-		].join('\n'),
-		'utf8',
+			"---",
+			"# B Skill",
+			"",
+			"## Scope",
+			"Contains run_in_terminal token for deterministic ordering checks.",
+		].join("\n"),
+		"utf8",
 	);
 
-	const lowerSkillDir = path.join(repoRoot, '.agents', 'skills', 'a-skill');
+	const lowerSkillDir = path.join(repoRoot, ".agents", "skills", "a-skill");
 	await mkdir(lowerSkillDir, { recursive: true });
 	await writeFile(
-		path.join(lowerSkillDir, 'SKILL.md'),
+		path.join(lowerSkillDir, "SKILL.md"),
 		[
-			'---',
+			"---",
 			'name: "a-skill"',
 			'description: "Lowercase sort probe"',
-			'---',
-			'# A Skill',
-			'',
-			'## Scope',
-			'Contains run_in_terminal token for deterministic ordering checks.',
-		].join('\n'),
-		'utf8',
+			"---",
+			"# A Skill",
+			"",
+			"## Scope",
+			"Contains run_in_terminal token for deterministic ordering checks.",
+		].join("\n"),
+		"utf8",
 	);
 
 	try {
@@ -450,8 +450,8 @@ test('checkCustomizations reports skill-file errors in code-point lexical order'
 			async () => checkCustomizations(repoRoot),
 			(error: unknown) => {
 				const message = String(error);
-				const upperIndex = message.indexOf('.agents/skills/B-skill/SKILL.md:');
-				const lowerIndex = message.indexOf('.agents/skills/a-skill/SKILL.md:');
+				const upperIndex = message.indexOf(".agents/skills/B-skill/SKILL.md:");
+				const lowerIndex = message.indexOf(".agents/skills/a-skill/SKILL.md:");
 
 				assert.notEqual(upperIndex, -1);
 				assert.notEqual(lowerIndex, -1);
@@ -464,10 +464,10 @@ test('checkCustomizations reports skill-file errors in code-point lexical order'
 	}
 });
 
-test('checkCustomizations rejects VS Code tool and session tokens in skill content', async () => {
+test("checkCustomizations rejects VS Code tool and session tokens in skill content", async () => {
 	const repoRoot = await createFixtureRepo({
 		skillBodyExtra:
-			'\nDo not store plans in /memories/session/plan.md and call run_in_terminal.',
+			"\nDo not store plans in /memories/session/plan.md and call run_in_terminal.",
 	});
 
 	try {
@@ -485,13 +485,13 @@ test('checkCustomizations rejects VS Code tool and session tokens in skill conte
 	}
 });
 
-test('checkCustomizations rejects agents declaring an unknown required skill', async () => {
+test("checkCustomizations rejects agents declaring an unknown required skill", async () => {
 	const repoRoot = await createFixtureRepo({
 		agentBodyOverride: [
-			'# Executable Planner',
-			'',
-			'**REQUIRED SKILL:** Use missing-skill for planning behavior.',
-		].join('\n'),
+			"# Executable Planner",
+			"",
+			"**REQUIRED SKILL:** Use missing-skill for planning behavior.",
+		].join("\n"),
 	});
 
 	try {
@@ -511,52 +511,52 @@ test('checkCustomizations rejects agents declaring an unknown required skill', a
 	}
 });
 
-test('checkCustomizations validates each Copilot agent against only its declared skills', async () => {
+test("checkCustomizations validates each Copilot agent against only its declared skills", async () => {
 	const repoRoot = await createFixtureRepo();
-	const reviewingSourceDir = path.join(repoRoot, 'sources', 'reviewing');
+	const reviewingSourceDir = path.join(repoRoot, "sources", "reviewing");
 	const reviewingSkillDir = path.join(
 		repoRoot,
-		'.agents',
-		'skills',
-		'reviewing',
+		".agents",
+		"skills",
+		"reviewing",
 	);
 
 	await mkdir(reviewingSourceDir, { recursive: true });
 	await mkdir(reviewingSkillDir, { recursive: true });
 	await writeFile(
-		path.join(reviewingSourceDir, 'core.md'),
-		'## Review\nReview source content.\n',
-		'utf8',
+		path.join(reviewingSourceDir, "core.md"),
+		"## Review\nReview source content.\n",
+		"utf8",
 	);
 	await writeFile(
-		path.join(reviewingSourceDir, 'skill.json'),
+		path.join(reviewingSourceDir, "skill.json"),
 		JSON.stringify(
 			{
-				name: 'reviewing',
-				title: 'Reviewing',
-				description: 'Provides focused review feedback.',
-				output: '.agents/skills/reviewing/SKILL.md',
+				name: "reviewing",
+				title: "Reviewing",
+				description: "Provides focused review feedback.",
+				output: ".agents/skills/reviewing/SKILL.md",
 				selections: [
-					{ source: 'core.md', owner: 'core', headings: ['Review'] },
+					{ source: "core.md", owner: "core", headings: ["Review"] },
 				],
-				sectionOwnership: { Review: 'core' },
+				sectionOwnership: { Review: "core" },
 				requiredPhrases: [],
 				forbiddenPhrases: [],
 			},
 			null,
 			2,
 		),
-		'utf8',
+		"utf8",
 	);
 	await writeFile(
-		path.join(reviewingSkillDir, 'SKILL.md'),
-		'---\nname: reviewing\ndescription: Provides focused review feedback.\n---\n# Reviewing\n\n## Review\nReview feedback.\n',
-		'utf8',
+		path.join(reviewingSkillDir, "SKILL.md"),
+		"---\nname: reviewing\ndescription: Provides focused review feedback.\n---\n# Reviewing\n\n## Review\nReview feedback.\n",
+		"utf8",
 	);
 	await writeFile(
-		path.join(repoRoot, '.github', 'agents', 'reviewer.agent.md'),
-		'---\nname: Reviewer\ndescription: Review work.\n---\n\n**REQUIRED SKILL:** Use reviewing for review behavior.\n',
-		'utf8',
+		path.join(repoRoot, ".github", "agents", "reviewer.agent.md"),
+		"---\nname: Reviewer\ndescription: Review work.\n---\n\n**REQUIRED SKILL:** Use reviewing for review behavior.\n",
+		"utf8",
 	);
 
 	try {
@@ -566,16 +566,16 @@ test('checkCustomizations validates each Copilot agent against only its declared
 	}
 });
 
-test('checkCustomizations rejects duplicated canonical headings in thin agent', async () => {
+test("checkCustomizations rejects duplicated canonical headings in thin agent", async () => {
 	const repoRoot = await createFixtureRepo({
 		agentBodyOverride: [
-			'# Executable Planner',
-			'',
-			'**REQUIRED SKILL:** Use executable-planning for all planning behavior.',
-			'',
-			'## Scope',
-			'Duplicated workflow section should stay in the skill.',
-		].join('\n'),
+			"# Executable Planner",
+			"",
+			"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+			"",
+			"## Scope",
+			"Duplicated workflow section should stay in the skill.",
+		].join("\n"),
 	});
 
 	try {
@@ -596,15 +596,15 @@ test('checkCustomizations rejects duplicated canonical headings in thin agent', 
 	}
 });
 
-test('checkCustomizations rejects canonical headings at any agent heading level', async () => {
+test("checkCustomizations rejects canonical headings at any agent heading level", async () => {
 	const repoRoot = await createFixtureRepo({
 		agentBodyOverride: [
-			'# Scope',
-			'',
-			'**REQUIRED SKILL:** Use executable-planning for all planning behavior.',
-			'',
-			'A level-one heading must not bypass canonical ownership.',
-		].join('\n'),
+			"# Scope",
+			"",
+			"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+			"",
+			"A level-one heading must not bypass canonical ownership.",
+		].join("\n"),
 	});
 
 	try {
@@ -621,10 +621,10 @@ test('checkCustomizations rejects canonical headings at any agent heading level'
 	}
 });
 
-test('checkCustomizations rejects missing README command and client instructions', async () => {
+test("checkCustomizations rejects missing README command and client instructions", async () => {
 	const repoRoot = await createFixtureRepo({
 		readmeOverride:
-			'# Executable Planning\n\nThis README omits install and check commands.',
+			"# Executable Planning\n\nThis README omits install and check commands.",
 	});
 
 	try {
@@ -644,9 +644,9 @@ test('checkCustomizations rejects missing README command and client instructions
 	}
 });
 
-test('checkCustomizations rejects broken repository-relative source paths', async () => {
+test("checkCustomizations rejects broken repository-relative source paths", async () => {
 	const repoRoot = await createFixtureRepo({
-		manifestSourceOverride: 'missing.md',
+		manifestSourceOverride: "missing.md",
 	});
 
 	try {
@@ -666,9 +666,9 @@ test('checkCustomizations rejects broken repository-relative source paths', asyn
 	}
 });
 
-test('checkCustomizations CLI exits nonzero with stable path-prefixed errors', async () => {
+test("checkCustomizations CLI exits nonzero with stable path-prefixed errors", async () => {
 	const repoRoot = await createFixtureRepo({
-		manifestSourceOverride: 'missing.md',
+		manifestSourceOverride: "missing.md",
 	});
 
 	try {
@@ -677,7 +677,7 @@ test('checkCustomizations CLI exits nonzero with stable path-prefixed errors', a
 			[tsxCliPath, checkerCliPath, repoRoot],
 			{
 				cwd: projectRoot,
-				encoding: 'utf8',
+				encoding: "utf8",
 			},
 		);
 
@@ -688,11 +688,11 @@ test('checkCustomizations CLI exits nonzero with stable path-prefixed errors', a
 	}
 });
 
-test('checkCustomizations rejects missing or invalid pre-push hook or prepare script', async () => {
+test("checkCustomizations rejects missing or invalid pre-push hook or prepare script", async () => {
 	const repoRoot = await createFixtureRepo();
 
 	try {
-		await rm(path.join(repoRoot, '.githooks', 'pre-push'));
+		await rm(path.join(repoRoot, ".githooks", "pre-push"));
 		await assert.rejects(
 			async () => {
 				await checkCustomizations(repoRoot);
@@ -704,8 +704,8 @@ test('checkCustomizations rejects missing or invalid pre-push hook or prepare sc
 		);
 
 		await writeFile(
-			path.join(repoRoot, '.githooks', 'pre-push'),
-			'#!/bin/sh\necho hello\n',
+			path.join(repoRoot, ".githooks", "pre-push"),
+			"#!/bin/sh\necho hello\n",
 		);
 		await assert.rejects(
 			async () => {
@@ -721,10 +721,10 @@ test('checkCustomizations rejects missing or invalid pre-push hook or prepare sc
 		);
 
 		await writeFile(
-			path.join(repoRoot, '.githooks', 'pre-push'),
-			'#!/bin/sh\nnpm run check\n',
+			path.join(repoRoot, ".githooks", "pre-push"),
+			"#!/bin/sh\nnpm run check\n",
 		);
-		await writeFile(path.join(repoRoot, 'package.json'), '{}');
+		await writeFile(path.join(repoRoot, "package.json"), "{}");
 		await assert.rejects(
 			async () => {
 				await checkCustomizations(repoRoot);
@@ -742,48 +742,48 @@ test('checkCustomizations rejects missing or invalid pre-push hook or prepare sc
 	}
 });
 
-test('executable planner agent is a thin adapter with byte-stable frontmatter', async () => {
+test("executable planner agent is a thin adapter with byte-stable frontmatter", async () => {
 	const [agentContent, coreContent] = await Promise.all([
-		readFile(executablePlannerPath, 'utf8'),
-		readFile(executablePlanningCorePath, 'utf8'),
+		readFile(executablePlannerPath, "utf8"),
+		readFile(executablePlanningCorePath, "utf8"),
 	]);
 
 	assert.ok(
 		agentContent.startsWith(EXECUTABLE_PLANNER_FRONTMATTER_BLOCK),
-		'agent frontmatter block must remain byte-identical',
+		"agent frontmatter block must remain byte-identical",
 	);
 
 	const parsedAgent = parseFrontmatter(
 		agentContent,
-		'.github/agents/executable-planner.agent.md',
+		".github/agents/executable-planner.agent.md",
 	);
 
 	assert.deepEqual(parsedAgent.attributes, {
-		name: 'Executable Planner',
+		name: "Executable Planner",
 		description:
-			'Create and maintain an executable plan without implementing project work',
-		'argument-hint':
+			"Create and maintain an executable plan without implementing project work",
+		"argument-hint":
 			'Goal and constraints; add "autopilot" for unattended runs and a storage choice (local/repo, native, or session-only)',
 		tools: [
-			'vscode/askQuestions',
-			'vscode/toolSearch',
-			'read',
-			'agent',
-			'vscodeGeneral/rename',
-			'vscodeGeneral/usages',
-			'vscodeGeneral/toolSearch',
-			'edit',
-			'search',
-			'todo',
+			"vscode/askQuestions",
+			"vscode/toolSearch",
+			"read",
+			"agent",
+			"vscodeGeneral/rename",
+			"vscodeGeneral/usages",
+			"vscodeGeneral/toolSearch",
+			"edit",
+			"search",
+			"todo",
 		],
-		agents: ['Plan Scout'],
-		'user-invocable': true,
-		'disable-model-invocation': false,
+		agents: ["Plan Scout"],
+		"user-invocable": true,
+		"disable-model-invocation": false,
 		handoffs: [
 			{
-				label: 'Start Implementation',
-				agent: 'agent',
-				prompt: 'Start implementation',
+				label: "Start Implementation",
+				agent: "agent",
+				prompt: "Start implementation",
 				send: true,
 			},
 		],
@@ -811,20 +811,20 @@ test('executable planner agent is a thin adapter with byte-stable frontmatter', 
 	}
 });
 
-test('plan scout is a non-invocable read-only investigator', async () => {
-	const content = await readFile(planScoutPath, 'utf8');
+test("plan scout is a non-invocable read-only investigator", async () => {
+	const content = await readFile(planScoutPath, "utf8");
 	const parsed = parseFrontmatter(
 		content,
-		'.github/agents/plan-scout.agent.md',
+		".github/agents/plan-scout.agent.md",
 	);
 
 	assert.deepEqual(parsed.attributes, {
-		name: 'Plan Scout',
-		description: 'Answers narrow codebase questions for the Executable Planner',
-		tools: ['search', 'read'],
+		name: "Plan Scout",
+		description: "Answers narrow codebase questions for the Executable Planner",
+		tools: ["search", "read"],
 		agents: [],
-		'user-invocable': false,
-		'disable-model-invocation': false,
+		"user-invocable": false,
+		"disable-model-invocation": false,
 	});
 	assert.match(parsed.body, /Never edit files, run commands, or plan the work/);
 	assert.match(parsed.body, /aiming for under 400 words/);

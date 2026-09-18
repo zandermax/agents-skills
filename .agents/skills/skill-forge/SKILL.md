@@ -38,23 +38,16 @@ design question is settled. Treat the skill's design as a tree: each
 decision (purpose, triggers, output shape, ...) branches into further
 decisions that depend on it.
 
+the user's answers. Do not ask a question whose answer depends on another
 Work the tree in rounds. The **frontier** is every decision whose
 prerequisites are already settled — the questions answerable right now
-without guessing at something not yet decided. Ask the whole frontier in one
-round, numbered, each with your recommended answer, then stop and wait for
-the user's answers. Do not ask a question whose answer depends on another
-question still open in the same round; that question belongs to a later
-round.
-
-Format a round like this:
-
-```
-❓ Q1 - <question title>: <question body, plain language, options if useful>
-➡️ <your recommended answer>
-
-❓ Q2 - <question title>: <question body>
-➡️ <your recommended answer>
-```
+without guessing at something not yet decided. Use the harness's structured
+question mechanism when available: submit the whole frontier in one request,
+with recommendations in the question text and predefined options where they
+are fixed. Only when no structured question mechanism is available, present a
+numbered frontier in conversation with each question and its recommended
+answer. Do not ask a question whose answer depends on another question still
+open in the same round; that question belongs to a later round.
 
 Finding facts is your job, never the user's. When a frontier question needs
 a fact from the environment (existing similar skills, repository
@@ -85,6 +78,14 @@ Use the frontier to settle at least these branches before drafting:
   kebab-case name.
 - **Verification depth**: how rigorously the finished skill should be
   pressure-tested before it's considered done.
+- **Paired agent handoff**: ask only when the skill is intended for a custom
+  planning agent or is explicitly accompanied by one. Determine whether the
+  workflow needs a planning-to-implementation transition. If it does, add the
+  harness's native transition to that agent adapter; in VS Code, this is a
+  `handoffs` frontmatter entry that starts implementation. Do not add an
+  agent, a handoff, or harness-specific configuration to a standalone skill.
+  For a harness without a native transition, have the agent present the
+  completed plan and wait for an explicit implementation request.
 
 ## Repository Authoring Constraints
 
