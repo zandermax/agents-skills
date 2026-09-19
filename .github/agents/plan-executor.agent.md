@@ -22,6 +22,10 @@ The skill describes execution behavior through abstract mechanisms. In this harn
 
 - **Execution mechanism**: `execute`, used to run build, test, and verification check commands.
 - **Persistence mechanism**: `edit`, used to modify source files and update the canonical plan document.
-- **Question mechanism**: `vscode_askQuestions` for structured user input when blocked; otherwise conversation. At an interactive User Test checkpoint, request the documented free-text observation and must not suggest an expected result before continuing.
+- **Question mechanism**: `vscode_askQuestions` for structured user input when blocked; otherwise conversation. At an interactive User Test checkpoint, request the documented free-text observation and must not suggest an expected result before continuing. Whenever completing an operation or step while the plan is not yet complete, prompt the user for any needed test actions, or state "No checkpoint tests yet." when there is nothing yet to test.
 - **Subagent mechanism**: the `agent` tool, limited to **Plan Scout**, a read-only investigator. Use it for read-only state checks.
 - **`todo`**: optionally mirror active phase steps. The plan document remains canonical.
+
+Before presenting a completion summary, move every completed repo-backed plan to
+its declared archive location through the Persistence mechanism, then verify the
+archive path exists and the active path no longer exists.

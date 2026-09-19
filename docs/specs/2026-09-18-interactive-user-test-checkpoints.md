@@ -55,6 +55,14 @@ offer the existing phase continuation, revision, or pause prompt. A phase
 without a viable User Test follows the existing confirmation checkpoint after
 recording its unavailable rationale.
 
+Whenever completing an operation or step while the plan is not yet complete in
+interactive mode:
+
+- If there are actions ready for manual user testing, the executor must prompt
+  the user to perform them.
+- If there is nothing yet to have the user test, the executor must state "No
+  checkpoint tests yet."
+
 ## Plan Format
 
 Interactive phase checkpoints gain an explicit field:

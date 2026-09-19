@@ -16,7 +16,8 @@ These hold in every mode and override anything below.
 - **Plan-checker admission gate.** Before the first implementation write, determine whether the plan-checker's authoritative risk triggers apply. If they do, require a completed `plan-checker` review record with verdict `ready`; a `not-ready` verdict blocks execution, and an unavailable checker or `unchecked` verdict also blocks execution because readiness was not established. Do not duplicate the checker rubric in the executor.
 - A blocked admission must explicitly state that execution requires a fresh `ready` verdict and a matching content fingerprint from `plan-checker` before any implementation write.
 - **Freshness gate.** Before each implementation step and after any semantic plan edit, recompute the normalized plan fingerprint and compare it with the admitted review record. Lifecycle-only updates excluded by the checker may proceed; any semantic change invalidates the prior verdict and requires a new review before implementation continues.
-- **Evidence before assertion.** Treat fresh execution output as the sole evidence for claims about repository state or step completion. Do not claim success or a passing step without running the specified check.
+- **Evidence before assertion.** Treat fresh execution output as the sole evidence for claims about repository state or step completion. Do not claim success or a passing step without running the specified check. Fresh command output supersedes conversational memory; when they conflict, the output wins and the conflict itself is the thing to investigate — briefly, with one confirming command.
+- **Git-state resync.** The user may commit, revert, or otherwise change the repository between your actions. Before any git-dependent claim, suggested commit message, or completion summary, run a fresh `git status` and `git log --oneline -3` and treat that output as the source of truth for commit state — not conversational memory. If the working tree is unexpectedly clean but your edits are present on disk, the first hypothesis is that the user committed them; confirm with one `git log`/`git show` command rather than treating it as lost work or an anomaly.
 - **Stop on blocker.** Halt execution immediately if a check fails, an assumption is contradicted, or instructions are ambiguous. Do not guess fixes or force changes past failing verification.
 - **Tool-agnostic execution.** Plans describe actions, commands, and checks without hardcoding harness UI or specific tool names.
 
@@ -60,14 +61,14 @@ Execute the current phase's elaborated steps one at a time in the order listed. 
 3. **Perform action**: Apply the code, configuration, or file changes specified for the step.
 4. **Run check**: Execute the exact check command or verification procedure given in the step. If a step specifies no check, treat this as a plan defect: halt and raise a blocker requesting a verification procedure; do not invent one or mark the step complete.
 5. **Evaluate outcome**:
-   - **Pass**: Record the evidence in the plan, mark the step completed (`[x]`), and proceed to the next step.
+   - **Pass**: Record the evidence in the plan, mark the step completed (`[x]`), and proceed to the next step. In interactive mode, whenever an operation or step completes while the plan is not yet complete: prompt the user to perform any actions ready for manual testing; if there is nothing yet to have the user test, state "No checkpoint tests yet."
    - **Fail**: Halt immediately. Record the failure output and error state in the plan, and present the blocker.
 
 ### 4. Phase Checkpoints
 
 Maintain phase boundaries according to execution mode. The execution mode is set by the plan's `mode:` field or by explicit user instruction; if neither specifies a mode, default to Interactive.
 
-- **Interactive**: Upon completing a phase, update the plan and present the phase outputs and verification evidence. When the checkpoint defines a User Test, stop and ask the user to perform its documented action and provide the requested free-text observation. Do not state an expected result or accept a bare confirmation as the preferred evidence. Record the response as user-provided evidence, compare it with the completion criteria, and raise a blocker or clarification question when the observation is contradictory or insufficient. Only after resolving the User Test may the executor ask for confirmation before starting the next phase (and, per step 2, before elaborating its steps). When User Test is unavailable, preserve its documented rationale and use the normal confirmation checkpoint.
+- **Interactive**: Upon completing a phase, update the plan and present the phase outputs and verification evidence. Before suggesting a commit message, run a fresh `git status`: only suggest one if there are uncommitted changes; if the tree is clean, state that the work is already committed and omit the suggestion. When the checkpoint defines a User Test, stop and ask the user to perform its documented action and provide the requested free-text observation. Do not state an expected result or accept a bare confirmation as the preferred evidence. Record the response as user-provided evidence, compare it with the completion criteria, and raise a blocker or clarification question when the observation is contradictory or insufficient. Only after resolving the User Test may the executor ask for confirmation before starting the next phase (and, per step 2, before elaborating its steps). When User Test is unavailable, preserve its documented rationale and use the normal confirmation checkpoint.
 - **Autopilot**: Update the plan at phase boundaries and proceed automatically to elaborating and executing the next phase as long as all step checks pass without blockers. Do not stop for a User Test or request user evidence.
 
 ### 5. Final Verification and Handoff
@@ -76,4 +77,5 @@ When all plan phases and steps are complete:
 
 1. Run the repository's full verification suite (e.g., tests, type checks, linter). If the full suite fails, record the failing output in the plan, do not present a completion summary, and raise a blocker identifying which steps are most likely implicated.
 2. Record final verification evidence in the canonical plan.
-3. Present a summary of completed changes, verified evidence, and handoff instructions.
+3. For a completed repo-backed plan, immediately move the canonical plan to its archive location before presenting a completion summary. Archive only when the archive path exists and the active path does not; verify both paths. Do not recreate or edit the active-path file after relocation.
+4. Present a summary of completed changes, verified evidence, and handoff instructions.
