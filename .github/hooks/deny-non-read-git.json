@@ -1,0 +1,12 @@
+{
+	"hooks": {
+		"PreToolUse": [
+			{
+				"type": "command",
+				"command": "sh -c 'if [ -x ./.github/hooks/deny-non-read-git.sh ]; then exec ./.github/hooks/deny-non-read-git.sh; elif [ -x ./.agents/hooks/deny-non-read-git.sh ]; then exec ./.agents/hooks/deny-non-read-git.sh; else exec node ./.github/hooks/deny-non-read-git.js; fi'",
+				"windows": "node .github/hooks/deny-non-read-git.js",
+				"timeout": 15
+			}
+		]
+	}
+}
