@@ -1,5 +1,5 @@
 export interface ToolEvaluationResult {
-	readonly decision: "allow" | "deny";
+	readonly decision: "allow" | "ask" | "deny";
 	readonly reason?: string;
 }
 

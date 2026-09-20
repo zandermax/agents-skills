@@ -149,19 +149,19 @@ describe("deny-non-read-git hook", () => {
 			assert.equal(result.decision, "allow");
 		});
 
-		it("denies mutating git command tool use", () => {
+		it("asks for confirmation on mutating git command tool use", () => {
 			const result = evaluateToolUse("run_in_terminal", {
 				command: "git commit -m 'feat'",
 			});
-			assert.equal(result.decision, "deny");
+			assert.equal(result.decision, "ask");
 			assert.match(result.reason ?? "", /git commit/);
 		});
 
-		it("denies mutating github MCP tools", () => {
+		it("asks for confirmation on mutating github MCP tools", () => {
 			const result = evaluateToolUse("mcp_github_mcp_se_push_files", {
 				files: [],
 			});
-			assert.equal(result.decision, "deny");
+			assert.equal(result.decision, "ask");
 		});
 	});
 });

@@ -18,6 +18,15 @@
 				"suffix": ".agent.md"
 			},
 			"validation": "copilot-agent"
+		},
+		{
+			"name": "hooks",
+			"artifactKind": "hook",
+			"source": ".github/hooks",
+			"entry": {
+				"kind": "file",
+				"suffix": ".json"
+			}
 		}
 	],
 	"clients": [
@@ -31,6 +40,10 @@
 				{
 					"collection": "copilot",
 					"path": "~/.copilot/agents"
+				},
+				{
+					"collection": "hooks",
+					"path": "~/.copilot/hooks"
 				}
 			]
 		},
@@ -49,6 +62,10 @@
 				{
 					"collection": "skills",
 					"path": "~/.agents/skills"
+				},
+				{
+					"collection": "hooks",
+					"path": "~/.agents/hooks"
 				}
 			]
 		}

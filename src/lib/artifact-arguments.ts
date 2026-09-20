@@ -7,8 +7,10 @@ export interface ParsedArtifactArguments {
 	readonly clients: readonly string[];
 	readonly skillDirectories: readonly string[];
 	readonly agentDirectories: readonly AgentDirectoryArgument[];
+	readonly hookDirectories: readonly string[];
 	readonly skills: readonly string[];
 	readonly agents: readonly string[];
+	readonly hooks: readonly string[];
 	readonly listOnly: boolean;
 	readonly hasDestinationArguments: boolean;
 }
@@ -19,8 +21,10 @@ export function parseArtifactArguments(
 	const clients = new Set<string>();
 	const skillDirectories = new Set<string>();
 	const agentDirectories = new Map<string, string>();
+	const hookDirectories = new Set<string>();
 	const skills = new Set<string>();
 	const agents = new Set<string>();
+	const hooks = new Set<string>();
 	let listOnly = false;
 	let hasDestinationArguments = false;
 
@@ -74,6 +78,19 @@ export function parseArtifactArguments(
 				throw new Error("--agents-dir requires format=path (path part empty)");
 			}
 			agentDirectories.set(format, path);
+		} else if (arg === "--hooks-dir") {
+			const value = arguments_[i + 1];
+			if (value === undefined) {
+				throw new Error("--hooks-dir requires a value");
+			}
+			hasDestinationArguments = true;
+			i += 1;
+			const [format, path] = value.split("=");
+			const dirPath = path !== undefined ? path : format;
+			if (!dirPath || dirPath.length === 0) {
+				throw new Error("--hooks-dir requires a non-empty path");
+			}
+			hookDirectories.add(dirPath);
 		} else if (arg === "--skill") {
 			const value = arguments_[i + 1];
 			if (value === undefined) {
@@ -88,6 +105,13 @@ export function parseArtifactArguments(
 			}
 			i += 1;
 			agents.add(value);
+		} else if (arg === "--hook") {
+			const value = arguments_[i + 1];
+			if (value === undefined) {
+				throw new Error("--hook requires a value");
+			}
+			i += 1;
+			hooks.add(value);
 		} else if (arg.startsWith("--")) {
 			throw new Error(
 				`${arg} is an unknown flag; use npm run install:artifacts -- --help`,
@@ -100,11 +124,13 @@ export function parseArtifactArguments(
 		(clients.size > 0 ||
 			skillDirectories.size > 0 ||
 			agentDirectories.size > 0 ||
+			hookDirectories.size > 0 ||
 			skills.size > 0 ||
-			agents.size > 0)
+			agents.size > 0 ||
+			hooks.size > 0)
 	) {
 		throw new Error(
-			"--list is exclusive with --client, --skills-dir, --agents-dir, --skill, and --agent",
+			"--list is exclusive with --client, --skills-dir, --agents-dir, --hooks-dir, --skill, --agent, and --hook",
 		);
 	}
 
@@ -118,8 +144,10 @@ export function parseArtifactArguments(
 				directory,
 			}),
 		),
+		hookDirectories: Array.from(hookDirectories),
 		skills: Array.from(skills),
 		agents: Array.from(agents),
+		hooks: Array.from(hooks),
 		listOnly,
 		hasDestinationArguments,
 	};

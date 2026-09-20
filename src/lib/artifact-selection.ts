@@ -58,24 +58,42 @@ function selectArtifacts(
 		artifacts.map((artifact) => [artifact.id, artifact]),
 	);
 
-	for (const skill of parsed.skills) {
+	const skills = parsed.skills ?? [];
+	const agents = parsed.agents ?? [];
+	const hooks = parsed.hooks ?? [];
+
+	for (const skill of skills) {
 		const artifact = artifactsById.get(skill);
 		if (artifact?.kind !== "skill") {
 			throw new Error(`unknown skill: ${skill}`);
 		}
 	}
-	for (const agent of parsed.agents) {
+	for (const agent of agents) {
 		const artifact = artifactsById.get(agent);
 		if (artifact?.kind !== "agent") {
 			throw new Error(`unknown agent: ${agent}`);
 		}
 	}
+	for (const hook of hooks) {
+		const artifact =
+			artifactsById.get(hook) ?? artifactsById.get(`hooks:${hook}`);
+		if (artifact?.kind !== "hook") {
+			throw new Error(`unknown hook: ${hook}`);
+		}
+	}
 
-	if (parsed.skills.length === 0 && parsed.agents.length === 0) {
+	if (skills.length === 0 && agents.length === 0 && hooks.length === 0) {
 		return artifacts;
 	}
 
-	const selectedIds = new Set([...parsed.skills, ...parsed.agents]);
+	const selectedHookIds = new Set(
+		hooks.map(
+			(hook) =>
+				(artifactsById.get(hook) ?? artifactsById.get(`hooks:${hook}`))?.id ??
+				hook,
+		),
+	);
+	const selectedIds = new Set([...skills, ...agents, ...selectedHookIds]);
 	return artifacts.filter((artifact) => selectedIds.has(artifact.id));
 }
 
@@ -144,9 +162,21 @@ export function resolveArtifactRequest(
 			resolveDirectory(agentDirectory.directory, options),
 		);
 	}
+	for (const directory of parsed.hookDirectories ?? []) {
+		addTarget(
+			targets,
+			collectionsByDirectory,
+			"hooks",
+			resolveDirectory(directory, options),
+		);
+	}
+
+	const skills = parsed.skills ?? [];
+	const agents = parsed.agents ?? [];
+	const hooks = parsed.hooks ?? [];
 
 	const targetCollections = new Set(targets.map((target) => target.collection));
-	if (parsed.skills.length === 0 && parsed.agents.length === 0) {
+	if (skills.length === 0 && agents.length === 0 && hooks.length === 0) {
 		selectedArtifacts = selectedArtifacts.filter((artifact) =>
 			targetCollections.has(artifact.collection),
 		);
@@ -158,6 +188,14 @@ export function resolveArtifactRequest(
 		) {
 			throw new Error(
 				`selected agent ${artifact.id} has no target for collection ${artifact.collection}`,
+			);
+		}
+		if (
+			artifact.kind === "hook" &&
+			!targetCollections.has(artifact.collection)
+		) {
+			throw new Error(
+				`selected hook ${artifact.id} has no target for collection ${artifact.collection}`,
 			);
 		}
 	}

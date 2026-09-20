@@ -254,7 +254,7 @@ test("loadInstallCatalog validates the real repository catalog", async () => {
 
 	assert.deepEqual(
 		catalog.collections.map((collection) => collection.name),
-		["skills", "copilot"],
+		["skills", "copilot", "hooks"],
 	);
 	assert.deepEqual(
 		catalog.clients.map((client) => client.name),

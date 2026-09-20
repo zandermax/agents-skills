@@ -543,8 +543,8 @@ export function evaluateToolUse(toolName, toolInput) {
 
 	if (MUTATING_GITHUB_TOOLS.has(toolName)) {
 		return {
-			decision: "deny",
-			reason: `Mutating Git/GitHub tool '${toolName}' is blocked by policy.`,
+			decision: "ask",
+			reason: `Mutating Git/GitHub tool '${toolName}' requires user confirmation.`,
 		};
 	}
 
@@ -567,8 +567,8 @@ export function evaluateToolUse(toolName, toolInput) {
 		const violation = checkCommandForNonReadGit(cmd);
 		if (violation) {
 			return {
-				decision: "deny",
-				reason: `Non-read git operations are denied by policy: ${violation}`,
+				decision: "ask",
+				reason: `Non-read git operation requires user confirmation: ${violation}`,
 			};
 		}
 	}
@@ -584,7 +584,7 @@ function outputResult(result) {
 		},
 	};
 
-	if (result.decision === "deny" && result.reason) {
+	if (result.decision !== "allow" && result.reason) {
 		output.hookSpecificOutput.permissionDecisionReason = result.reason;
 	}
 

@@ -9,8 +9,10 @@ test("parseArtifactArguments defaults to empty when no arguments provided", () =
 		clients: [],
 		skillDirectories: [],
 		agentDirectories: [],
+		hookDirectories: [],
 		skills: [],
 		agents: [],
+		hooks: [],
 		listOnly: false,
 		hasDestinationArguments: false,
 	});
@@ -94,6 +96,26 @@ test("parseArtifactArguments --agents-dir deduplicates equivalent mappings", () 
 	assert.deepEqual(result.agentDirectories, [
 		{ collection: "copilot", directory: "/agents" },
 	]);
+});
+
+test("parseArtifactArguments --hooks-dir parses format=path", () => {
+	const result = parseArtifactArguments([
+		"--hooks-dir",
+		"copilot=/custom/hooks",
+	]);
+	assert.deepEqual(result.hookDirectories, ["/custom/hooks"]);
+	assert.strictEqual(result.hasDestinationArguments, true);
+});
+
+test("parseArtifactArguments --hooks-dir parses plain path", () => {
+	const result = parseArtifactArguments(["--hooks-dir", "/custom/hooks"]);
+	assert.deepEqual(result.hookDirectories, ["/custom/hooks"]);
+	assert.strictEqual(result.hasDestinationArguments, true);
+});
+
+test("parseArtifactArguments --hook format:name", () => {
+	const result = parseArtifactArguments(["--hook", "deny-non-read-git"]);
+	assert.deepEqual(result.hooks, ["deny-non-read-git"]);
 });
 
 test("parseArtifactArguments --skill format:name", () => {

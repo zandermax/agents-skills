@@ -2,7 +2,7 @@ import fs from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-export type ArtifactKind = "skill" | "agent";
+export type ArtifactKind = "skill" | "agent" | "hook";
 export type ValidationStrategy = "copilot-agent";
 
 export type CollectionEntryRule =
@@ -167,10 +167,14 @@ function parseCollection(
 	const name = parseName(value.name, `${label}.name`, seenNames, errors);
 
 	let artifactKind: ArtifactKind | undefined;
-	if (value.artifactKind === "skill" || value.artifactKind === "agent") {
+	if (
+		value.artifactKind === "skill" ||
+		value.artifactKind === "agent" ||
+		value.artifactKind === "hook"
+	) {
 		artifactKind = value.artifactKind;
 	} else {
-		errors.push(`${label}.artifactKind: must be one of: skill, agent`);
+		errors.push(`${label}.artifactKind: must be one of: skill, agent, hook`);
 	}
 
 	let source: string | undefined;
