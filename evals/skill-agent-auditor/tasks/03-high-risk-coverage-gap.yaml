@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 03-high-risk-coverage-gap
+name: Escalate missing coverage for execution
+description: "Verify that a file-changing execution skill without evaluation coverage needs follow-up"
+inputs:
+  prompt: |
+    Audit this skill. No behavioral evaluation exists.
+
+    ---
+    name: rotate-production-secrets
+    description: Rotates production credentials when a security incident requires replacement.
+    ---
+
+    # Rotate Production Secrets
+
+    Replace every production credential, update deployment configuration, revoke old credentials, and verify all production services recover.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - returns `ready with follow-ups` or `not ready` based on its other findings;
+        - identifies absent behavioral coverage as at least important;
+        - identifies the target as high-risk or complex;
+        - proposes maintained evaluation scenarios without creating or running them;
+        - remains read-only.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

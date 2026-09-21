@@ -1,0 +1,39 @@
+{
+	"name": "skill-agent-auditor",
+	"title": "Skill-Agent Auditor",
+	"description": "Audits repository skills and agents for readiness and evaluation gaps.",
+	"output": ".agents/skills/skill-agent-auditor/SKILL.md",
+	"selections": [
+		{
+			"source": "skill-agent-auditor.md",
+			"owner": "core",
+			"headings": [
+				"Scope and Targeting",
+				"Evidence and Validation",
+				"Rubric and Coverage",
+				"Report and Boundaries"
+			]
+		}
+	],
+	"sectionOwnership": {
+		"Scope and Targeting": "core",
+		"Evidence and Validation": "core",
+		"Rubric and Coverage": "core",
+		"Report and Boundaries": "core"
+	},
+	"requiredPhrases": [
+		"explicit path or exact skill or agent name",
+		"Never modify target artifacts",
+		"smallest applicable existing validation commands",
+		"`confirmed`, `observed`, and `inferred`",
+		"`blocking`, `important`, and `advisory`",
+		"`ready`, `ready with follow-ups`, or `not ready`"
+	],
+	"forbiddenPhrases": [
+		"/memories/session/",
+		"run_in_terminal",
+		"vscode_askQuestions",
+		"read_file",
+		"apply_patch"
+	]
+}

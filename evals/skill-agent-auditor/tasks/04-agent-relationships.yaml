@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 04-agent-relationships
+name: Audit each declared agent-skill relationship
+description: "Verify that an agent with multiple required skills receives separate relationship findings"
+inputs:
+  prompt: |
+    Audit this agent and its declared skill relationships.
+
+    ---
+    name: release-coordinator
+    description: Coordinates release preparation from approved inputs.
+    ---
+
+    # Release Coordinator
+
+    **REQUIRED SKILL:** Use release-checklist for release safety behavior.
+    **REQUIRED SKILL:** Use stakeholder-update for status communication.
+
+    Ask the requester for the release date, then send the status update.
+
+    `release-checklist` requires a readiness review before any publication.
+    `stakeholder-update` requires approved release facts before drafting a status update.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - audits both declared relationships separately;
+        - identifies that the agent does not invoke the release-checklist before publishing communication;
+        - identifies the missing approved-facts boundary for stakeholder-update;
+        - labels findings with evidence and does not modify the agent or skills.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

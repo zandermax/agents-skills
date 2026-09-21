@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 01-ready-skill
+name: Audit a clear low-risk skill
+description: "Verify that a coherent skill receives a ready verdict without invented coverage requirements"
+inputs:
+  prompt: |
+    Audit this skill. It has no behavioral evaluation.
+
+    ---
+    name: format-release-notes
+    description: Formats approved release notes when a release manager supplies completed work items.
+    ---
+
+    # Format Release Notes
+
+    Accept a supplied list of completed work items. Return a Markdown document with exactly the Summary, Changes, and Known Limitations headings. Do not publish or edit external systems.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - returns a `ready` verdict;
+        - treats missing behavioral coverage as advisory rather than blocking;
+        - labels any rubric judgment as inferred;
+        - does not invent validation commands, repository facts, or changes;
+        - stops after the audit report.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

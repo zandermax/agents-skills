@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 02-structural-issue
+name: Report a structural skill issue
+description: "Verify that a mismatched name and folder relationship is a blocking finding"
+inputs:
+  prompt: |
+    Audit the skill at `.agents/skills/release-notes/SKILL.md`.
+
+    Its frontmatter is:
+
+    ---
+    name: publish-release-notes
+    description: Publishes release notes after an approved release.
+    ---
+
+    # Publish Release Notes
+
+    Post the supplied release notes to the approved destination.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - returns `not ready`;
+        - reports the name versus folder mismatch as a blocking, confirmed finding;
+        - recommends aligning the declared name and folder without editing either;
+        - does not claim to run unavailable repository validation.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.
