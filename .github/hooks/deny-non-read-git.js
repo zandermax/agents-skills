@@ -591,7 +591,7 @@ function outputResult(result) {
 	process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
 }
 
-function runCli() {
+export function runCli() {
 	let rawInput = "";
 	try {
 		rawInput = readFileSync(0, "utf-8");

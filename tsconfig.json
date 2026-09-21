@@ -7,9 +7,16 @@
 		"noEmit": true,
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
+		"allowImportingTsExtensions": true,
 		"resolveJsonModule": true,
 		"verbatimModuleSyntax": true,
 		"types": ["node"]
 	},
-	"include": ["src/**/*.ts", "scripts/**/*.ts", "test/**/*.ts"]
+	"include": [
+		"src/**/*.ts",
+		"scripts/**/*.ts",
+		"test/**/*.ts",
+		".github/hooks/**/*.mts",
+		".agents/hooks/**/*.mts"
+	]
 }

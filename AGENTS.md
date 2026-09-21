@@ -34,3 +34,11 @@ npm run eval:waza -- run executable-planning -v
 
 Behavioral evaluations are strictly on-demand; they are never run in CI or
 part of `npm run check` or `npm test`.
+
+## Git Mutation During Investigation
+
+Do not use mutating Git commands to establish a baseline, reproduce a failure,
+or investigate a discrepancy. Stop, explain why a Git mutation would be needed,
+and ask the user to perform it or grant explicit authorization for the exact
+command. Prefer read-only evidence such as `git diff`, `git show`, `git log`,
+and targeted tests.

@@ -3,7 +3,7 @@
 		"PreToolUse": [
 			{
 				"type": "command",
-				"command": "node -e 'const fs = require(\"fs\"), path = require(\"path\"), cp = require(\"child_process\"); const p = [path.join(process.env.HOME||\"\", \".copilot/hooks/deny-non-read-git.json\"), path.join(process.env.HOME||\"\", \".agents/hooks/deny-non-read-git.json\"), \"./.github/hooks/deny-non-read-git.json\", \"./.agents/hooks/deny-non-read-git.json\"].find(f => fs.existsSync(f)); const target = p ? path.join(path.dirname(fs.realpathSync(p)), \"deny-non-read-git.js\") : null; if (target) cp.spawnSync(process.execPath, [target], { stdio: \"inherit\" });'",
+				"command": "node -e 'const fs = require(\"fs\"), path = require(\"path\"), cp = require(\"child_process\"); const p = [path.join(process.env.HOME||\"\", \".copilot/hooks/deny-non-read-git.json\"), path.join(process.env.HOME||\"\", \".agents/hooks/deny-non-read-git.json\"), \"./.github/hooks/deny-non-read-git.json\", \"./.agents/hooks/deny-non-read-git.json\"].find(f => fs.existsSync(f)); const target = p ? path.join(path.dirname(fs.realpathSync(p)), \"deny-non-read-git.mts\") : null; if (target) cp.spawnSync(process.execPath, [\"--import\", \"tsx\", target], { stdio: \"inherit\" });'",
 				"timeout": 15
 			}
 		]

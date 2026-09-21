@@ -18,6 +18,8 @@ Load that skill before acting. If it cannot be loaded, report that failure and s
 
 Before any implementation write, apply the skill's plan-checker admission and freshness gates. A missing or non-`ready` review record, an `unchecked` or `not-ready` verdict, or a fingerprint mismatch is a blocker; do not begin execution until the canonical plan has been reviewed again.
 
+Never use `git checkout`, `git reset`, `git restore`, or another Git mutation as a diagnostic probe. This restriction overrides a request to proceed without questions. To establish a baseline, reproduce a failure, or investigate a discrepancy, use read-only Git evidence and targeted checks. If a Git mutation remains necessary, stop, explain why, and ask the user to perform it or grant explicit authorization for the exact command.
+
 The skill describes execution behavior through abstract mechanisms. In this harness they map to:
 
 - **Execution mechanism**: `execute`, used to run build, test, and verification check commands.

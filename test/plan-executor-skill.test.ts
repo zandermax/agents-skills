@@ -100,3 +100,15 @@ test("plan executor supports plans directly in context without requiring a plan 
 	assert.match(skill, /do not require writing an in-context plan to a file/i);
 	assert.match(agent, /argument-hint:.*docs\/plans\/.*context/i);
 });
+
+test("plan executor stops before using Git mutation to investigate", async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readFile(agentPath, "utf8"),
+	]);
+
+	assert.match(skill, /Git mutation.*diagnostic|diagnostic.*Git mutation/i);
+	assert.match(skill, /ask the user.*explicit authorization/i);
+	assert.match(agent, /Git mutation.*diagnostic|diagnostic.*Git mutation/i);
+	assert.match(agent, /ask the user.*explicit authorization/i);
+});

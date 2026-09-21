@@ -6,7 +6,7 @@ import {
 	evaluateToolUse,
 	splitShellStatements,
 	tokenizeStatement,
-} from "../.github/hooks/deny-non-read-git.js";
+} from "../.github/hooks/deny-non-read-git.mts";
 
 describe("deny-non-read-git hook", () => {
 	describe("splitShellStatements", () => {

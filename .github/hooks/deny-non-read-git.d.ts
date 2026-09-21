@@ -11,3 +11,5 @@ export function evaluateToolUse(
 	toolName: string | undefined,
 	toolInput: unknown,
 ): ToolEvaluationResult;
+
+export function runCli(): void;
