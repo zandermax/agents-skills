@@ -26,7 +26,7 @@ These hold in every mode and override anything below.
 This skill names four abstract mechanisms; the executing agent maps them to concrete tools.
 
 - **Execution mechanism**: the harness's command runner or terminal tool used to run build, test, and verification checks.
-- **Persistence mechanism**: the file editing tool used to modify project code and update the canonical plan file.
+- **Persistence mechanism**: the file editing tool used to modify project code and update the canonical plan file when repo-backed.
 - **Question mechanism**: the harness's structured prompt or conversation channel to raise blockers or request clarification.
 - **Subagent mechanism**: read-only discovery agents (such as Plan Scout) used to inspect state without mutating context.
 
@@ -34,10 +34,10 @@ This skill names four abstract mechanisms; the executing agent maps them to conc
 
 ### 1. Ingest and Sanity-Check
 
-Inspect the canonical plan and current workspace state before changing any code.
+Inspect the canonical plan (from a file or conversation context) and current workspace state before changing any code.
 
-1. Read the plan document (e.g., under `docs/plans/` or held in conversation).
-2. Confirm the plan is the canonical, usable artifact: it exists and contains the required state (phases with tangible outputs and completion criteria, at minimum). A phase's detailed steps are not required at this point; they may be elaborated just-in-time per step 2 below. If no valid plan exists or the plan is malformed, stop and request the missing or corrected plan before any code changes.
+1. Read the plan document (e.g., under `docs/plans/`) or inspect the plan provided in conversation context.
+2. Confirm the plan is a usable, canonical plan: it exists (in a file or in context) and contains the required state (phases with tangible outputs and completion criteria, at minimum). A phase's detailed steps are not required at this point; they may be elaborated just-in-time per step 2 below. If no valid plan exists or the plan is malformed, stop and request the missing or corrected plan before any code changes.
 3. Verify git branch and workspace state against the plan's prerequisite context.
 4. Confirm that dependencies, referenced files, and initial assumptions match reality.
 5. If discrepancies or unresolvable gaps exist, raise a blocker before executing any steps.
@@ -61,21 +61,21 @@ Execute the current phase's elaborated steps one at a time in the order listed. 
 3. **Perform action**: Apply the code, configuration, or file changes specified for the step.
 4. **Run check**: Execute the exact check command or verification procedure given in the step. If a step specifies no check, treat this as a plan defect: halt and raise a blocker requesting a verification procedure; do not invent one or mark the step complete.
 5. **Evaluate outcome**:
-   - **Pass**: Record the evidence in the plan, mark the step completed (`[x]`), and proceed to the next step. In interactive mode, whenever an operation or step completes while the plan is not yet complete: prompt the user to perform any actions ready for manual testing; if there is nothing yet to have the user test, state "No checkpoint tests yet."
-   - **Fail**: Halt immediately. Record the failure output and error state in the plan, and present the blocker.
+   - **Pass**: Record the evidence in the plan (or conversation context if in-session), mark the step completed (`[x]`), and proceed to the next step. In interactive mode, whenever an operation or step completes while the plan is not yet complete: prompt the user to perform any actions ready for manual testing; if there is nothing yet to have the user test, state "No checkpoint tests yet."
+   - **Fail**: Halt immediately. Record the failure output and error state in the plan (or conversation context), and present the blocker.
 
 ### 4. Phase Checkpoints
 
 Maintain phase boundaries according to execution mode. The execution mode is set by the plan's `mode:` field or by explicit user instruction; if neither specifies a mode, default to Interactive.
 
-- **Interactive**: Upon completing a phase, update the plan and present the phase outputs and verification evidence. Before suggesting a commit message, run a fresh `git status`: only suggest one if there are uncommitted changes; if the tree is clean, state that the work is already committed and omit the suggestion. When the checkpoint defines a User Test, stop and ask the user to perform its documented action and provide the requested free-text observation. Do not state an expected result or accept a bare confirmation as the preferred evidence. Record the response as user-provided evidence, compare it with the completion criteria, and raise a blocker or clarification question when the observation is contradictory or insufficient. Only after resolving the User Test may the executor ask for confirmation before starting the next phase (and, per step 2, before elaborating its steps). When User Test is unavailable, preserve its documented rationale and use the normal confirmation checkpoint.
-- **Autopilot**: Update the plan at phase boundaries and proceed automatically to elaborating and executing the next phase as long as all step checks pass without blockers. Do not stop for a User Test or request user evidence.
+- **Interactive**: Upon completing a phase, update the plan (or context) and present the phase outputs and verification evidence. Before suggesting a commit message, run a fresh `git status`: only suggest one if there are uncommitted changes; if the tree is clean, state that the work is already committed and omit the suggestion. When the checkpoint defines a User Test, stop and ask the user to perform its documented action and provide the requested free-text observation. Do not state an expected result or accept a bare confirmation as the preferred evidence. Record the response as user-provided evidence, compare it with the completion criteria, and raise a blocker or clarification question when the observation is contradictory or insufficient. Only after resolving the User Test may the executor ask for confirmation before starting the next phase (and, per step 2, before elaborating its steps). When User Test is unavailable, preserve its documented rationale and use the normal confirmation checkpoint.
+- **Autopilot**: Update the plan (or context) at phase boundaries and proceed automatically to elaborating and executing the next phase as long as all step checks pass without blockers. Do not stop for a User Test or request user evidence.
 
 ### 5. Final Verification and Handoff
 
 When all plan phases and steps are complete:
 
 1. Run the repository's full verification suite (e.g., tests, type checks, linter). If the full suite fails, record the failing output in the plan, do not present a completion summary, and raise a blocker identifying which steps are most likely implicated.
-2. Record final verification evidence in the canonical plan.
+2. Record final verification evidence in the canonical plan or context.
 3. For a completed repo-backed plan, immediately move the canonical plan to its archive location before presenting a completion summary. Archive only when the archive path exists and the active path does not; verify both paths. Do not recreate or edit the active-path file after relocation.
 4. Present a summary of completed changes, verified evidence, and handoff instructions.

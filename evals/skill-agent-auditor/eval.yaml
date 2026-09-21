@@ -5,7 +5,7 @@ description: Behavioral evaluation suite for the skill-agent-auditor skill
 skill: skill-agent-auditor
 
 config:
-  trials_per_task: 1
+  trials_per_task: 2
   timeout_seconds: 120
   parallel: false
   executor: copilot-sdk

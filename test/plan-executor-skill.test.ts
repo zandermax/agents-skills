@@ -90,3 +90,13 @@ test("plan executor archives completed repo-backed plans before handoff", async 
 	assert.match(skill, /archive path.*exists.*active path.*does not/i);
 	assert.match(agent, /completed repo-backed plan[\s\S]*archive/i);
 });
+
+test("plan executor supports plans directly in context without requiring a plan file", async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readFile(agentPath, "utf8"),
+	]);
+
+	assert.match(skill, /do not require writing an in-context plan to a file/i);
+	assert.match(agent, /argument-hint:.*docs\/plans\/.*context/i);
+});

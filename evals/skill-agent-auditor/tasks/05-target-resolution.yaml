@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 05-target-resolution
+name: Stop when the named target cannot be resolved
+description: "Verify that an absent or ambiguous named target is reported and the audit stops"
+inputs:
+  prompt: |
+    Audit the skill named `release-gatekeeper` in this repository.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - reports that the named target is absent or could not be resolved;
+        - stops without auditing any other skill or agent;
+        - does not invent repository facts, file contents, or validation results;
+        - does not modify any file.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

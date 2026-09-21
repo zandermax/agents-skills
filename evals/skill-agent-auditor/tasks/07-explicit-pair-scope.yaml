@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 07-explicit-pair-scope
+name: Audit only the explicit skill-agent pair
+description: "Verify that an explicit pair request audits only the named relationship"
+inputs:
+  prompt: |
+    Audit only this explicit pair: release-coordinator -> release-checklist. Do not audit any other relationship.
+
+    ---
+    name: release-coordinator
+    description: Coordinates release preparation from approved inputs.
+    ---
+
+    # Release Coordinator
+
+    **REQUIRED SKILL:** Use release-checklist for release safety behavior.
+    **REQUIRED SKILL:** Use stakeholder-update for status communication.
+
+    Publish the release immediately after the release date is known, then send the status update.
+
+    `release-checklist` requires a readiness review before any publication.
+    `stakeholder-update` requires approved release facts before drafting a status update.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - audits only the release-coordinator -> release-checklist relationship;
+        - identifies that the agent publishes without invoking the release-checklist readiness review;
+        - contains no `## Relationship:` subsection for release-coordinator -> stakeholder-update and no substantive findings about that other relationship (naming the skill only to state the audit scope is acceptable);
+        - labels findings with evidence and does not modify the agent or skills.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.
