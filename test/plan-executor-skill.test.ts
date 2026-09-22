@@ -108,7 +108,11 @@ test("plan executor stops before using Git mutation to investigate", async () =>
 	]);
 
 	assert.match(skill, /Git mutation.*diagnostic|diagnostic.*Git mutation/i);
-	assert.match(skill, /ask the user.*explicit authorization/i);
+	assert.match(skill, /explicit authorization/i);
+	assert.match(skill, /must perform.*exact.*Git command.*themselves/i);
+	assert.match(skill, /cannot determine.*pre-existing/i);
 	assert.match(agent, /Git mutation.*diagnostic|diagnostic.*Git mutation/i);
-	assert.match(agent, /ask the user.*explicit authorization/i);
+	assert.match(agent, /explicit authorization/i);
+	assert.match(agent, /must perform.*exact.*Git command.*themselves/i);
+	assert.match(agent, /cannot determine.*pre-existing/i);
 });

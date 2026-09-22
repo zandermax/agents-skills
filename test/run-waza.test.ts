@@ -11,7 +11,11 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { createWazaWorkspace, runWaza } from "../scripts/run-waza.js";
+import {
+	createMacosWazaSandboxProfile,
+	createWazaWorkspace,
+	runWaza,
+} from "../scripts/run-waza.js";
 
 test("createWazaWorkspace copies the repository without Git metadata or dependencies", async (t) => {
 	const sourceDirectory = await mkdtemp(path.join(os.tmpdir(), "waza-source-"));
@@ -46,43 +50,78 @@ test("createWazaWorkspace copies the repository without Git metadata or dependen
 	);
 });
 
+test("createMacosWazaSandboxProfile permits writes only in the workspace", () => {
+	const profile = createMacosWazaSandboxProfile('/tmp/waza "workspace"');
+
+	assert.match(profile, /^\(allow default\)$/m);
+	assert.match(profile, /^\(deny file-write\*\)$/m);
+	assert.match(
+		profile,
+		/\(allow file-write\* \(subpath "\/tmp\/waza \\"workspace\\""\)\)/,
+	);
+	assert.match(profile, /Library\\?\/Caches\\?\/copilot-sdk/);
+	assert.match(profile, /\/\.waza/);
+	assert.match(profile, /\/\.copilot/);
+});
+
 test("runWaza executes the evaluator in an isolated workspace", async (t) => {
 	const toolDirectory = await mkdtemp(path.join(os.tmpdir(), "waza-tool-"));
-	const currentDirectoryPath = path.join(toolDirectory, "cwd.txt");
 	const fakeWazaPath = path.join(toolDirectory, "waza");
 	const originalPath = process.env.PATH;
-	const originalCurrentDirectoryPath = process.env.WAZA_TEST_CWD_PATH;
 
 	t.after(async () => {
 		process.env.PATH = originalPath;
-		if (originalCurrentDirectoryPath === undefined) {
-			delete process.env.WAZA_TEST_CWD_PATH;
+		await rm(toolDirectory, { force: true, recursive: true });
+	});
+
+	await writeFile(
+		fakeWazaPath,
+		"#!/usr/bin/env sh\nprintf mutation > mutation-marker.txt\n",
+	);
+	await chmod(fakeWazaPath, 0o755);
+	process.env.PATH = `${toolDirectory}${path.delimiter}${originalPath ?? ""}`;
+
+	assert.equal(await runWaza(["run", "plan-executor"]), 0);
+	const repositoryRoot = path.resolve(
+		path.dirname(new URL(import.meta.url).pathname),
+		"..",
+	);
+
+	await assert.rejects(
+		readFile(path.join(repositoryRoot, "mutation-marker.txt")),
+	);
+});
+
+test("runWaza denies macOS evaluator writes outside its workspace", async (t) => {
+	if (process.platform !== "darwin") {
+		t.skip("macOS sandbox-exec is unavailable");
+		return;
+	}
+
+	const toolDirectory = await mkdtemp(path.join(os.homedir(), "waza-tool-"));
+	const outsideMarkerPath = path.join(toolDirectory, "outside-marker.txt");
+	const fakeWazaPath = path.join(toolDirectory, "waza");
+	const originalPath = process.env.PATH;
+	const originalOutsideMarkerPath = process.env.WAZA_TEST_OUTSIDE_MARKER_PATH;
+
+	t.after(async () => {
+		process.env.PATH = originalPath;
+		if (originalOutsideMarkerPath === undefined) {
+			delete process.env.WAZA_TEST_OUTSIDE_MARKER_PATH;
 		} else {
-			process.env.WAZA_TEST_CWD_PATH = originalCurrentDirectoryPath;
+			process.env.WAZA_TEST_OUTSIDE_MARKER_PATH = originalOutsideMarkerPath;
 		}
 		await rm(toolDirectory, { force: true, recursive: true });
 	});
 
 	await writeFile(
 		fakeWazaPath,
-		'#!/usr/bin/env sh\nprintf \'%s\' "$PWD" > "$WAZA_TEST_CWD_PATH"\nprintf mutation > mutation-marker.txt\n',
+		'#!/usr/bin/env sh\nprintf workspace > workspace-marker.txt\nprintf outside > "$WAZA_TEST_OUTSIDE_MARKER_PATH"\n',
 	);
 	await chmod(fakeWazaPath, 0o755);
 	process.env.PATH = `${toolDirectory}${path.delimiter}${originalPath ?? ""}`;
-	process.env.WAZA_TEST_CWD_PATH = currentDirectoryPath;
+	process.env.WAZA_TEST_OUTSIDE_MARKER_PATH = outsideMarkerPath;
 
-	assert.equal(await runWaza(["run", "plan-executor"]), 0);
-	const evaluatorDirectory = await readFile(currentDirectoryPath, "utf8");
-	const repositoryRoot = path.resolve(
-		path.dirname(new URL(import.meta.url).pathname),
-		"..",
-	);
-
-	assert.notEqual(evaluatorDirectory, repositoryRoot);
-	await assert.rejects(
-		readFile(path.join(repositoryRoot, "mutation-marker.txt")),
-	);
-	await assert.rejects(
-		readFile(path.join(evaluatorDirectory, "mutation-marker.txt")),
-	);
+	assert.notEqual(await runWaza(["run", "plan-executor"]), 0);
+	await assert.rejects(readFile(outsideMarkerPath));
 });

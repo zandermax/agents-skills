@@ -55,5 +55,11 @@ starting Waza. Agents and tools invoked by an evaluation can therefore modify
 only that copy, never the checkout that launched the evaluation. The temporary
 workspace is removed when the run completes.
 
+On macOS, the runner additionally starts Waza through `sandbox-exec`. It
+permits writes only in the temporary workspace (including Waza's runtime
+temporary directory), Waza's state directory at `~/.waza`, Copilot's state
+directory at `~/.copilot`, and the embedded Copilot SDK's license cache at
+`~/Library/Caches/copilot-sdk`. Other platforms retain copy-based isolation.
+
 Pass `--keep-workspace` to preserve the copy for debugging; the runner prints
 its path before returning.
