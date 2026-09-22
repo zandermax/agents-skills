@@ -47,3 +47,13 @@ waza run executable-planning -v
 ```
 
 Local caches and execution outputs (e.g. `.waza-cache/`) are ignored by version control.
+
+## Workspace Isolation
+
+`npm run eval:waza` copies this repository to a temporary workspace before
+starting Waza. Agents and tools invoked by an evaluation can therefore modify
+only that copy, never the checkout that launched the evaluation. The temporary
+workspace is removed when the run completes.
+
+Pass `--keep-workspace` to preserve the copy for debugging; the runner prints
+its path before returning.
