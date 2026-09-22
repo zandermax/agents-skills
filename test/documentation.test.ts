@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const testFilePath = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(testFilePath), "..");
+const agentInstructionsPath = path.join(projectRoot, "AGENTS.md");
 const readmePath = path.join(projectRoot, "README.md");
 
 const REQUIRED_MARKERS = [
@@ -45,6 +46,27 @@ test("README documents catalog-driven artifact installation and maintenance", as
 			"Source and destination mappings used by scripts/install-clients.ts",
 		),
 		false,
+	);
+});
+
+test("shared agent instructions treat staging as semantically neutral", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/stage changes at any time solely to monitor them/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/carry no signal about progress.*desired file state/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Never mutate Git or try to make the index and worktree match/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/working files and fresh task-specific checks/i,
 	);
 });
 

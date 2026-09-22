@@ -42,3 +42,9 @@ or investigate a discrepancy. Stop, explain why a Git mutation would be needed,
 and ask the user to perform it or grant explicit authorization for the exact
 command. Prefer read-only evidence such as `git diff`, `git show`, `git log`,
 and targeted tests.
+
+The user may stage changes at any time solely to monitor them. Staged and
+unstaged differences carry no signal about progress, ownership, approval,
+completion, conflict, recovery, or desired file state. Never mutate Git or try
+to make the index and worktree match based on those differences; use working
+files and fresh task-specific checks to determine current state.
