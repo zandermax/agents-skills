@@ -2,10 +2,10 @@
 status: drafting
 mode: interactive
 canonical_location: docs/plans/2026-09-19-skill-agent-audit-token-optimization.md
-last_updated: 2026-09-19
+last_updated: 2026-09-22
 current_phase: Phase 1
 current_step: not started
-next_action: Begin Phase 1 by inventorying all agent and skill sources and defining the audit rubric.
+next_action: Obtain explicit user confirmation to execute the elaborated Phase 1 steps.
 blockers: none
 ---
 
@@ -15,9 +15,9 @@ blockers: none
 
 - Status: drafting
 - Mode: interactive
-- Delegation: not applicable at outline stage; step design will be delegated per phase only when a phase is elaborated.
+- Delegation: Phase 1 is owned by the plan executor; ownership for later phases will be assigned when each phase is elaborated.
 - Canonical location: docs/plans/2026-09-19-skill-agent-audit-token-optimization.md
-- Last updated: 2026-09-19
+- Last updated: 2026-09-22
 - Goal: Audit every skill and agent in the repository for token-efficiency opportunities while preserving or improving output quality, execution efficiency, and agent usefulness.
 - Success criteria:
   - Every relevant skill and agent is inventoried and reviewed against a shared token-efficiency rubric.
@@ -36,7 +36,7 @@ blockers: none
 
 - Current phase: Phase 1
 - Current step: not started
-- Next action: Begin Phase 1 by inventorying all agent and skill sources and defining the audit rubric.
+- Next action: Obtain explicit user confirmation to execute the elaborated Phase 1 steps.
 - Blockers: none
 
 ## Decisions
@@ -70,7 +70,26 @@ A complete inventory of all skills and agents covered by the audit, plus a share
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+1. [ ] **Inventory canonical instruction surfaces.**
+
+    - Owner: plan executor.
+    - Depends on: admitted plan and repository instructions.
+    - Action: enumerate hand-authored skills, manifest-driven skill sources and manifests, generated skill outputs, agent definitions, and repository-level instruction files that directly influence agent behavior. Record each path once with its artifact type and source-of-truth status; record explicit exclusions separately.
+    - Check: compare the recorded inventory with sorted `rg --files` results for `SKILL.md`, `*.agent.md`, `skill.json`, source Markdown under `sources/`, and repository instruction files; every discovered instruction surface is either included once or has a documented exclusion.
+
+1. [ ] **Define the shared audit rubric and measurement protocol.**
+
+    - Owner: plan executor.
+    - Depends on: Step 1 inventory categories.
+    - Action: record rubric fields for instruction size, clarity, redundancy, signal-to-noise ratio, correctness and safety preservation, execution efficiency, trigger accuracy, evidence discipline, and output-contract quality. Define reproducible before/after size measures and the quality evidence accepted for each artifact type without representing proxy measures as exact model token counts.
+    - Check: verify every required efficiency and quality dimension has a definition, evidence source, and decision rule, and that the size protocol can be repeated with repository-local commands.
+
+1. [ ] **Reconcile scope and publish the Phase 1 audit baseline.**
+
+    - Owner: plan executor.
+    - Depends on: Steps 1 and 2.
+    - Action: deduplicate generated and source artifacts by auditing the source of truth while retaining generated outputs as validation targets, summarize inventory counts by category, and record the final scope, exclusions, rubric, and measurement protocol in this plan.
+    - Check: rerun the Step 1 discovery commands and confirm the recorded category counts reconcile with discovered paths, no source artifact is double-counted, every exclusion has a rationale, and every in-scope category can be reviewed with the Step 2 rubric.
 
 ### Validation
 
@@ -146,7 +165,7 @@ _Not yet elaborated. Populate immediately before this phase starts._
 
 _Interactive mode requires a phase checkpoint and user confirmation before Phase 4 starts._
 
-## Phase 4: Synthesize Improvements and Update Instruction Files
+## Phase 4: Synthesize and Approve Instruction Updates
 
 ### Tangible output
 
@@ -155,7 +174,7 @@ A prioritized set of concrete instruction updates for skills and agents, with th
 ### Completion criteria
 
 - Recommended changes are ranked by impact and risk.
-- The update scope is explicit: which files or instruction sections will change, and which will remain intentionally unchanged.
+- The update scope is explicit: which source-of-truth files or instruction sections will change, which generated outputs require rebuilding, and which files will remain intentionally unchanged.
 - The final recommendation set is ready for review and editing without re-litigating the audit rubric.
 
 ### Dependencies and risks
@@ -188,7 +207,7 @@ The repository contains only the targeted instruction improvements that survived
 
 - The approved changes are applied to relevant skill or agent instructions.
 - The validation process confirms no regression in the repository’s expected behavior for the changed artifacts.
-- Final notes include the measured tradeoff between token reduction and output quality.
+- Final notes compare a consistent before/after instruction-size measure and the applicable quality evidence for every changed artifact.
 
 ### Dependencies and risks
 
@@ -202,9 +221,12 @@ _Not yet elaborated. Populate immediately before this phase starts._
 
 ### Validation
 
-- Run the smallest relevant verification command(s) for the edited instruction artifacts.
+- For hand-authored skills, run `npm run check` after editing the final `SKILL.md`.
+- For manifest-driven skills, edit the source fragments or manifest, run `npm run build`, then run `npm run check` against the generated output.
+- When a change meaningfully alters a skill’s instructed behavior, run `npm run eval:waza -- run <skill-name> -v` as required by the repository instructions.
+- Run the smallest relevant verification command(s) for any edited agent instruction artifacts not covered by the skill checks above.
 - Check the final diff for evidence that token-noise reduction happened without omitting necessary guidance.
-- Confirm the final review notes explicitly call out the net effect on efficiency and quality.
+- Confirm the final review notes report the before/after size measure, quality evidence, and net effect on efficiency and quality for each changed artifact.
 
 ### Checkpoint
 
