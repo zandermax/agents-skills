@@ -11,9 +11,12 @@ skill composes reusable sections, uses transforms, or needs generated output.
 Choose manifest-driven authoring for composition and reuse, not simply because
 a skill is long.
 
-For manifest-driven skills, run `npm run build` after changing source
+For manifest-driven skills, run `npm run build` only after changing source
 fragments or manifests, then run `npm run check` to validate generated output.
-For hand-authored skills, add the final `SKILL.md` directly and run
+Never run `npm run build` unless you have modified a source file under `sources/`
+or a `skill.json` manifest; do not run `build` speculatively, as a general check,
+or as a routine cleanup step.
+For hand-authored skills, edit the final `SKILL.md` directly and run
 `npm run check`.
 
 ## Behavioral Evaluations

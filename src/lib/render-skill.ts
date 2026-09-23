@@ -118,7 +118,10 @@ export function renderSkill(
 
 	const frontmatter = renderFrontmatter(frontmatterAttributes);
 
-	const renderedContent = `${frontmatter}# ${manifest.title}\n\n${orderedSectionContent.join("\n\n")}`;
+	const normalizedSections = orderedSectionContent.map((section) =>
+		section.trimEnd(),
+	);
+	const renderedContent = `${frontmatter}\n# ${manifest.title}\n\n${normalizedSections.join("\n\n")}\n`;
 
 	const h1Count = listSections(renderedContent).filter(
 		(section) => section.level === 1,

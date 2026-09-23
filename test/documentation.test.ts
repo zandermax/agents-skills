@@ -70,6 +70,15 @@ test("shared agent instructions treat staging as semantically neutral", async ()
 	);
 });
 
+test("shared agent instructions prohibit speculative skill builds", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/Never run `npm run build` unless you have modified a source file under `sources\/` or a `skill\.json` manifest/i,
+	);
+});
+
 test("repository keeps active and archived plans beside specifications under docs", async () => {
 	await access(path.join(projectRoot, "docs", "plans"));
 	await access(path.join(projectRoot, "docs", "plans", "archive"));

@@ -39,6 +39,11 @@ test("plan-executor skill frontmatter and core structure", async () => {
 		skill,
 		/before.*implementation write|implementation write.*before/i,
 	);
+	assert.match(
+		skill,
+		/user confirmation.*satisfies readiness|supersedes automated re-admission/i,
+	);
+	assert.match(skill, /step completion markers.*recorded execution evidence/i);
 });
 
 test("plan-executor agent frontmatter and required skill reference", async () => {
@@ -61,6 +66,7 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 	assert.match(agent, /plan-checker admission and freshness gates/i);
 	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
 	assert.match(agent, /fingerprint mismatch/i);
+	assert.match(agent, /user confirmation.*satisfies readiness/i);
 });
 
 test("plan executor collects user-test evidence before phase continuation", async () => {
