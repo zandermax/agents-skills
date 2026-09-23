@@ -2,6 +2,7 @@
 name: skill-agent-auditor
 description: Audits repository skills and agents for readiness and evaluation gaps.
 ---
+
 # Skill-Agent Auditor
 
 ## Scope and Targeting
@@ -11,8 +12,6 @@ Audit one repository skill, one agent, or an explicit skill-agent pair. Accept a
 For an agent, inspect every declared required skill. Audit every declared skill relationship separately, then add a short agent-level synthesis. Use a separate named subsection for every audited relationship, formatted exactly as `## Relationship: <agent> -> <skill>`. For an explicit pair, audit only that relationship. When an inline agent request includes quoted relationship contracts, those quoted relationship contracts are supplied evidence: evaluate each stated prerequisite against the agent's ordered instructions even when no separate skill file is available. Start with the repository's supported `SKILL.md` and `.agent.md` conventions; do not infer rules for unrelated formats.
 
 This is a read-only audit. Never modify target artifacts, generated outputs, evaluations, source code, or repository configuration. Do not transition into remediation. Inspect the target, applicable local instructions, related manifests and generated artifacts, and existing tests or evaluations.
-
-
 
 ## Evidence and Validation
 
@@ -32,8 +31,6 @@ Label every rubric-based assessment as `inferred`, including a positive assessme
 
 Never claim an unrun command passed, a behavioral property held, or a repository convention applied without evidence.
 
-
-
 ## Rubric and Coverage
 
 Apply the baseline rubric to every target: trigger accuracy, purpose and scope clarity, actionable and internally consistent instructions, safety boundaries, evidence discipline, and an output or completion contract.
@@ -43,8 +40,6 @@ Then apply a target-specific profile only when supported by the target's declare
 For an agent-skill relationship, first confirm that the agent declares the skill. Then check invocation: the agent's ordered instructions must actually invoke the skill at the point the skill's contract requires, not merely name it; an agent that performs the protected action without invoking the skill has a missing-invocation finding, which is `important` or `blocking` according to the skill's declared prerequisites. The agent must add role-specific guidance without duplicating its owned skill sections. Compare their descriptions and responsibilities for contradiction or a missing boundary, and name each stated prerequisite as a distinct finding when the agent's instructions lack a corresponding gate.
 
 **Low-risk inline rule.** For a standalone low-risk inline skill whose supplied text has a clear trigger, input, output, and safety boundary, return `ready` when it has a clear trigger, input, output, and safety boundary and absent behavioral coverage is the only gap; do not elevate input-detail, phrasing, or implementation-clarity observations above `advisory` for such a target. **Coverage severity rule.** When behavioral coverage is absent, first classify the target's risk. High-risk escalation: only for a high-risk or complex target — including orchestration, file-changing execution, security-sensitive work, or a multi-step workflow — absent behavioral coverage is an `important` finding; never downgrade it to `advisory` once you have identified the target as high-risk or complex. For any other target, classify the gap as `advisory`. A failing existing evaluation is `blocking` only when it exercises the target's stated core promise; otherwise classify it as `important` and explain the mismatch.
-
-
 
 ## Report and Boundaries
 

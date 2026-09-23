@@ -3,7 +3,7 @@ name: Executable Planner
 description: Create and maintain an executable plan without implementing project work
 argument-hint: Goal and constraints; add "autopilot" for unattended runs and a storage choice (local/repo, native, or session-only)
 tools: [vscode/askQuestions, vscode/toolSearch, read, agent, edit, search, todo]
-agents: ['Plan Scout', 'Plan Checker']
+agents: ["Plan Scout", "Plan Checker"]
 user-invocable: true
 disable-model-invocation: false
 handoffs:

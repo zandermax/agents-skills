@@ -77,6 +77,30 @@ test("plan executor collects user-test evidence before phase continuation", asyn
 	assert.match(agent, /User Test.*free-text observation/i);
 	assert.match(agent, /must not.*expected result/i);
 	assert.match(agent, /No checkpoint tests yet\./);
+	assert.match(
+		skill,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free-text observation.*record.*user-provided evidence.*before phase continuation/i,
+	);
+	assert.match(
+		agent,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free-text observation.*record.*user-provided evidence.*before phase continuation/i,
+	);
+	assert.match(
+		skill,
+		/This response takes precedence over the Plan existence gate/i,
+	);
+	assert.match(
+		agent,
+		/This response takes precedence over the plan-existence gate/i,
+	);
+	assert.match(
+		skill,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free-text observation.*user-provided evidence/i,
+	);
+	assert.match(
+		agent,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free-text observation.*user-provided evidence/i,
+	);
 });
 
 test("plan executor archives completed repo-backed plans before handoff", async () => {
@@ -115,4 +139,12 @@ test("plan executor stops before using Git mutation to investigate", async () =>
 	assert.match(agent, /explicit authorization/i);
 	assert.match(agent, /must perform.*exact.*Git command.*themselves/i);
 	assert.match(agent, /cannot determine.*pre-existing/i);
+	assert.match(
+		skill,
+		/establishing a baseline.*requires explicit user authorization or user action/i,
+	);
+	assert.match(
+		agent,
+		/establishing a baseline.*requires explicit user authorization or user action/i,
+	);
 });

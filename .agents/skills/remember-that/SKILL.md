@@ -141,10 +141,10 @@ step silently only when no customization-evaluation skill is available.
    diagnostics). If neither is present, skip this section silently: emit no
    message and take no action.
 2. **Evaluate and fix the file**: if `fix-customization-evaluation-diagnostics`
-    is available, invoke it against the written memory `SKILL.md` file and
-    complete any fixes it applies or recommends. If only `analyze-prompt` is
-    available, invoke it against the file to report findings, then apply any
-    resulting fixes manually before continuing.
+   is available, invoke it against the written memory `SKILL.md` file and
+   complete any fixes it applies or recommends. If only `analyze-prompt` is
+   available, invoke it against the file to report findings, then apply any
+   resulting fixes manually before continuing.
 3. **Re-verify after fixes**: if the evaluation skill modified the memory
    note, re-run the memory topic's test suite to confirm it still passes, and
    include the additional changes in the diff shown to the user.
@@ -174,9 +174,11 @@ Inside the memory note, structure entries under clean markdown sections:
 # <Topic Title> Notes
 
 ## Preferences
+
 - <specific preference or pattern>
 
 ## Conventions
+
 - <specific convention>
 ```
 
@@ -187,6 +189,7 @@ file verifying both trigger sensitivity and behavioral invariants:
 `<resolved-memory-dir>/<topic>-notes/test/<topic>-notes.test.ts`.
 
 When creating a new memory topic:
+
 1. Create `<resolved-memory-dir>/<topic>-notes/test/` directory.
 2. Create `<resolved-memory-dir>/<topic>-notes/test/<topic>-notes.test.ts`
    containing:
@@ -197,6 +200,7 @@ When creating a new memory topic:
    - Conventions assertions (asserting specified libraries, formats, or tools).
 
 When appending preferences to an existing memory topic:
+
 1. Update `<resolved-memory-dir>/<topic>-notes/test/<topic>-notes.test.ts`
    with corresponding behavioral assertions for the newly added preferences.
 2. Execute the test with `node --test --experimental-strip-types <path>` (or the

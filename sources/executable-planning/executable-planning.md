@@ -136,7 +136,7 @@ Discovery fan-out during planning (step 1) is separate from this setting and ava
 
 Adapt detail to the task. In the Execution Protocol, keep only the variant of each line that matches the plan's mode and delegation.
 
-````markdown
+```markdown
 # <Plan title>
 
 ## Plan Metadata
@@ -220,7 +220,7 @@ _Not yet elaborated. Populate immediately before this phase starts._
 ## Progress Log
 
 - <timestamp>: <event and evidence, one line>
-````
+```
 
 Step identifiers stay stable so updates are easy to audit. Whenever work is active there is exactly one Next action; during parallel execution, Current step names the active group.
 
