@@ -1,12 +1,11 @@
 import {
 	checkCommandForNonReadGit,
 	checkGitCommandTokens,
-	checkToolInputPaths,
-	evaluateToolUse,
-	runCli,
 	splitShellStatements,
 	tokenizeStatement,
 } from "./deny-non-read-git.js";
+import { evaluateToolUse, runCli } from "./pre-tool-safety.js";
+import { checkToolInputPaths } from "./pre-tool-safety-workspace.js";
 
 export {
 	checkCommandForNonReadGit,

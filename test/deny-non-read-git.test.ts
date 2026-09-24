@@ -8,8 +8,31 @@ import {
 	splitShellStatements,
 	tokenizeStatement,
 } from "../.github/hooks/deny-non-read-git.mts";
+import { evaluateToolUse as evaluatePreToolSafety } from "../.github/hooks/pre-tool-safety.mts";
 
 describe("deny-non-read-git hook", () => {
+	describe("pre-tool-safety compatibility", () => {
+		it("keeps the legacy and canonical entrypoints on the same decisions", () => {
+			const input = {
+				command: "git commit -m 'feat'",
+			};
+			assert.deepEqual(
+				evaluatePreToolSafety("run_in_terminal", input),
+				evaluateToolUse("run_in_terminal", input),
+			);
+		});
+
+		it("keeps one registered PreToolUse entrypoint per config", async () => {
+			for (const path of [
+				"../.github/hooks/deny-non-read-git.json",
+				"../.agents/hooks/deny-non-read-git.json",
+			]) {
+				const config = await import(path, { with: { type: "json" } });
+				assert.equal(config.default.hooks.PreToolUse.length, 1);
+			}
+		});
+	});
+
 	describe("splitShellStatements", () => {
 		it("splits on semicolons, &&, ||, and pipes outside quotes", () => {
 			const stmts = splitShellStatements(
@@ -136,6 +159,19 @@ describe("deny-non-read-git hook", () => {
 	});
 
 	describe("evaluateToolUse", () => {
+		it("allows unknown payload shapes without guessing", () => {
+			assert.equal(evaluateToolUse("unknown_tool", null).decision, "allow");
+			assert.equal(evaluateToolUse("unknown_tool", []).decision, "allow");
+		});
+
+		it("preserves GitHub mutation precedence over path checks", () => {
+			const result = evaluateToolUse("mcp_github_mcp_se_push_files", {
+				filePath: "/tmp/outside-workspace.txt",
+			});
+			assert.equal(result.decision, "ask");
+			assert.match(result.reason ?? "", /Mutating Git\/GitHub tool/);
+		});
+
 		it("allows non-command tools", () => {
 			const result = evaluateToolUse("read_file", {
 				filePath: "src/index.ts",

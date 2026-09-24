@@ -95,7 +95,7 @@ export function checkToolInputPaths(toolInput) {
 	return null;
 }
 
-function checkCommandPaths(command) {
+export function checkCommandPaths(command) {
 	for (const statement of splitShellStatements(command)) {
 		for (const token of tokenizeStatement(statement).slice(1)) {
 			if (isExternalPath(token)) {
