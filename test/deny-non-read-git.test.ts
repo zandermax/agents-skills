@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
 	checkCommandForNonReadGit,
+	checkToolInputPaths,
 	evaluateToolUse,
 	splitShellStatements,
 	tokenizeStatement,
@@ -140,6 +141,42 @@ describe("deny-non-read-git hook", () => {
 				filePath: "src/index.ts",
 			});
 			assert.equal(result.decision, "allow");
+		});
+
+		it("asks before a path-bearing tool accesses outside the workspace", () => {
+			const result = evaluateToolUse("read_file", {
+				filePath: "/tmp/outside-workspace.txt",
+			});
+			assert.equal(result.decision, "ask");
+			assert.match(result.reason ?? "", /outside the active workspace/);
+		});
+
+		it("allows workspace-relative paths and classifies external paths", () => {
+			assert.equal(checkToolInputPaths({ filePath: "src/index.ts" }), null);
+			assert.equal(
+				checkToolInputPaths({ filePath: `${process.cwd()}/src/index.ts` }),
+				null,
+			);
+			assert.match(
+				checkToolInputPaths({ filePath: "/tmp/outside.txt" }) ?? "",
+				/outside the active workspace/,
+			);
+		});
+
+		it("asks before a command accesses an external absolute path", () => {
+			const result = evaluateToolUse("run_in_terminal", {
+				command: "cat /tmp/outside-workspace.txt",
+			});
+			assert.equal(result.decision, "ask");
+			assert.match(result.reason ?? "", /outside the active workspace/);
+		});
+
+		it("allows an absolute executable while checking its arguments", () => {
+			assert.equal(
+				evaluateToolUse("run_in_terminal", { command: "/usr/bin/git status" })
+					.decision,
+				"allow",
+			);
 		});
 
 		it("allows safe read-only git command tool use", () => {

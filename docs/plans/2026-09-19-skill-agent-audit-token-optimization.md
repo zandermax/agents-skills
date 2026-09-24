@@ -3,15 +3,15 @@ status: in-progress
 mode: interactive
 canonical_location: docs/plans/2026-09-19-skill-agent-audit-token-optimization.md
 last_updated: 2026-09-24
-current_phase: Phase 2
-current_step: Preventive Waza safeguard slice complete; full mechanical validation
-next_action: Run full mechanical validation, then review whether to continue the audit or pause.
+current_phase: Phase 6
+current_step: Phase 6 added; awaiting confirmation before elaborating implementation
+next_action: Confirm the hook organization phase, then elaborate and execute it before any closeout or User Test checkpoint.
 blockers: "Maintained Waza aggregate evidence is unavailable for executable-planning because the embedded tool adapter rejected the generated apply_patch argument and the run timed out; skill-agent-auditor showed trial variance and hung before completion. Repository-owned runner diagnostics are covered; adapter argument normalization remains upstream-owned."
-plan_checker_verdict: unchecked
-plan_checker_fingerprint: pending
+plan_checker_verdict: ready
+plan_checker_fingerprint: unavailable
 plan_checker_mode: interactive
-plan_checker_reviewed_at: pending
-plan_checker_repair_cycles: 0
+plan_checker_reviewed_at: 2026-09-24
+plan_checker_repair_cycles: 1
 recovery_cycle: 1 of 2 maximum
 ---
 
@@ -44,10 +44,10 @@ recovery_cycle: 1 of 2 maximum
 
 ## Current State
 
-- Current phase: Phase 2
-- Current step: Phase 2 Step 5 manifest-driven skill audit [blocked]
-- Next action: Investigate the failing manifest-skill scenarios, classify root causes, and make only bounded source/test repairs.
-- Blockers: Plan Checker fingerprint computation is unavailable; interactive user authorization for Repair supplies the documented readiness override. Manifest-skill Waza failures still require bounded root-cause investigation and repair before Phase 2 synthesis can complete.
+- Current phase: Phase 6
+- Current step: Phase 6 added; awaiting confirmation before elaborating implementation
+- Next action: Confirm the hook organization phase, then elaborate and execute it before any closeout or User Test checkpoint.
+- Blockers: Maintained Waza aggregate evidence remains unavailable for `executable-planning` and `skill-agent-auditor`; repository-owned runner diagnostics are covered, and adapter argument normalization remains upstream-owned.
 
 ## Execution Protocol
 
@@ -82,6 +82,8 @@ For admission freshness, canonicalize the plan with this exact procedure: parse 
 - Prioritize instruction-induced runtime context over static skill or agent size. Measure required discovery, reads, tool outputs, repeated checks, loops, delegation, interaction turns, and report verbosity; use file size only as a secondary proxy; 2026-09-22.
 - Treat staging as semantically neutral user monitoring. It may happen at any time, and staged or unstaged differences carry no signal about progress, ownership, approval, completion, conflict, recovery, or desired file state; never mutate Git or try to make the index and worktree match based on those differences; 2026-09-22.
 - Add repository-owned Waza diagnostics and fail-fast classification around the observed adapter failure, limited to `scripts/run-waza.ts` and its directly owned deterministic tests; keep `apply_patch` argument normalization upstream because this repository does not own that adapter; user authorized this scope amendment on 2026-09-24.
+- Default agent filesystem access to the active workspace; require explicit user approval or a plan-named requirement before external paths, and prevent optional session-history lookups from running merely because the `ctx` skill is available; user authorized this scope amendment on 2026-09-24.
+- Add hook enforcement only for tool payloads whose path or command shape can be identified reliably; fail closed with an approval request for external paths, and fail open for unrecognized payloads while documenting that limitation rather than pretending the hook covers every tool.
 
 ## Deferred Items
 
@@ -358,7 +360,51 @@ A comparable review of agent instructions, including a self-audit of the plan ex
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+1. [x] **Audit the seven agent instruction files.**
+   - Owner: plan executor.
+   - Depends on: completed Phase 2 findings and current agent inventory.
+   - Action: review each agent file against all 11 rubric dimensions, tracing required discovery, reads, tool calls and output, repeated checks, loops, delegation, user turns, and report verbosity. Record one evidence-backed ledger entry per agent, including maintained evaluation coverage or an explicit limitation.
+   - Check: all seven agent files have labeled verdicts, concrete evidence references, runtime-context drivers, and recommendations tied to a named rubric dimension and protected behavior; run `npm run check:customizations` and applicable deterministic tests.
+   - Evidence: all seven entries are recorded under Phase 3 Audit Findings. `npm run check:customizations` passed on 2026-09-24; the applicable deterministic suites passed `41/41` tests with `0` failures. Maintained Waza usage telemetry is unavailable for these agents; the covered owned-skill suites and absent agent-specific suites are labeled per artifact.
+
+2. [x] **Self-audit the Plan Executor coding-agent context.**
+   - Owner: plan executor.
+   - Depends on: Step 1 agent ledger and the existing Plan Executor skill findings.
+   - Action: compare always-loaded repository and agent instructions with context induced by plan reads, admission checks, tool calls, validation loops, subagent delegation, user checkpoints, and output contracts. Keep the shared skill and VS Code adapter distinct and do not double-count their guidance.
+   - Check: record a distinct Plan Executor self-audit naming avoidable context, retained safety/evidence boundaries, and actionable tightening recommendations; verify the question-mechanism prose matches declared agent permissions.
+   - Evidence: the distinct self-audit below separates the adapter's always-loaded contract from the shared skill's induced execution context. The adapter declares `search`, `read`, `edit`, `execute`, `agent`, and `todo`, but does not declare `vscode/askQuestions`; this is a confirmed Phase 4 recommendation, not an implementation change in this audit phase.
+
+3. [x] **Validate and checkpoint Phase 3 findings.**
+   - Owner: plan executor.
+   - Depends on: Steps 1 and 2.
+   - Action: reconcile the seven agent entries and self-audit into the Phase 3 findings section without changing implementation files.
+   - Check: Phase 3 validation criteria pass, unavailable telemetry is labeled rather than estimated, and the plan records whether to continue to Phase 4, revise, or pause.
+   - Evidence: the seven agent entries, the distinct self-audit, and the explicit telemetry limitations below satisfy the Phase 3 validation criteria. The interactive checkpoint is now awaiting the user's choice to continue, revise, or pause.
+
+### Phase 3 Audit Findings
+
+The seven adapter entries below apply all 11 rubric dimensions. Static size is secondary evidence; runtime-context drivers are bounded qualitative traces because agent-specific usage telemetry and maintained agent Waza suites are unavailable.
+
+1. **`.github/agents/code-walk.agent.md` — Verdict: ready.** Confirmed evidence: the adapter exposes only `search`, `read`, `todo`, and `execute`, requires `code-walk`, prohibits edits, and delegates the step loop to the owned skill; `test/code-walk-skill.test.ts` passed `6/6`. Runtime context is induced by one-step explanations, repeated user turns, changed-file reads, and read-only checks. The output contract is concrete suggestions with file links and concise action descriptions. Recommendation: intentional non-change; retain the narrow read/check permissions and delegation because they bound tool output and preserve learner-controlled edits, verification, trigger accuracy, and safety. No agent-specific evaluation or usage telemetry exists.
+
+2. **`.github/agents/executable-planner.agent.md` — Verdict: ready with follow-up.** Confirmed evidence: the adapter requires `executable-planning`, permits question routing, read-only discovery, delegation, plan edits, and todo tracking, and hands off implementation through a native transition; `test/executable-planning-skill.test.ts` passed its applicable assertions and `npm run check:customizations` passed. Runtime context is induced by plan discovery, unresolved-question turns, Plan Scout and Plan Checker delegation, plan persistence, and full handoff output. Redundancy is limited because the adapter maps abstract mechanisms rather than duplicating the skill rubric. Recommendation: preserve the adapter/skill split; in Phase 4 consider shortening repeated mechanism prose only if the handoff still exposes question routing, checker ownership, persistence boundary, and no-implementation scope. No agent-specific telemetry exists.
+
+3. **`.github/agents/plan-checker.agent.md` — Verdict: ready.** Confirmed evidence: the adapter has only `read` and `edit`, requires the shared `plan-checker` skill, limits review to the canonical plan and planning metadata, and forbids implementation edits; `test/plan-checker-skill.test.ts` passed `7/7` and the maintained Waza suite passed `6/6` at aggregate `1.00`. Runtime context is induced by complete-plan reads, field-by-field rubric traversal, bounded repair edits, and the structured final report. The safety and output contracts are explicit and avoid delegation duplication. Recommendation: intentional non-change; preserve the read/edit boundary, checker-owned verdict, and bounded repair protocol. Agent-specific telemetry is unavailable; Waza evidence belongs to the owned skill behavior.
+
+4. **`.github/agents/plan-executor.agent.md` — Verdict: ready with follow-up.** Confirmed evidence: the adapter requires `plan-executor`, exposes execution and delegation tools, repeats the immediate User Test precedence and Git-mutation rules, and requires admission/freshness checks; `test/plan-executor-skill.test.ts` passed `6/6`, the maintained Waza suite passed `3/3` at aggregate `1.00`, and `npm run check:customizations` passed. Runtime context is induced by mandatory plan/state/dependency reads, checker admission, per-step edits and checks, Git resync for Git-dependent claims, user checkpoints, and final archive verification. The main confirmed interaction-routing gap is that prose names `vscode_askQuestions` but frontmatter omits `vscode/askQuestions`. Recommendation: Phase 4 should add that permission and a parsed-frontmatter assertion; retain the detailed safety/evidence contracts, while evaluating adapter prose consolidation against the maintained scenarios. No separate agent telemetry exists.
+
+5. **`.github/agents/plan-scout.agent.md` — Verdict: ready.** Confirmed evidence: the adapter exposes only `search` and `read`, requires narrow read-only discovery, prohibits edits, execution, and planning, and specifies a compact five-section report. Runtime context is bounded by the single narrow question, relevant-file selection, under-400-word target, and omission of unrelated findings. The output contract and safety boundary are stronger than a generic discovery prompt. Recommendation: intentional non-change; preserve the narrow permissions and compact report because they reduce delegation output and prevent scope expansion. No deterministic agent-specific suite, maintained Waza suite, or usage telemetry exists.
+
+6. **`.github/agents/remember-that.agent.md` — Verdict: ready with follow-up.** Confirmed evidence: the adapter requires `remember-that`, permits search/read/edit/execute for private-memory operations, forbids writes to this repository and global instructions, and requires tests plus a unified diff; `test/remember-that-skill.test.ts` passed `8/8`. Runtime context is induced by public/private topic scans, optional capture-only history lookup, memory test execution, and diff reporting. The output contract protects private storage, suggestion-only context, and verification. Recommendation: preserve the private-storage boundary and capture-only lookup; Phase 4 may evaluate whether the adapter's repeated memory-operation summary can be shortened without weakening the owned skill's routing, test, or diff requirements. No agent-specific telemetry exists.
+
+7. **`.github/agents/teach-by-doing.agent.md` — Verdict: ready.** Confirmed evidence: the adapter requires `teach-by-doing`, allows only `search`, `read`, and `todo`, and prohibits performing the user's steps; `test/code-walk-skill.test.ts` passed `6/6` for the shared teaching surface. Runtime context is induced by one-step explanations, a user wait, read-only verification, and repeat-until-complete turns. The output contract and stopping boundary are explicit and concise. Recommendation: intentional non-change; retain the minimal permission set and user-owned step loop because they bound tool output and preserve correctness, trigger accuracy, and learner agency. No agent-specific evaluation or usage telemetry exists.
+
+### Plan Executor Coding-Agent Self-Audit
+
+- **Always-loaded context:** `AGENTS.md` supplies universal evidence, minimal-change, read-before-action, read-only Git, and skill-loading rules; the Plan Executor adapter supplies the role, tool declarations, required-skill handoff, immediate User Test precedence, plan existence, checker admission/freshness, Git-mutation refusal, mechanism mapping, and archive requirement; the shared `plan-executor` skill supplies the full invariant and workflow contract. The adapter and skill are one behavior surface, but their guidance is not double-counted as two independent runtime workflows.
+- **Induced context:** each execution adds canonical-plan and workspace reads, current-state and dependency checks, checker review metadata, per-step edits and command output, possible Plan Scout or Plan Checker delegation, interactive checkpoint turns, Git status/log evidence for Git-dependent claims, and final archive-path verification. These actions are justified by evidence, safety, or user-decision requirements; the avoidable cost is repeated adapter prose that mirrors high-detail skill sections and repeated plan-state narration after evidence is already recorded.
+- **Retained boundaries:** do not shorten the plan-existence gate, checker readiness and fingerprint gate, stop-on-blocker behavior, fresh-evidence rule, no-diagnostic-Git-mutation rule, immediate supplied-User-Test response, or archive verification. Removing any of these would trade token savings for correctness or safety risk.
+- **Actionable tightening:** in Phase 4, consider a thinner adapter that keeps only role, required skill, tool/agent declarations, the immediate User Test exception, and harness-specific mechanism mappings; move duplicated general protocol text to the shared skill. Add `vscode/askQuestions` to the declared permissions so the documented question mechanism is callable. Preserve explicit adapter text only for behavior that the harness can otherwise miss, especially the User Test precedence and Git-mutation response. Validate any consolidation with the focused tests and the maintained Plan Executor Waza scenarios; no runtime token reduction may be claimed without like-for-like telemetry.
 
 ### Validation
 
@@ -403,7 +449,17 @@ A prioritized set of concrete instruction updates for skills and agents, with th
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+1. [x] **Specify the workspace-boundary contract and hook payload boundary.**
+   - Owner: plan executor.
+   - Depends on: completed Phase 3 findings and user-approved boundary policy.
+   - Action: define the exact `AGENTS.md` rule and identify which `PreToolUse` command/tool-input fields the existing hook can inspect without guessing. Treat workspace folders as the default root; external access requires explicit user approval, either in the current request or through an approved plan-named requirement, with a stated path and reason. Optional history/session lookups are prohibited unless requested or required by the active plan.
+   - Check: `AGENTS.md` now defines workspace-default access, explicit path-and-reason approval for external access, and no optional history lookup. The existing hook reliably exposes `command`, `cmd`, `script`, and object path fields `path`, `filePath`, `directory`, `cwd`, and `workspaceFolder`; unrecognized payload shapes remain allowed and are outside the enforcement claim.
+
+2. [x] **Approve the exact Phase 5 update list.**
+   - Owner: user and plan executor.
+   - Depends on: Step 1.
+   - Action: present the exact source files, deterministic tests, and hook files to be changed: `AGENTS.md`, `test/documentation.test.ts`, `.github/hooks/deny-non-read-git.js`, `.github/hooks/deny-non-read-git.mts`, `.github/hooks/deny-non-read-git.d.ts`, `.github/hooks/deny-non-read-git.json`, and directly owned hook tests if needed. Keep `ctx` global skill files out of scope unless separately requested.
+   - Check: user confirmed implementation on 2026-09-24; implementation began only after that approval. The approved source set was `AGENTS.md`, `test/documentation.test.ts`, `.github/hooks/deny-non-read-git.js`, `.github/hooks/deny-non-read-git.mts`, `.github/hooks/deny-non-read-git.d.ts`, `.github/hooks/deny-non-read-git.json`, and directly owned hook tests; the JSON registration remained unchanged because no registration change was needed.
 
 ### Validation
 
@@ -414,6 +470,8 @@ _Not yet elaborated. Populate immediately before this phase starts._
 - Confirm the general-instruction recommendation states that staged and unstaged differences carry no signal about progress, ownership, approval, completion, conflict, recovery, or desired file state; prohibits Git mutation or attempts to make the index and worktree match based on those differences; and directs agents to working files and fresh checks for current task state.
 - Confirm the Plan Executor permission recommendation matches the repository's existing structured-question tool declaration convention.
 - Confirm no implementation file is changed before the user explicitly approves the exact Phase 5 update list.
+- Confirm the workspace-boundary recommendation distinguishes instruction-level prevention from hook-level enforcement and names the unobservable-tool limitation.
+- Confirm external access is not silently permitted merely because a skill, environment variable, or home-directory path exists.
 
 ### Checkpoint
 
@@ -448,7 +506,17 @@ The repository contains only the targeted instruction improvements that survived
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+1. [x] **Implement the approved workspace-boundary guidance and hook checks.**
+   - Check: changed `AGENTS.md`, its deterministic documentation test, the hook implementation and declarations, and the directly owned hook tests. No global `ctx` or home-directory skill files were changed.
+   - Outcome: explicit path-bearing fields and command arguments outside the active workspace return `ask`; workspace-relative and workspace-absolute paths remain allowed; unknown payload shapes preserve the existing allow behavior.
+
+2. [x] **Run focused validation.**
+   - Check: `npx tsx --test test/deny-non-read-git.test.ts test/documentation.test.ts`, `npm run typecheck`, `npm run lint:markdown`, and `npm run check:customizations`.
+   - Outcome: all 25 focused tests passed; typecheck, Markdown lint, and customization checks passed.
+
+3. [x] **Run full repository validation and review the final diff.**
+   - Check: `npm run check` must pass; inspect read-only working-file evidence and record any residual evaluator limitations.
+   - Outcome: `npm run check` passed with 232 tests, zero failures, formatting, Markdown lint, typecheck, customization checks, and drift checks. The final focused hook/documentation suite passed `25/25`. npm emitted only an `always-auth` deprecation warning.
 
 ### Validation
 
@@ -466,7 +534,48 @@ _Not yet elaborated. Populate immediately before this phase starts._
 
 ### Checkpoint
 
-User Test unavailable: the changed instructions are validated through deterministic checks and maintained scenario evaluations where available; no single manual action independently covers the cross-artifact behavior. After final Validation passes, use the structured question mechanism to ask whether to close and archive the plan, revise, or pause.
+User Test unavailable: the changed instructions are validated through deterministic checks and maintained scenario evaluations where available; no single manual action independently covers the cross-artifact behavior. After final Validation passes, continue to Phase 6 before any closeout or User Test checkpoint.
+
+## Phase 6: Organize Hook Responsibilities and Naming
+
+### Tangible output
+
+The pre-tool safety hook has an accurate public name and clear internal policy boundaries while retaining one registered entrypoint and consistent decision precedence.
+
+### Completion criteria
+
+- The hook family name describes all enforced pre-tool policies rather than only Git mutation checks.
+- Git mutation protection, mutating GitHub tool confirmation, and workspace-boundary checks have clear internal ownership and focused tests.
+- The hook remains registered as one `PreToolUse` entrypoint; policy splitting does not create competing hook decisions or duplicate bootstrap logic.
+- Existing allow/ask behavior is preserved, including the documented limitation for unrecognized payload shapes.
+- Focused and full repository validation pass after the refactor.
+
+### Context
+
+- This phase follows the completed Phase 5 implementation and validation.
+- Prefer an internal module split plus an entrypoint rename over multiple independently registered hooks.
+- Keep the refactor limited to the hook implementation, wrappers/configuration, declarations, and directly owned tests; do not modify global hook copies or home-directory skills.
+
+### Dependencies and risks
+
+- Depends on Phase 5's validated workspace-boundary behavior.
+- Risk: renaming the hook can break bootstrap lookup, installed copies, or direct test imports.
+- Recovery: preserve compatibility aliases or update every repository-owned reference in one validated change; do not broaden the policy behavior during this refactor.
+
+### Steps
+
+_To be elaborated immediately before execution and confirmed through the interactive plan checkpoint._
+
+### Validation
+
+- Verify all repository-owned hook references and bootstrap paths use the selected name.
+- Run focused policy and orchestration tests before broader checks.
+- Run `npm run typecheck`, `npm run lint:markdown`, `npm run check:customizations`, and `npm run check`.
+- Confirm no user test is required for the refactor; if a User Test is later defined, place it after this phase's validation.
+
+### Checkpoint
+
+User Test unavailable unless the refactor produces a separately documented interactive action. After validation passes, use the structured question mechanism to ask whether to close and archive the plan, revise, pause, or perform any defined User Test.
 
 ## Progress Log
 
@@ -490,3 +599,8 @@ User Test unavailable: the changed instructions are validated through determinis
 - 2026-09-24: Repair cycle 1 isolated and addressed two source-contract gaps: explicit repo-backed persistence in executable-planning and explicit coverage evidence/severity classification in skill-agent-auditor. Focused deterministic checks passed after rebuilding generated output. Waza validation exposed an `apply_patch` argument-format adapter failure and an incomplete auditor run with trial variance; no further source edit is justified until those harness results are reproducible and classified.
 - 2026-09-24: The bounded recovery completed. `npm run check` passed, focused manifest-skill tests passed `20/20`, `npm run build` and `npm run check:drift` passed, and the plan lints clean. The executable-planning Waza aggregate is unavailable because the embedded adapter rejected the generated `apply_patch` argument and timed out; the auditor aggregate is unavailable because of trial variance and a hung scenario. Both are recorded as evaluator limitations rather than source failures, and Phase 2 is paused at its interactive checkpoint for the user's choice.
 - 2026-09-24: User authorized the preventive Waza fixes. `scripts/run-waza.ts` now runs a sandboxed `waza --version` preflight, verifies workspace write access, forwards evaluator output while classifying and stopping on adapter-format or sandbox-denial signatures, and reports actionable diagnostics. Directly owned runner tests pass `5/5`; Biome validation passes. The observed `apply_patch` argument normalization remains outside this repository's ownership and is recorded as an upstream follow-up.
+- 2026-09-24: Phase 2 validation passed after the preventive runner changes: `npm run check` passed formatting, Markdown lint, typecheck, all `227` tests, customization checks, and drift checks. Maintained Waza aggregates remain explicitly unavailable evaluator evidence. Phase 2 is now at its interactive checkpoint; no User Test is defined for this evidence-producing phase.
+- 2026-09-24: Phase 3 agent audit completed. All seven agent entries and the distinct Plan Executor coding-agent self-audit were recorded with runtime-context traces, protected behavior, recommendations, and explicit telemetry limitations. `npm run check:customizations` passed and the applicable deterministic suites passed `41/41`; `npm run lint:markdown -- --no-globs docs/plans/2026-09-19-skill-agent-audit-token-optimization.md` passed with zero diagnostics. Phase 3 is now at its interactive checkpoint; no User Test is defined for this evidence-producing phase.
+- 2026-09-24: User approved the Phase 5 update list. `AGENTS.md` now establishes the workspace boundary and approval rule for external paths, with optional history lookups prohibited unless requested or plan-required. The existing pre-tool hook now asks for confirmation on identifiable external paths in `path`, `filePath`, `directory`, `cwd`, `workspaceFolder`, `command`, `cmd`, and `script` payloads while preserving allow behavior for unrecognized shapes. Focused tests passed `25/25`; typecheck, Markdown lint, and customization validation passed. Full repository validation is pending.
+- 2026-09-24: Phase 5 implementation and validation completed. Final `npm run check` passed with `232` tests and zero failures, and the final focused hook/documentation suite passed `25/25`. The plan is at its interactive closeout checkpoint; no plan archive move has been made yet.
+- 2026-09-24: User requested a final hook-organization phase before any closeout or User Test. Phase 6 now covers renaming the hook family, separating internal policy ownership, preserving one `PreToolUse` entrypoint, and revalidating all behavior. No Phase 6 implementation has started.

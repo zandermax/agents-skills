@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync } from "node:fs";
+import { relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const STRICTLY_READ_ONLY_SUBCOMMANDS = new Set([
@@ -51,6 +52,60 @@ const MUTATING_GITHUB_TOOLS = new Set([
 	"mcp_github_mcp_se_delete_file",
 	"mcp_github_mcp_se_push_files",
 ]);
+
+const PATH_FIELDS = new Set([
+	"path",
+	"filePath",
+	"directory",
+	"cwd",
+	"workspaceFolder",
+]);
+
+function isExternalPath(value) {
+	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+
+	const expandedValue =
+		value === "~" || value.startsWith("~/")
+			? resolve(process.env.HOME ?? "", value.slice(1))
+			: value.startsWith("$HOME/") || value.startsWith("${HOME}/")
+				? resolve(process.env.HOME ?? "", value.replace(/^\$\{?HOME\}?\//, ""))
+				: resolve(value);
+	const relativePath = relative(resolve(process.cwd()), expandedValue);
+
+	return relativePath === ".." || relativePath.startsWith(`..${sep}`);
+}
+
+function externalPathReason(pathValue) {
+	return `External path access requires user confirmation: '${pathValue}' is outside the active workspace.`;
+}
+
+export function checkToolInputPaths(toolInput) {
+	if (!toolInput || typeof toolInput !== "object" || Array.isArray(toolInput)) {
+		return null;
+	}
+
+	for (const [key, value] of Object.entries(toolInput)) {
+		if (PATH_FIELDS.has(key) && isExternalPath(value)) {
+			return externalPathReason(value);
+		}
+	}
+
+	return null;
+}
+
+function checkCommandPaths(command) {
+	for (const statement of splitShellStatements(command)) {
+		for (const token of tokenizeStatement(statement).slice(1)) {
+			if (isExternalPath(token)) {
+				return externalPathReason(token);
+			}
+		}
+	}
+
+	return null;
+}
 
 const GIT_GLOBAL_OPTIONS_WITH_ARG = new Set([
 	"-C",
@@ -548,6 +603,11 @@ export function evaluateToolUse(toolName, toolInput) {
 		};
 	}
 
+	const pathViolation = checkToolInputPaths(toolInput);
+	if (pathViolation) {
+		return { decision: "ask", reason: pathViolation };
+	}
+
 	const commandsToCheck = [];
 	if (typeof toolInput === "string") {
 		commandsToCheck.push(toolInput);
@@ -564,6 +624,11 @@ export function evaluateToolUse(toolName, toolInput) {
 	}
 
 	for (const cmd of commandsToCheck) {
+		const externalPathViolation = checkCommandPaths(cmd);
+		if (externalPathViolation) {
+			return { decision: "ask", reason: externalPathViolation };
+		}
+
 		const violation = checkCommandForNonReadGit(cmd);
 		if (violation) {
 			return {

@@ -11,6 +11,16 @@ skill composes reusable sections, uses transforms, or needs generated output.
 Choose manifest-driven authoring for composition and reuse, not simply because
 a skill is long.
 
+## Workspace Boundary
+
+Treat the active workspace folders as the default filesystem boundary. Do not
+read, search, execute against, or delegate discovery for `$HOME`, session
+history, parent directories, global configuration, or other external paths
+unless the user explicitly requests the exact path or the active plan names it
+as required. Before external access, state the exact path and reason and
+request approval. Do not perform optional history or context lookups merely
+because a related tool or skill is available.
+
 For manifest-driven skills, run `npm run build` only after changing source
 fragments or manifests, then run `npm run check` to validate generated output.
 Never run `npm run build` unless you have modified a source file under `sources/`

@@ -79,6 +79,27 @@ test("shared agent instructions prohibit speculative skill builds", async () => 
 	);
 });
 
+test("shared agent instructions keep filesystem access inside the workspace by default", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/active workspace folders as the default filesystem boundary/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/explicitly requests the exact path.*active plan names it as required/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/state the exact path and reason and request approval/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Do not perform optional history or context lookups merely because/i,
+	);
+});
+
 test("repository keeps active and archived plans beside specifications under docs", async () => {
 	await access(path.join(projectRoot, "docs", "plans"));
 	await access(path.join(projectRoot, "docs", "plans", "archive"));

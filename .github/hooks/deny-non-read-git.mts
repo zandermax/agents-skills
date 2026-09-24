@@ -1,6 +1,7 @@
 import {
 	checkCommandForNonReadGit,
 	checkGitCommandTokens,
+	checkToolInputPaths,
 	evaluateToolUse,
 	runCli,
 	splitShellStatements,
@@ -10,6 +11,7 @@ import {
 export {
 	checkCommandForNonReadGit,
 	checkGitCommandTokens,
+	checkToolInputPaths,
 	evaluateToolUse,
 	runCli,
 	splitShellStatements,
