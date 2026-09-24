@@ -100,6 +100,27 @@ test("shared agent instructions keep filesystem access inside the workspace by d
 	);
 });
 
+test("shared agent instructions bound tool output and format repair", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/minimize tool-output context by default.*filtered commands or concise success, failure, and evidence reporting/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Retain full output when it is needed to diagnose a failure, interpret results, make a decision, or preserve audit evidence/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/auto-format command before addressing format diagnostics.*only the diagnostics that remain after formatting/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/If no auto-format command exists, record that unavailable check/i,
+	);
+});
+
 test("repository keeps active and archived plans beside specifications under docs", async () => {
 	await access(path.join(projectRoot, "docs", "plans"));
 	await access(path.join(projectRoot, "docs", "plans", "archive"));

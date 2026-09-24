@@ -3,15 +3,15 @@ status: in-progress
 mode: interactive
 canonical_location: docs/plans/2026-09-19-skill-agent-audit-token-optimization.md
 last_updated: 2026-09-24
-current_phase: Phase 6
-current_step: Phase 6 added; awaiting confirmation before elaborating implementation
-next_action: Confirm the hook organization phase, then elaborate and execute it before any closeout or User Test checkpoint.
+current_phase: Phase 8
+current_step: Phase 8 elaborated; awaiting confirmation to execute P8.S1
+next_action: Confirm the elaborated Phase 8 steps, then execute P8.S1 to inventory approved read-only diagnostic paths and command boundaries.
 blockers: "Maintained Waza aggregate evidence is unavailable for executable-planning because the embedded tool adapter rejected the generated apply_patch argument and the run timed out; skill-agent-auditor showed trial variance and hung before completion. Repository-owned runner diagnostics are covered; adapter argument normalization remains upstream-owned."
-plan_checker_verdict: ready
+plan_checker_verdict: not-ready
 plan_checker_fingerprint: unavailable
 plan_checker_mode: interactive
 plan_checker_reviewed_at: 2026-09-24
-plan_checker_repair_cycles: 1
+plan_checker_repair_cycles: 0
 recovery_cycle: 1 of 2 maximum
 ---
 
@@ -33,8 +33,6 @@ recovery_cycle: 1 of 2 maximum
   - The plan-executor agent reviews its own coding-agent context and transforms those findings into improved instructions for other coding agents.
   - General repository instructions require skills and agents to use the harness question mechanism for user choices when it is available, with conversational text only as an explicit fallback when no question mechanism exists.
   - General repository instructions treat staging as semantically neutral user monitoring that may happen at any time. Staged or unstaged differences carry no signal about progress, ownership, approval, completion, conflict, recovery, or desired file state; agents must never mutate Git or try to make the index and worktree match based on those differences.
-  - The Plan Executor agent declares the structured question capability in its tool permissions so its documented question mechanism is available in supporting harnesses.
-  - The repository stores the final findings and the resulting instruction updates in a traceable, reviewable way.
 - Constraints and assumptions:
   - Repo-backed storage is required; planning stays under `docs/plans/`, and implementation is limited to approved source-of-truth instruction files, their directly owned deterministic tests, and generated outputs required by manifest builds.
   - Git usage is read-only except for inspecting repository state; no stage, commit, branch, or push actions are allowed.
@@ -44,9 +42,9 @@ recovery_cycle: 1 of 2 maximum
 
 ## Current State
 
-- Current phase: Phase 6
-- Current step: Phase 6 added; awaiting confirmation before elaborating implementation
-- Next action: Confirm the hook organization phase, then elaborate and execute it before any closeout or User Test checkpoint.
+- Current phase: Phase 8
+- Current step: Phase 8 elaborated; awaiting confirmation to execute P8.S1
+- Next action: Confirm the elaborated Phase 8 steps, then execute P8.S1 to inventory approved read-only diagnostic paths and command boundaries.
 - Blockers: Maintained Waza aggregate evidence remains unavailable for `executable-planning` and `skill-agent-auditor`; repository-owned runner diagnostics are covered, and adapter argument normalization remains upstream-owned.
 
 ## Execution Protocol
@@ -65,6 +63,8 @@ Any agent executing this plan follows these rules.
 10. Git is read-only: status, diff, log, show, and branch listing only. Never stage, unstage, commit, branch, push, restore, or otherwise mutate the index or worktree through Git. The user may stage at any time solely to monitor changes; staged and unstaged differences carry no signal about progress, ownership, approval, completion, conflict, recovery, or desired file state. Never mutate Git or try to make the index and worktree match based on those differences. Read working files and fresh validation output for current task state.
 11. When a phase completes, collapse each step to a one-line result retaining its Check and outcome as the sole evidence record.
 12. After all phases pass, run final validation, set Status to completed, move this file to `docs/plans/archive/`, and verify the active path no longer exists.
+13. Minimize tool-output context by default: use commands that filter output or report only the success, failure, or evidence needed for the current decision. Use full output only when it is required to diagnose a failure, resolve ambiguity, make a decision, or retain auditable evidence.
+14. After making changes, detect and run the repository's available auto-format command before addressing format diagnostics. Treat remaining format failures as the follow-up scope; do not manually repair format issues first when the auto-format command exists.
 
 ### Plan Fingerprint Normalization
 
@@ -84,6 +84,15 @@ For admission freshness, canonicalize the plan with this exact procedure: parse 
 - Add repository-owned Waza diagnostics and fail-fast classification around the observed adapter failure, limited to `scripts/run-waza.ts` and its directly owned deterministic tests; keep `apply_patch` argument normalization upstream because this repository does not own that adapter; user authorized this scope amendment on 2026-09-24.
 - Default agent filesystem access to the active workspace; require explicit user approval or a plan-named requirement before external paths, and prevent optional session-history lookups from running merely because the `ctx` skill is available; user authorized this scope amendment on 2026-09-24.
 - Add hook enforcement only for tool payloads whose path or command shape can be identified reliably; fail closed with an approval request for external paths, and fail open for unrecognized payloads while documenting that limitation rather than pretending the hook covers every tool.
+- Treat tool-output minimization as a general execution rule: use filtered commands or concise success/failure reporting by default, and request or retain full output only when it is needed to interpret a failure, make a decision, or preserve evidence.
+- Treat formatting as an ordered validation step: when the project exposes an auto-format command, run it after edits before manually addressing residual formatting diagnostics; only remaining diagnostics require follow-up.
+- Treat the Executable Planner handoff as a phase-start transition rather than a generic implementation button: label it to start the first phase, target the named `Plan Executor` agent when the handoff schema supports named agents, and instruct that agent to elaborate the first phase before executing it under the plan's interactive confirmation rules.
+- Treat `/tmp/*` and explicitly identified VS Code-owned Application Support or equivalent session-resource paths as permitted read-only diagnostic inputs, while keeping unrelated external paths confirmation-gated and preserving the prohibition on external writes.
+- Replace the phase-neutral `Start` handoff with three explicit transitions: `Execute 💀` targets `Plan Executor` and executes only an approved, ready phase; `Elaborate 💬` targets `Executable Planner` and elaborates or clarifies the current phase before confirmation; `Complete ✅` targets `Plan Executor` and marks the plan complete and archives it only after no steps remain and final validation passes.
+- Treat existing symlinks by their resolved targets: a symlink whose target is inside the active workspace inherits workspace-local read behavior, while a symlink to an unapproved external target remains confirmation-gated; broken or ambiguous links fail closed.
+- Treat `~/.memory/<skill-name>/SKILL.md` memory skill files as shared, read-only resources readable by all agents through supported read tools; do not invent or allow a root-level `/memories/...` namespace.
+- Use visually distinct planner handoffs: `Execute 💀` for execution, `Elaborate 💬` for phase elaboration or clarification, and `Complete ✅` for marking a plan complete and archiving it when no steps remain; each handoff must retain its underlying readiness, confirmation, and archive gates.
+- When a phase defines a manual test, ask through the question mechanism with a pass option and an issue-reporting free-text option; record either the confirmation or the user's free-text issues as evidence before continuing.
 
 ## Deferred Items
 
@@ -564,7 +573,33 @@ The pre-tool safety hook has an accurate public name and clear internal policy b
 
 ### Steps
 
-_To be elaborated immediately before execution and confirmed through the interactive plan checkpoint._
+1. [x] **Inventory and lock repository-owned hook references.**
+   - Owner: plan executor.
+   - Depends on: Phase 5 validation and current hook source.
+   - Action: search only the workspace for hook filenames, bootstrap paths, direct imports, wrappers, declarations, and tests. Select `pre-tool-safety` as the canonical public family name and retain `deny-non-read-git` compatibility entrypoints where required by installed-copy or direct-import paths.
+   - Check: every repository-owned reference is classified as canonical, updated, or compatibility-only; no home-directory hook copy is edited; the one-entrypoint constraint remains explicit. Passed on 2026-09-24: workspace search found mirrored `.github/hooks` and `.agents/hooks` implementations, wrappers, declarations, bootstrap configs, and one focused test; `test/artifact-arguments.test.ts` references the hook name only as an artifact-selection fixture and remains unrelated. No external path was accessed or edited; both configs retain one `PreToolUse` entrypoint.
+   - Recovery: if an external or unobservable reference is required, stop and record it rather than editing outside the workspace.
+
+2. [x] **Split policy ownership behind one orchestrator.**
+   - Owner: plan executor.
+   - Depends on: Step 1.
+   - Action: extract Git/GitHub mutation checks and workspace-boundary checks into focused modules, with `pre-tool-safety` retaining `evaluateToolUse`, CLI input/output handling, and decision precedence. Keep compatibility wrappers thin and behavior-preserving.
+   - Check: focused tests cover read-only Git allow, Git mutation ask, mutating GitHub tool ask, workspace-relative and external path decisions, unknown payload allow behavior, and precedence when multiple policies apply. Passed on 2026-09-24: `npx tsx --test test/deny-non-read-git.test.ts` passed `23/23`; canonical and compatibility evaluators returned identical Git-mutation decisions.
+   - Recovery: if extraction changes a decision or command parser behavior, revert the local refactor through edits and repair only the affected module before proceeding.
+
+3. [x] **Update repository-owned registration, declarations, and tests.**
+   - Owner: plan executor.
+   - Depends on: Step 2.
+   - Action: update the canonical hook config, `.mts` and shell wrappers, declarations, direct imports, and test organization to use the new family name while preserving legacy compatibility paths.
+   - Check: workspace search finds no unintended stale canonical references; both canonical and compatibility entrypoints resolve to the same orchestrator; no duplicate `PreToolUse` registration is introduced. Passed on 2026-09-24: both mirrored hook trees target `pre-tool-safety.mts`, legacy wrappers remain compatibility-only, and focused tests verified one `PreToolUse` registration per config.
+   - Recovery: restore compatibility wrappers or update the affected repository-owned reference; do not modify global installed copies.
+
+4. [x] **Run focused and full validation.**
+   - Owner: plan executor.
+   - Depends on: Steps 1-3.
+   - Action: run focused hook tests first, then repository validation.
+   - Check: focused hook tests pass; `npm run typecheck`, `npm run lint:markdown`, `npm run check:customizations`, and `npm run check` all exit zero. Record any non-failing npm warnings separately. Passed on 2026-09-24: focused tests passed `23/23`; `npm run typecheck`, `npm run lint:markdown`, `npm run check:customizations`, and `npm run check` passed; full check reported `234` tests, `0` failures, `6` suites. npm emitted only the existing `always-auth` warning.
+   - Recovery: stop on the first failing check, record its output in this plan, and repair only the implicated Phase 6 slice.
 
 ### Validation
 
@@ -577,7 +612,131 @@ _To be elaborated immediately before execution and confirmed through the interac
 
 User Test unavailable unless the refactor produces a separately documented interactive action. After validation passes, use the structured question mechanism to ask whether to close and archive the plan, revise, pause, or perform any defined User Test.
 
+## Phase 7: Enforce Efficient Tool Output and Format-First Validation
+
+### Tangible output
+
+Shared agent guidance and execution-specific instructions explicitly minimize unnecessary tool output and establish auto-format-before-format-repair behavior, with deterministic tests proving both rules are discoverable and unambiguous.
+
+### Completion criteria
+
+- The repository-wide instruction source states that agents should filter command output or report only the needed result by default, while permitting full output when diagnosis, interpretation, decisions, or audit evidence require it.
+- The execution protocol used by planning and coding agents contains the same bounded output rule without requiring a specific shell, IDE, or harness.
+- The repository-wide instruction source states that an available project auto-format command is run after changes before remaining format issues are addressed.
+- The execution protocol makes clear that format-only issues are deferred to the auto-format command when one exists, and only residual diagnostics are manually handled afterward.
+- Deterministic tests protect the wording or parsed instruction contract, and the repository's actual format command is used as the first formatting validation after the edits.
+- The update does not require agents to suppress diagnostic evidence needed to understand failures or support a completion claim.
+- The Executable Planner handoff is labeled as starting the first phase rather than generic implementation, targets `Plan Executor` by name when supported by the handoff schema, and instructs it to elaborate the first phase before execution.
+
+### Context
+
+- The canonical general source is `AGENTS.md`, which is also the target resolved by `CLAUDE.md`.
+- The execution-specific source is `.agents/skills/plan-executor/SKILL.md`; inspect `.github/agents/plan-executor.agent.md` and change it only if the harness-facing contract needs a concise reminder beyond the shared rule.
+- The existing repository format command is `npm run format`, defined in `package.json`; it runs Biome and Prettier and is already the first stage of `npm run check`.
+- Directly owned deterministic coverage belongs in `test/documentation.test.ts` for the shared rule and `test/plan-executor-skill.test.ts` for execution behavior. Do not add a new evaluator merely to restate the policy.
+- Handoff coverage belongs in the Executable Planner adapter contract and its applicable customization test; verify the supported frontmatter syntax for a named `Plan Executor` target before editing it, and preserve a fallback or record the schema limitation if named targets are unsupported.
+
+### Dependencies and risks
+
+- Depends on the completed Phase 6 validation and the existing `AGENTS.md` policy conventions.
+- Risk: “minimize output” could be interpreted as hiding failure evidence or as requiring lossy output filtering for every command.
+- Recovery: preserve the explicit exceptions for diagnosis, interpretation, decisions, and audit evidence; use concise summaries only after the relevant evidence has been captured.
+- Risk: auto-format may modify unrelated files or expose pre-existing formatting drift.
+- Recovery: run the repository format command in the normal project workflow, inspect its result, and address only residual diagnostics relevant to the current change; record unrelated drift rather than broadening scope.
+- If no project auto-format command exists, record that fact as an unavailable check and proceed with the repository's remaining applicable validation without inventing a formatter.
+
+### Steps
+
+- [x] P7.S1: Keep the repository-wide bounded tool-output and format-first rules in `AGENTS.md`, preserving full-output exceptions for diagnosis, interpretation, decisions, and evidence. Files: `AGENTS.md`, with `test/documentation.test.ts` as directly owned coverage. Check: the documentation test asserts both rules, their exceptions, and the no-formatter fallback; the Plan Executor skill remains free of duplicate policy text. Outcome: `npm run format` exited 0 with no file changes; it reported one unrelated warning in `.github/hooks/deny-non-read-git.js:72`. Focused tests passed `13/13` before the duplicate was removed; the focused regression test is rerun in P7.S3. Depends: none. Tier: standard.
+- [x] P7.S2: Replace the Executable Planner's generic implementation handoff with a first-phase handoff targeting `Plan Executor` when supported, and add a parsed-frontmatter assertion for its label, target, and prompt. Files: `.github/agents/executable-planner.agent.md`, `test/check-customizations.test.ts`. Check: `npm run check:customizations` proves phase start, named target when supported, and elaboration-before-execution, or records the schema limitation and fallback. Outcome: named `agent: Plan Executor` syntax was accepted by the repository frontmatter contract; the handoff now uses label `Start First Phase` and prompts elaboration plus confirmation. `npm run format` exited 0 with no file changes and reported two warnings; `npm run check:customizations` passed. Depends: P7.S1. Tier: deep.
+- [x] P7.S3: Run the repository formatter immediately after the edits, resolve only remaining diagnostics, and run focused validation. Files: changed files from P7.S1-P7.S2. Check: run `npm run format` first, then `npx tsx --test test/documentation.test.ts test/plan-executor-skill.test.ts`, `npm run check:customizations`, and the focused Markdown lint; record formatter output or the no-formatter fallback. Outcome: `npm run format` exited 0 and rewrote already-touched files; it reported an npm deprecated `always-auth` config warning and one Biome lint warning. Focused tests passed `13/13`, `npm run check:customizations` passed, and focused plan Markdown lint passed. Depends: P7.S1, P7.S2. Tier: light.
+- [x] P7.S4: Run complete repository validation and reconcile Phase 7 completion criteria before the interactive checkpoint. Action: compare each completion criterion with fresh validation evidence, record warnings, formatting changes, unavailable checks, and residual evaluator limitations in this plan, then prepare the checkpoint decision. Files: validation outputs and this plan. Check: `npm run check` passes and every Phase 7 criterion has a recorded disposition. Outcome: `npm run check` passed all `237` checks with `0` failures; three unknown npm `always-auth` config warnings remain. Phase 7 criteria are satisfied: shared policy is single-sourced in `AGENTS.md`, the handoff targets `Plan Executor` with phase-oriented copy, formatter-first validation ran, focused checks passed, and full validation passed. Depends: P7.S3. Tier: standard.
+
+### Validation
+
+- Confirm the changed instruction sources contain both rules with the required exceptions and no harness-specific command requirement.
+- Run `npx tsx --test test/documentation.test.ts test/plan-executor-skill.test.ts` as the smallest deterministic coverage for the shared documentation and Plan Executor execution contract.
+- Run `npm run format` immediately after the instruction edits when it exists, then run the focused checks and address only diagnostics that remain after formatting; when it does not exist, record the unavailable check and continue with the remaining validation.
+- Run the applicable repository validation, including `npm run check`, and record whether formatting changed files or surfaced unrelated drift.
+- Review the final instruction-size and runtime-context impact: output minimization should bound captured tool context, while format-first ordering should reduce manual format-repair loops without suppressing failure evidence.
+
+### Checkpoint
+
+User Test unavailable: these are agent-execution policies whose evidence is deterministic instruction coverage and repository validation, not an independent end-user workflow. After Validation passes, use the structured question mechanism to ask whether to close and archive the plan, revise, pause, or define a separate User Test.
+
+## Phase 8: Permit Scoped Read-Only Diagnostic Resources
+
+### Tangible output
+
+The workspace-boundary policy and its hook tests distinguish approved read-only diagnostic resources from unrelated external paths: `/tmp/*` and narrowly identified VS Code-owned Application Support or equivalent session-resource roots are readable without confirmation, while external writes and unapproved paths remain confirmation-gated.
+
+### Completion criteria
+
+- The approved path set is explicit and limited to `/tmp/*` plus the exact VS Code-owned Application Support or equivalent roots needed for session diagnostics; the entire home directory and unrelated Application Support data remain outside the allowlist.
+- Read-only commands such as `grep`, `cat`, and `sed` can inspect approved resources without confirmation when their command shape is identifiable.
+- Existing symlinks resolving into the workspace are allowed for reads; symlinks resolving outside approved roots, broken symlinks, and ambiguous link targets ask for confirmation.
+- The identified `~/.memory/<skill-name>/SKILL.md` memory skill files are readable by all agents through supported read tools and read-only shell commands; this does not grant writes or access to a root-level `/memories` path.
+- Writes, mutating Git/GitHub operations, unapproved external paths, and ambiguous or unrecognized payloads retain their existing safety behavior.
+- Directly owned deterministic hook tests cover approved paths, sibling or unrelated external paths, read-only command examples, write attempts, and path-boundary traversal cases.
+- Full repository validation passes, and the plan records any platform-specific path variants or limitations instead of broadening the allowlist by assumption.
+- The final Phase 8 step audits `AGENTS.md`, the relevant agent guidance, and `.agents/skills/remember-that/SKILL.md` to confirm that every agent resolves memory skills under `~/.memory/<skill-name>/SKILL.md`, reads them without unnecessary confirmation, and does not construct root-level `/memories/...` paths.
+- The planner exposes exactly three distinct handoffs: `Execute 💀` -> `Plan Executor` with an approved-phase execution prompt; `Elaborate 💬` -> `Executable Planner` with a current-phase elaboration prompt; and `Complete ✅` -> `Plan Executor` with a no-steps-remain, final-validation, and archive-gated completion prompt.
+- Manual-test checkpoints offer a structured pass choice or a free-text issue path, and neither path is treated as complete until the response is persisted as evidence and evaluated against the phase criteria.
+- Safety decisions are explicit: approved identifiable read-only resources allow; unrelated external reads ask; external writes ask; Git/GitHub mutations ask; ambiguous commands with external paths ask; and unrecognized payload shapes continue to allow under the existing fail-open limitation.
+
+### Context
+
+- The current hook resolves every identifiable path against the active workspace and asks for confirmation when it is outside; this correctly protects external paths but blocks VS Code-owned session artifacts.
+- The current path check uses lexical resolution and does not follow symlinks before comparing the path with the workspace root; this causes workspace-targeting symlink aliases such as `~/.copilot/skills/minimal-changes-notes/SKILL.md` to be classified by their link location instead of their target.
+- The concrete diagnostic example is under `~/Library/Application Support/Code/User/workspaceStorage/**/chat-session-resources/**` on macOS. The implementation must verify whether stable, Insiders, or equivalent VS Code-owned roots require separate explicit patterns.
+- `/tmp/*` is a temporary diagnostic workspace, not a general external filesystem grant; read-only access is the intended exception.
+- The current handoff label `Start First Phase` is phase-specific and must be replaced by the three exact transitions above; prompts must use current-plan state rather than naming Phase 7 or Phase 8.
+- The screenshot path `/memories/repo/skill-invocation-paradigm.md` does not match the actual memory-skill layout and should be treated as hallucinated or malformed. A valid memory resource follows `~/.memory/<skill-name>/SKILL.md`, for example `~/.memory/git-workflow-notes/SKILL.md`. P8.S1 must verify the supported read-tool path contract before allowing reads.
+
+### Dependencies and risks
+
+- Depends on completed Phase 7 validation and the existing workspace hook module/test boundaries.
+- Risk: a broad Application Support or home-directory exception could expose unrelated user data.
+- Recovery: use explicit product-owned path patterns, test near-miss paths, and fail closed for paths that cannot be classified.
+- Risk: command parsing may not prove that a shell command is read-only when wrappers or substitutions obscure its behavior.
+- Recovery: allow only identifiable read-only command shapes; retain confirmation for ambiguous payloads and document the limitation.
+- Risk: following symlinks or trusting virtual namespaces too broadly could expose unrelated home-directory data.
+- Recovery: resolve existing link targets, keep broken or ambiguous links confirmation-gated, allow `~/.memory/<skill-name>/SKILL.md` files as read-only resources for all agents, reject root-level `/memories/...` and non-skill memory paths, and test near-miss paths through supported read tools and shell payloads.
+
+### Steps
+
+- [ ] P8.S1: Inventory the exact approved `/tmp`, VS Code-owned session-resource, workspace-targeting symlink, and shared `~/.memory/<skill-name>/SKILL.md` path patterns and define the read-only boundary. Action: inspect the existing path-policy modules and tests, identify supported read-tool payloads, verify the memory skill path contract, and record the approved and negative path categories. Owner: the executing agent. Files: `.github/hooks/pre-tool-safety-workspace.js`, `.github/hooks/pre-tool-safety-git.js`, `.github/hooks/pre-tool-safety.js`, `test/deny-non-read-git.test.ts`, and this plan. Check: record a path matrix under the Phase 8 Evidence subsection, distinguishing lexical paths from resolved symlink targets, valid `~/.memory/<skill-name>/SKILL.md` resources readable by all agents from malformed root-level `/memories/...` and non-skill paths, allowed roots, near-miss external roots, and write or ambiguous cases. Depends: P7. Tier: standard.
+- [ ] P8.S2: Implement the narrow path-policy exception and deterministic tests for the supplied `grep` example plus equivalent `cat` and `sed` reads, workspace-targeting symlinks, and the shared `~/.memory/<skill-name>/SKILL.md` resource. Action: update only the owning workspace-policy modules and directly owned hook tests, preserving existing Git/GitHub and unknown-payload behavior. Owner: the executing agent. Files: `.github/hooks/pre-tool-safety-workspace.js`, `.github/hooks/pre-tool-safety.js`, and `test/deny-non-read-git.test.ts`. Check: focused hook tests prove approved identifiable reads allow; workspace-targeting symlink reads and valid `~/.memory/<skill-name>/SKILL.md` reads through supported tools allow; malformed root-level `/memories/...` reads, unrelated external reads, external writes, Git/GitHub mutations, broken or external symlinks, non-skill memory paths, and ambiguous external-path commands ask; unrecognized payload shapes retain the existing allow behavior. Depends: P8.S1. Tier: deep.
+- [ ] P8.S3: Replace the single phase-specific planner handoff with visually distinct `Execute 💀`, `Elaborate 💬`, and `Complete ✅` handoffs, verify their targets and prompts, and remove the old `Start` handoff. Action: update the agent frontmatter and its parsed customization fixture; `Execute 💀` -> `Plan Executor` executes only an approved ready phase, `Elaborate 💬` -> `Executable Planner` elaborates or clarifies the current phase and requests confirmation, and `Complete ✅` -> `Plan Executor` marks complete and archives only when no steps remain and final validation passes. Owner: the executing agent. Files: `.github/agents/executable-planner.agent.md`, `test/check-customizations.test.ts`, and this plan. Check: parsed frontmatter proves all three exact labels, targets, phase-aware prompts, and completion/archive gating; the customization test confirms their distinct semantics and absence of `Start`. Depends: P8.S2. Tier: standard.
+- [ ] P8.S4: Define the manual-test question contract for phase checkpoints. Action: update the execution guidance and directly owned tests so the question mechanism offers a pass/confirm option and a free-text option for reporting issues, records either response as evidence, and blocks continuation on contradictory or insufficient observations. Owner: the executing agent. Files: `AGENTS.md`, `.agents/skills/plan-executor/SKILL.md`, `.github/agents/plan-executor.agent.md`, `test/documentation.test.ts`, and `test/plan-executor-skill.test.ts`. Check: deterministic assertions prove the two response paths, persisted evidence recording before continuation, and no expected-result coaching. Depends: P8.S3. Tier: standard.
+- [ ] P8.S5: Run `npm run format` first, then focused hook/documentation tests, customization validation, Markdown lint, and full repository validation. Action: execute the listed checks in order and record formatter changes, warnings, platform-specific limitations, the final safety matrix, and handoff/manual-test evidence. Owner: the executing agent. Files: changed hook sources, agents, guidance, tests, and this plan. Check: run `npx tsx --test test/deny-non-read-git.test.ts test/documentation.test.ts test/plan-executor-skill.test.ts`, `npm run check:customizations`, `npm run lint:markdown -- --no-globs docs/plans/2026-09-19-skill-agent-audit-token-optimization.md`, and `npm run check`; all pass. Depends: P8.S4. Tier: light.
+- [ ] P8.S6: Perform the final memory-path guidance audit. Action: inspect `AGENTS.md`, `.github/agents/plan-executor.agent.md`, `.github/agents/executable-planner.agent.md`, and `.agents/skills/remember-that/SKILL.md`; correct any guidance that invents `/memories/...`, omits the `~/.memory/<skill-name>/SKILL.md` layout, or makes memory reads unavailable to agents, then run the directly owned documentation and skill tests. Owner: the executing agent. Files: the listed guidance sources, `test/documentation.test.ts`, `test/plan-executor-skill.test.ts`, `test/memory-skills.test.ts`, and this plan. Check: direct review plus `npx tsx --test test/documentation.test.ts test/plan-executor-skill.test.ts test/memory-skills.test.ts` confirms the canonical memory path, all-agent read access, and absence of the hallucinated root-level path; if guidance changes, rerun `npm run format` before addressing residual diagnostics. Depends: P8.S5. Tier: standard.
+
+### Evidence
+
+- Pending Phase 8 execution; record the approved path matrix, safety decisions, exact platform variants, and validation outcomes here.
+
+### Validation
+
+- Verify the exact approved path matrix and its negative cases through deterministic hook tests.
+- Run the formatter before addressing any remaining format diagnostics.
+- Run focused hook tests, `npm run check:customizations`, focused plan Markdown lint, and `npm run check`.
+
+### Checkpoint
+
+When a manual User Test is defined, use the structured question mechanism with `Passed` and `Issues found` options; the issue option must accept free text. Record the selected response and observation before continuation. When no manual test is defined, ask whether to close and archive, revise, or pause.
+
 ## Progress Log
+
+- 2026-09-24: P7.S1 scope was corrected to keep bounded tool-output and format-first rules only in `AGENTS.md`; the duplicate Plan Executor skill block and its stale assertions were removed. The shared documentation test remains the policy contract; the focused regression test is rerun in P7.S3.
+- 2026-09-24: P7.S2 completed. The Executable Planner handoff now uses label `Start First Phase`, targets `Plan Executor`, and prompts first-phase elaboration followed by confirmation. The parsed frontmatter fixture was updated; `npm run check:customizations` passed. Formatter-first validation exited 0 without file changes and reported two warnings.
+- 2026-09-24: P7.S3 completed after the single-source correction. Formatter-first validation exited 0; focused tests passed `13/13`, customization validation passed, and focused plan Markdown lint passed. The Plan Executor skill no longer duplicates the repository-wide policy.
+- 2026-09-24: P7.S4 completed. `npm run check` passed all `237` checks with `0` failures; three unknown npm `always-auth` config warnings remain. Phase 7 is complete and awaiting the documented interactive checkpoint decision.
+- 2026-09-24: User requested a follow-up phase to permit read-only access to `/tmp/*` and narrowly identified VS Code-owned Application Support or equivalent session-resource files, based on the `grep` diagnostic against a VS Code chat-session resource. Phase 8 was added as an outline; implementation is not started.
+- 2026-09-24: User clarified that the planner handoff must be phase-neutral: Phase 8 now requires changing `Start First Phase` to `Start`. The plan also records that multiple handoffs are supported as an option when their targets or prompts represent genuinely distinct transitions.
+- 2026-09-24: User clarified that the shared memory root is `~/.memory/**`, readable by all agents. Phase 8 now treats that home-relative root as read-only, requires correcting the malformed root-level `/memories/...` path construction, adds workspace-targeting symlink resolution, and keeps host writes, broken or external links, and ambiguous paths confirmation-gated.
+- 2026-09-24: User corrected the memory layout: individual memory skills live at `~/.memory/<skill-name>/SKILL.md`, for example `~/.memory/git-workflow-notes/SKILL.md`. Phase 8 now rejects the hallucinated `/memories/repo/...` form and ends with an audit of `AGENTS.md`, agent guidance, and `remember-that`.
+- 2026-09-24: User requested visual planner handoffs (`Execute 💀`, `Elaborate 💬`, `Complete ✅`) and structured manual-test responses offering pass confirmation or free-text issue reporting. Phase 8 now includes those handoff and checkpoint contracts; implementation remains paused pending fresh review.
 
 - 2026-09-19: Plan created in repo-backed storage and scoped as an interactive, multi-phase audit of skills and agents for token efficiency and quality retention.
 - 2026-09-22: Phase 1 Step 3 reconciliation stopped: repository derivation found 18 logical audit targets represented by 20 unique canonical source files because each of the 2 manifest-driven skills has a manifest and selected Markdown source. Inventory paths, exclusions, rubric mappings, and document diagnostics otherwise passed.
@@ -604,3 +763,10 @@ User Test unavailable unless the refactor produces a separately documented inter
 - 2026-09-24: User approved the Phase 5 update list. `AGENTS.md` now establishes the workspace boundary and approval rule for external paths, with optional history lookups prohibited unless requested or plan-required. The existing pre-tool hook now asks for confirmation on identifiable external paths in `path`, `filePath`, `directory`, `cwd`, `workspaceFolder`, `command`, `cmd`, and `script` payloads while preserving allow behavior for unrecognized shapes. Focused tests passed `25/25`; typecheck, Markdown lint, and customization validation passed. Full repository validation is pending.
 - 2026-09-24: Phase 5 implementation and validation completed. Final `npm run check` passed with `232` tests and zero failures, and the final focused hook/documentation suite passed `25/25`. The plan is at its interactive closeout checkpoint; no plan archive move has been made yet.
 - 2026-09-24: User requested a final hook-organization phase before any closeout or User Test. Phase 6 now covers renaming the hook family, separating internal policy ownership, preserving one `PreToolUse` entrypoint, and revalidating all behavior. No Phase 6 implementation has started.
+- 2026-09-24: Plan Checker reviewed the Phase 6 outline and returned `not-ready` because executable steps and focused checks were missing. Phase 6 was elaborated with the proposed `pre-tool-safety` name, legacy compatibility wrappers, one-orchestrator constraint, policy-precedence coverage, workspace-only reference inventory, and ordered validation. Implementation remains paused pending confirmation of these steps.
+- 2026-09-24: User continued the plan, satisfying interactive confirmation for the elaborated Phase 6. Workspace-only inventory found mirrored hook trees and compatibility references; no external files were accessed or edited.
+- 2026-09-24: Phase 6 implementation completed: `pre-tool-safety` orchestrators now own CLI handling and precedence, Git/GitHub and workspace policies have focused module boundaries, legacy `deny-non-read-git` entrypoints remain behavior-preserving, and both configs retain one `PreToolUse` registration.
+- 2026-09-24: Phase 6 validation passed: focused hook tests `23/23`, TypeScript validation, Markdown lint, customization checks, and full repository check `234/234` with zero failures. The only warning was npm's existing `always-auth` deprecation notice. Awaiting interactive closeout decision before archiving the plan.
+- 2026-09-24: User requested two additional always-follow execution rules: minimize tool output by default while retaining full output when interpretation or evidence requires it, and run an available project auto-format command after changes before addressing remaining format issues. Phase 7 was added to update shared and execution-specific guidance, add deterministic coverage, run `npm run format` first, and then validate residual diagnostics before closeout.
+- 2026-09-24: Independent Plan Checker reviewed the amended plan and returned `not-ready`: the prior readiness metadata is stale after the semantic Phase 7 amendment, and Phase 7 is intentionally not yet elaborated with executable steps. Its non-blocking outline warnings were resolved by naming `AGENTS.md`, `.agents/skills/plan-executor/SKILL.md`, the conditional adapter scope, the two deterministic test files, and the no-format-command fallback. Handoff remains blocked until the user starts Phase 7 and its steps are elaborated and reviewed.
+- 2026-09-24: User requested a more appropriate planner handoff because the current button says “Start Implementation” and targets a generic agent. Phase 7 now also requires a phase-start handoff labeled for the first phase, targeting `Plan Executor` by name when supported, with a prompt to elaborate the first phase before execution; schema support must be verified and any limitation recorded.

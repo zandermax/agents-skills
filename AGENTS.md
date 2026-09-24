@@ -61,3 +61,8 @@ unstaged differences carry no signal about progress, ownership, approval,
 completion, conflict, recovery, or desired file state. Never mutate Git or try
 to make the index and worktree match based on those differences; use working
 files and fresh task-specific checks to determine current state.
+
+## Execution Output and Formatting
+
+- Minimize tool-output context by default: use filtered commands or concise success, failure, and evidence reporting for the current decision. Retain full output when it is needed to diagnose a failure, interpret results, make a decision, or preserve audit evidence.
+- After making changes, detect and run the repository's available auto-format command before addressing format diagnostics. Address only the diagnostics that remain after formatting. If no auto-format command exists, record that unavailable check and continue with the applicable validation.

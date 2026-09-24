@@ -7,9 +7,9 @@ agents: ["Plan Scout", "Plan Checker"]
 user-invocable: true
 disable-model-invocation: false
 handoffs:
-  - label: Start Implementation
-    agent: agent
-    prompt: Start implementation
+  - label: Start First Phase
+    agent: Plan Executor
+    prompt: Elaborate the first phase, then ask for confirmation before executing it.
     send: true
 ---
 
