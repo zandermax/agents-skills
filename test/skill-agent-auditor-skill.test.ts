@@ -45,6 +45,10 @@ test("skill-agent-auditor defines layered evidence and coverage decisions", asyn
 	assert.match(skill, /`inferred`.*rubric/i);
 	assert.match(skill, /Label every rubric-based assessment as `inferred`/);
 	assert.match(skill, /`evidence: inferred`/);
+	assert.match(
+		skill,
+		/coverage assessment.*`evidence: inferred`.*absent behavioral coverage.*advisory/is,
+	);
 	assert.match(skill, /baseline rubric/);
 	assert.match(skill, /target-specific profile/);
 	assert.match(skill, /high-risk or complex target/i);

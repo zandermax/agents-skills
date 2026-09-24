@@ -190,6 +190,10 @@ test("executable-planning skill composes required static contract", async () => 
 			`missing required phrase: ${phrase}`,
 		);
 	}
+	assert.match(
+		rendered,
+		/When the requester explicitly asks for a repo-backed plan, create or update the canonical file before presenting the plan/,
+	);
 
 	for (const phrase of forbiddenPhrases) {
 		assert.equal(
