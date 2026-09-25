@@ -30,6 +30,7 @@ The skill describes execution behavior through abstract mechanisms. In this harn
 - **Subagent mechanism**: the `agent` tool may use **Plan Scout** for read-only state checks and **Plan Checker** for the shared `plan-checker` admission review. Plan Scout is never a substitute for the readiness checker; if the checker agent is not exposed, execute the shared `plan-checker` protocol in-context rather than treating the skill as unavailable.
 - **`todo`**: optionally mirror active phase steps. The plan document remains canonical.
 
-Before presenting a completion summary, move every completed repo-backed plan to
-its declared archive location through the Persistence mechanism, then verify the
-archive path exists and the active path no longer exists.
+Before presenting a completion summary, complete all final plan updates in the active file,
+move every completed repo-backed plan to its declared archive location (via filesystem move `mv`
+or writing archive and deleting active file), and verify the archive path exists and the active
+path no longer exists. Ensure no editor buffer or subsequent edit re-persists the active file.
