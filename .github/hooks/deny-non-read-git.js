@@ -115,14 +115,42 @@ function isWithin(root, candidate, requireDescendant = false) {
 	);
 }
 
-function isMemorySkillPath(candidate) {
-	const memoryRoot = canonicalPath(resolve(process.env.HOME ?? "", ".memory"));
-	const relativePath = relative(memoryRoot, candidate);
-	const segments = relativePath.split(sep);
-	return (
-		segments.length === 2 &&
-		segments[0].length > 0 &&
-		segments[1] === "SKILL.md"
+function isApprovedSkillPath(candidate) {
+	if (!candidate.endsWith(`${sep}SKILL.md`) && candidate !== "SKILL.md") {
+		return false;
+	}
+
+	if (
+		candidate.startsWith(`${sep}memories${sep}`) ||
+		candidate === `${sep}memories`
+	) {
+		return false;
+	}
+
+	const home = resolve(process.env.HOME ?? "");
+	const memoryRoot = canonicalPath(resolve(home, ".memory"));
+	if (isWithin(memoryRoot, candidate, true)) {
+		const relativePath = relative(memoryRoot, candidate);
+		const segments = relativePath.split(sep);
+		return (
+			segments.length === 2 &&
+			segments[0].length > 0 &&
+			segments[1] === "SKILL.md"
+		);
+	}
+
+	const approvedSkillRoots = [
+		resolve(home, ".agents", "skills"),
+		resolve(home, ".copilot"),
+		resolve(home, ".claude", "skills"),
+		resolve(home, ".vscode", "extensions"),
+		resolve(home, ".vscode-insiders", "extensions"),
+		"/Applications/Visual Studio Code.app",
+		"/Applications/Visual Studio Code - Insiders.app",
+	];
+
+	return approvedSkillRoots.some((root) =>
+		isWithin(canonicalPath(root), candidate, true),
 	);
 }
 
@@ -133,7 +161,7 @@ function isApprovedExternalReadPath(value) {
 		return true;
 	}
 
-	if (isMemorySkillPath(candidate)) {
+	if (isApprovedSkillPath(candidate)) {
 		return true;
 	}
 

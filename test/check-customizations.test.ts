@@ -38,6 +38,12 @@ const planScoutPath = path.join(
 	"agents",
 	"plan-scout.agent.md",
 );
+const planExecutorPath = path.join(
+	projectRoot,
+	".github",
+	"agents",
+	"plan-executor.agent.md",
+);
 
 const EXECUTABLE_PLANNER_FRONTMATTER_BLOCK = [
 	"---",
@@ -836,4 +842,15 @@ test("plan scout is a non-invocable read-only investigator", async () => {
 	});
 	assert.match(parsed.body, /Never edit files, run commands, or plan the work/);
 	assert.match(parsed.body, /aiming for under 400 words/);
+});
+
+test("plan executor declares structured-question capability in tools", async () => {
+	const content = await readFile(planExecutorPath, "utf8");
+	const parsed = parseFrontmatter(
+		content,
+		".github/agents/plan-executor.agent.md",
+	);
+
+	assert.ok(Array.isArray(parsed.attributes.tools));
+	assert.ok(parsed.attributes.tools.includes("vscode/askQuestions"));
 });

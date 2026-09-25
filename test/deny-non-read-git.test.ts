@@ -217,6 +217,31 @@ describe("deny-non-read-git hook", () => {
 			);
 			assert.equal(
 				evaluateToolUse("read_file", {
+					filePath: "~/.agents/skills/ctx/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "~/.copilot/skills/auto-vulnerability-fixer/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/.copilot/installed-plugins/atlassian/atlassian/skills/capture-tasks-from-meeting-notes/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "~/.vscode/extensions/test-extension/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
 					filePath:
 						"~/Library/Application Support/Code/User/workspaceStorage/session/chat-session-resources/content.txt",
 				}).decision,
@@ -233,7 +258,9 @@ describe("deny-non-read-git hook", () => {
 		it("rejects malformed or write-capable external access", () => {
 			for (const filePath of [
 				"/memories/repo/skill-invocation-paradigm.md",
+				"/memories/repo/SKILL.md",
 				"~/.memory/git-workflow-notes/notes.txt",
+				"~/.agents/skills/ctx/notes.txt",
 				"/var/log/system.log",
 			]) {
 				const result = evaluateToolUse("read_file", { filePath });

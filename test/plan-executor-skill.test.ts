@@ -60,7 +60,7 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 	);
 	assert.match(
 		agent,
-		/tools:\s*\[\s*["']search["']\s*,\s*["']read["']\s*,\s*["']edit["']\s*,\s*["']execute["']\s*,\s*["']agent["']\s*,\s*["']todo["']\s*\]/i,
+		/tools:\s*\[\s*vscode\/askQuestions\s*,\s*search\s*,\s*read\s*,\s*edit\s*,\s*execute\s*,\s*agent\s*,\s*todo\s*\]/i,
 	);
 	assert.match(agent, /no canonical plan exists|malformed|incomplete/i);
 	assert.match(agent, /plan-checker admission and freshness gates/i);

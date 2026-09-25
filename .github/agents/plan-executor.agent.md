@@ -2,7 +2,7 @@
 name: Plan Executor
 description: Executes implementation plans step-by-step with strict verification
 argument-hint: Path to plan doc (e.g. docs/plans/<name>.md), 'session', or plan in context
-tools: ["search", "read", "edit", "execute", "agent", "todo"]
+tools: [vscode/askQuestions, search, read, edit, execute, agent, todo]
 agents: ["Plan Scout", "Plan Checker"]
 user-invocable: true
 disable-model-invocation: false
