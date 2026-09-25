@@ -1,16 +1,16 @@
 ---
-status: in-progress
+status: completed
 mode: interactive
-canonical_location: docs/plans/2026-09-19-skill-agent-audit-token-optimization.md
-last_updated: 2026-09-24
+canonical_location: docs/plans/archive/2026-09-19-skill-agent-audit-token-optimization.md
+last_updated: 2026-09-25
 current_phase: Phase 8
-current_step: Phase 8 complete; awaiting checkpoint decision
-next_action: Ask whether to close and archive the plan, revise it, pause, or define a separate User Test.
+current_step: Plan completed and archived
+next_action: None; plan complete
 blockers: "Maintained Waza aggregate evidence is unavailable for executable-planning because the embedded tool adapter rejected the generated apply_patch argument and the run timed out; skill-agent-auditor showed trial variance and hung before completion. Repository-owned runner diagnostics are covered; adapter argument normalization remains upstream-owned."
-plan_checker_verdict: not-ready
+plan_checker_verdict: ready
 plan_checker_fingerprint: unavailable
 plan_checker_mode: interactive
-plan_checker_reviewed_at: 2026-09-24
+plan_checker_reviewed_at: 2026-09-25
 plan_checker_repair_cycles: 0
 recovery_cycle: 1 of 2 maximum
 ---
@@ -19,11 +19,11 @@ recovery_cycle: 1 of 2 maximum
 
 ## Plan Metadata
 
-- Status: in-progress
+- Status: completed
 - Mode: interactive
 - Delegation: single agent; the audit and approval phases are sequential, and this avoids multiplying context and token use.
-- Canonical location: docs/plans/2026-09-19-skill-agent-audit-token-optimization.md
-- Last updated: 2026-09-24
+- Canonical location: docs/plans/archive/2026-09-19-skill-agent-audit-token-optimization.md
+- Last updated: 2026-09-25
 - Goal: Audit every skill and agent for total context efficiency, prioritizing context generated while following instructions over the static size of the instructions themselves, while preserving or improving output quality and usefulness.
 - Success criteria:
   - Every relevant skill and agent is inventoried and reviewed against a shared context-efficiency rubric.
@@ -43,8 +43,8 @@ recovery_cycle: 1 of 2 maximum
 ## Current State
 
 - Current phase: Phase 8
-- Current step: Phase 8 complete; awaiting checkpoint decision
-- Next action: Ask whether to close and archive the plan, revise it, pause, or define a separate User Test.
+- Current step: Plan completed and archived
+- Next action: None; plan complete
 - Blockers: Maintained Waza aggregate evidence remains unavailable for `executable-planning` and `skill-agent-auditor`; repository-owned runner diagnostics are covered, and adapter argument normalization remains upstream-owned.
 
 ## Execution Protocol
@@ -777,3 +777,5 @@ When a manual User Test is defined, use the structured question mechanism with `
 - 2026-09-24: User requested two additional always-follow execution rules: minimize tool output by default while retaining full output when interpretation or evidence requires it, and run an available project auto-format command after changes before addressing remaining format issues. Phase 7 was added to update shared and execution-specific guidance, add deterministic coverage, run `npm run format` first, and then validate residual diagnostics before closeout.
 - 2026-09-24: Independent Plan Checker reviewed the amended plan and returned `not-ready`: the prior readiness metadata is stale after the semantic Phase 7 amendment, and Phase 7 is intentionally not yet elaborated with executable steps. Its non-blocking outline warnings were resolved by naming `AGENTS.md`, `.agents/skills/plan-executor/SKILL.md`, the conditional adapter scope, the two deterministic test files, and the no-format-command fallback. Handoff remains blocked until the user starts Phase 7 and its steps are elaborated and reviewed.
 - 2026-09-24: User requested a more appropriate planner handoff because the current button says “Start Implementation” and targets a generic agent. Phase 7 now also requires a phase-start handoff labeled for the first phase, targeting `Plan Executor` by name when supported, with a prompt to elaborate the first phase before execution; schema support must be verified and any limitation recorded.
+- 2026-09-24: Phase 8 implementation and validation completed across all steps (P8.S1 to P8.S6). Full `npm run check` passed 245 checks with 0 failures.
+- 2026-09-25: User requested closeout. Verified clean git tree, passed final repository verification suite `npm run check`, marked plan completed, and relocated canonical plan to `docs/plans/archive/2026-09-19-skill-agent-audit-token-optimization.md`.
