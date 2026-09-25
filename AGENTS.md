@@ -57,9 +57,9 @@ command. Prefer read-only evidence such as `git diff`, `git show`, `git log`,
 and targeted tests.
 
 Mutating git commands are permission-gated and are always presented to the user,
- so justify them and output the reasoning as to why they are needed: this will
- be seen by the user to explain the requests to do so. No explanation will mean
- the requests in this regards will likely be denied.
+so justify them and output the reasoning as to why they are needed: this will
+be seen by the user to explain the requests to do so. No explanation will mean
+the requests in this regards will likely be denied.
 
 The user may stage changes at any time solely to monitor them. Staged and
 unstaged differences carry no signal about progress, ownership, approval,
