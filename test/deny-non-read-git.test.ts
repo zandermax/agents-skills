@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, symlink } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, it } from "node:test";
 
 import {
@@ -181,7 +184,7 @@ describe("deny-non-read-git hook", () => {
 
 		it("asks before a path-bearing tool accesses outside the workspace", () => {
 			const result = evaluateToolUse("read_file", {
-				filePath: "/tmp/outside-workspace.txt",
+				filePath: "/var/log/outside-workspace.txt",
 			});
 			assert.equal(result.decision, "ask");
 			assert.match(result.reason ?? "", /outside the active workspace/);
@@ -199,9 +202,84 @@ describe("deny-non-read-git hook", () => {
 			);
 		});
 
+		it("allows approved read-only diagnostic resources", () => {
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "/tmp/diagnostic-output.txt",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "~/.memory/git-workflow-notes/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/Library/Application Support/Code/User/workspaceStorage/session/chat-session-resources/content.txt",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: "grep -o pattern /tmp/diagnostic-output.txt | wc -l",
+				}).decision,
+				"allow",
+			);
+		});
+
+		it("rejects malformed or write-capable external access", () => {
+			for (const filePath of [
+				"/memories/repo/skill-invocation-paradigm.md",
+				"~/.memory/git-workflow-notes/notes.txt",
+				"/var/log/system.log",
+			]) {
+				const result = evaluateToolUse("read_file", { filePath });
+				assert.equal(result.decision, "ask", filePath);
+			}
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: "cat /tmp/input.txt > /tmp/output.txt",
+				}).decision,
+				"ask",
+			);
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: "sed -i s/old/new/ /tmp/input.txt",
+				}).decision,
+				"ask",
+			);
+		});
+
+		it("follows symlinks when classifying read paths", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "path-policy-"),
+			);
+			const workspaceTarget = path.join(process.cwd(), "AGENTS.md");
+			const workspaceLink = path.join(temporaryDirectory, "workspace-link.md");
+			const externalLink = path.join(temporaryDirectory, "external-link.md");
+
+			try {
+				await symlink(workspaceTarget, workspaceLink);
+				await symlink("/etc/hosts", externalLink);
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: workspaceLink }).decision,
+					"allow",
+				);
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: externalLink }).decision,
+					"ask",
+				);
+			} finally {
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
+		});
+
 		it("asks before a command accesses an external absolute path", () => {
 			const result = evaluateToolUse("run_in_terminal", {
-				command: "cat /tmp/outside-workspace.txt",
+				command: "cat /var/log/outside-workspace.txt",
 			});
 			assert.equal(result.decision, "ask");
 			assert.match(result.reason ?? "", /outside the active workspace/);

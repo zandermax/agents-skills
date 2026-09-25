@@ -7,9 +7,17 @@ agents: ["Plan Scout", "Plan Checker"]
 user-invocable: true
 disable-model-invocation: false
 handoffs:
-  - label: Start First Phase
+  - label: Execute 💀
     agent: Plan Executor
-    prompt: Elaborate the first phase, then ask for confirmation before executing it.
+    prompt: Execute the approved current phase. If it is not elaborated or confirmed, stop and request elaboration or confirmation.
+    send: true
+  - label: Elaborate 💬
+    agent: Executable Planner
+    prompt: Elaborate or clarify the current phase, then ask for confirmation before execution.
+    send: true
+  - label: Complete ✅
+    agent: Plan Executor
+    prompt: Complete the plan and archive it only when no steps remain and final validation passes.
     send: true
 ---
 

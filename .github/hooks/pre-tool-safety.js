@@ -22,7 +22,7 @@ export function evaluateToolUse(toolName, toolInput) {
 		return { decision: "ask", reason: githubReason };
 	}
 
-	const pathViolation = checkToolInputPaths(toolInput);
+	const pathViolation = checkToolInputPaths(toolInput, toolName);
 	if (pathViolation) {
 		return { decision: "ask", reason: pathViolation };
 	}

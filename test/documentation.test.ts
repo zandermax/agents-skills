@@ -49,6 +49,19 @@ test("README documents catalog-driven artifact installation and maintenance", as
 	);
 });
 
+test("shared agent instructions expose canonical memory skills to all agents", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/memory skill files under `~\/\.memory\/<skill-name>\/SKILL\.md` are approved read-only resources for all agents/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/do not construct or read a root-level `\/memories\/\.\.\.` path/i,
+	);
+});
+
 test("shared agent instructions treat staging as semantically neutral", async () => {
 	const instructions = await readFile(agentInstructionsPath, "utf8");
 	const normalizedInstructions = instructions.replace(/\s+/g, " ");
@@ -119,6 +132,20 @@ test("shared agent instructions bound tool output and format repair", async () =
 		normalizedInstructions,
 		/If no auto-format command exists, record that unavailable check/i,
 	);
+});
+
+test("shared agent instructions define manual-test response options", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/manual-test checkpoint.*Passed.*Issues found.*free text/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Record either the confirmation or the reported issues as user-provided evidence before continuing/i,
+	);
+	assert.match(normalizedInstructions, /do not suggest an expected result/i);
 });
 
 test("repository keeps active and archived plans beside specifications under docs", async () => {

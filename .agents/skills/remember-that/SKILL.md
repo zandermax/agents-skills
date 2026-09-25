@@ -21,6 +21,9 @@ while referencing public skills as read-only topic anchors.
     (defaulting to `~/.memory`). All captured notes, conventions, and personal
     preferences must be written to this location only, except for symlinks
     created in tool skill directories as required by the Lazy Loading Invariant.
+  - Every agent may read memory skill files at
+    `~/.memory/<skill-name>/SKILL.md`; this read access does not permit writes
+    and does not use a root-level `/memories/...` path.
 - **Curated Instruction Immutability**:
   - Never write to `AGENTS.md` or `agents.local.md`. Universal paradigms are
     curated manually by the human operator, never auto-appended to.

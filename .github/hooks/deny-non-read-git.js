@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -61,18 +61,130 @@ const PATH_FIELDS = new Set([
 	"workspaceFolder",
 ]);
 
+const READ_ONLY_PATH_TOOLS = new Set([
+	"read_file",
+	"view_image",
+	"read_notebook_cell_output",
+	"copilot_getNotebookSummary",
+]);
+
+const READ_ONLY_EXTERNAL_COMMANDS = new Set([
+	"awk",
+	"cat",
+	"cut",
+	"file",
+	"grep",
+	"head",
+	"ls",
+	"sed",
+	"sort",
+	"stat",
+	"tail",
+	"tr",
+	"uniq",
+	"wc",
+]);
+
+function expandPath(value) {
+	return value === "~"
+		? resolve(process.env.HOME ?? "")
+		: value.startsWith("~/")
+			? resolve(process.env.HOME ?? "", value.slice(2))
+			: value.startsWith("$HOME/") || value.startsWith("${HOME}/")
+				? resolve(process.env.HOME ?? "", value.replace(/^\$\{?HOME\}?\//, ""))
+				: resolve(value);
+}
+
+function canonicalPath(value) {
+	const expandedValue = expandPath(value);
+	try {
+		return realpathSync.native(expandedValue);
+	} catch {
+		return expandedValue;
+	}
+}
+
+function isWithin(root, candidate, requireDescendant = false) {
+	const relativePath = relative(root, candidate);
+	return (
+		(!requireDescendant && relativePath === "") ||
+		(relativePath !== "" &&
+			relativePath !== ".." &&
+			!relativePath.startsWith(`..${sep}`) &&
+			!relativePath.startsWith(sep))
+	);
+}
+
+function isMemorySkillPath(candidate) {
+	const memoryRoot = canonicalPath(resolve(process.env.HOME ?? "", ".memory"));
+	const relativePath = relative(memoryRoot, candidate);
+	const segments = relativePath.split(sep);
+	return (
+		segments.length === 2 &&
+		segments[0].length > 0 &&
+		segments[1] === "SKILL.md"
+	);
+}
+
+function isApprovedExternalReadPath(value) {
+	const candidate = canonicalPath(value);
+	const temporaryRoot = resolve(sep, "tmp");
+	if (isWithin(temporaryRoot, candidate, true)) {
+		return true;
+	}
+
+	if (isMemorySkillPath(candidate)) {
+		return true;
+	}
+
+	const applicationSupportRoot = resolve(
+		process.env.HOME ?? "",
+		"Library",
+		"Application Support",
+	);
+	for (const codeVariant of ["Code", "Code - Insiders"]) {
+		const sessionRoot = resolve(
+			applicationSupportRoot,
+			codeVariant,
+			"User",
+			"workspaceStorage",
+		);
+		if (isWithin(sessionRoot, candidate, true)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function commandName(statement) {
+	const token = tokenizeStatement(statement)[0] ?? "";
+	return token.split(/[\\/]/).pop() ?? "";
+}
+
+function isReadOnlyExternalCommand(statement) {
+	const tokens = tokenizeStatement(statement);
+	const name = commandName(statement);
+	if (!READ_ONLY_EXTERNAL_COMMANDS.has(name)) {
+		return false;
+	}
+
+	if (/(^|\s)>>?(?:\s|$)/.test(statement)) {
+		return false;
+	}
+
+	return !(
+		name === "sed" &&
+		tokens.some((token) => token === "-i" || token === "--in-place")
+	);
+}
+
 function isExternalPath(value) {
 	if (typeof value !== "string" || value.length === 0) {
 		return false;
 	}
 
-	const expandedValue =
-		value === "~" || value.startsWith("~/")
-			? resolve(process.env.HOME ?? "", value.slice(1))
-			: value.startsWith("$HOME/") || value.startsWith("${HOME}/")
-				? resolve(process.env.HOME ?? "", value.replace(/^\$\{?HOME\}?\//, ""))
-				: resolve(value);
-	const relativePath = relative(resolve(process.cwd()), expandedValue);
+	const relativePath = relative(resolve(process.cwd()), canonicalPath(value));
 
 	return relativePath === ".." || relativePath.startsWith(`..${sep}`);
 }
@@ -81,13 +193,17 @@ function externalPathReason(pathValue) {
 	return `External path access requires user confirmation: '${pathValue}' is outside the active workspace.`;
 }
 
-export function checkToolInputPaths(toolInput) {
+export function checkToolInputPaths(toolInput, toolName = "") {
 	if (!toolInput || typeof toolInput !== "object" || Array.isArray(toolInput)) {
 		return null;
 	}
 
 	for (const [key, value] of Object.entries(toolInput)) {
-		if (PATH_FIELDS.has(key) && isExternalPath(value)) {
+		if (
+			PATH_FIELDS.has(key) &&
+			isExternalPath(value) &&
+			!(READ_ONLY_PATH_TOOLS.has(toolName) && isApprovedExternalReadPath(value))
+		) {
 			return externalPathReason(value);
 		}
 	}
@@ -98,7 +214,13 @@ export function checkToolInputPaths(toolInput) {
 export function checkCommandPaths(command) {
 	for (const statement of splitShellStatements(command)) {
 		for (const token of tokenizeStatement(statement).slice(1)) {
-			if (isExternalPath(token)) {
+			if (
+				isExternalPath(token) &&
+				!(
+					isReadOnlyExternalCommand(statement) &&
+					isApprovedExternalReadPath(token)
+				)
+			) {
 				return externalPathReason(token);
 			}
 		}
@@ -603,7 +725,7 @@ export function evaluateToolUse(toolName, toolInput) {
 		};
 	}
 
-	const pathViolation = checkToolInputPaths(toolInput);
+	const pathViolation = checkToolInputPaths(toolInput, toolName);
 	if (pathViolation) {
 		return { decision: "ask", reason: pathViolation };
 	}

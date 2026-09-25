@@ -66,3 +66,5 @@ files and fresh task-specific checks to determine current state.
 
 - Minimize tool-output context by default: use filtered commands or concise success, failure, and evidence reporting for the current decision. Retain full output when it is needed to diagnose a failure, interpret results, make a decision, or preserve audit evidence.
 - After making changes, detect and run the repository's available auto-format command before addressing format diagnostics. Address only the diagnostics that remain after formatting. If no auto-format command exists, record that unavailable check and continue with the applicable validation.
+- At a manual-test checkpoint, use the question mechanism with `Passed` and `Issues found` options; the issues option accepts free text. Record either the confirmation or the reported issues as user-provided evidence before continuing, and do not suggest an expected result.
+- Memory skill files under `~/.memory/<skill-name>/SKILL.md` are approved read-only resources for all agents. Use that canonical layout; do not construct or read a root-level `/memories/...` path, and never write memory files unless the memory workflow explicitly requires it.

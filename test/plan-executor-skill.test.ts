@@ -75,21 +75,27 @@ test("plan executor collects user-test evidence before phase continuation", asyn
 		readFile(agentPath, "utf8"),
 	]);
 
-	assert.match(skill, /User Test.*free-text observation/i);
+	assert.match(skill, /User Test.*free text for issues/i);
 	assert.match(skill, /user-provided evidence/i);
 	assert.match(skill, /insufficient.*blocker|blocker.*insufficient/i);
 	assert.match(skill, /Autopilot[\s\S]*no.*User Test/i);
 	assert.match(skill, /No checkpoint tests yet\./);
-	assert.match(agent, /User Test.*free-text observation/i);
+	assert.match(skill, /`Passed` and `Issues found` options/i);
+	assert.match(skill, /accept free text for issues/i);
+	assert.match(skill, /response will be recorded as user-provided evidence/i);
+	assert.match(agent, /User Test.*free text for issues/i);
 	assert.match(agent, /must not.*expected result/i);
 	assert.match(agent, /No checkpoint tests yet\./);
+	assert.match(agent, /`Passed` and `Issues found` options/i);
+	assert.match(agent, /accept free text for issues/i);
+	assert.match(agent, /response will be recorded as user-provided evidence/i);
 	assert.match(
 		skill,
-		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free-text observation.*record.*user-provided evidence.*before phase continuation/i,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free text for issues.*record.*user-provided evidence.*before phase continuation/i,
 	);
 	assert.match(
 		agent,
-		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free-text observation.*record.*user-provided evidence.*before phase continuation/i,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free text for issues.*record.*user-provided evidence.*before phase continuation/i,
 	);
 	assert.match(
 		skill,
@@ -101,11 +107,11 @@ test("plan executor collects user-test evidence before phase continuation", asyn
 	);
 	assert.match(
 		skill,
-		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free-text observation.*user-provided evidence/i,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free text for issues.*user-provided evidence/i,
 	);
 	assert.match(
 		agent,
-		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free-text observation.*user-provided evidence/i,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free text for issues.*user-provided evidence/i,
 	);
 });
 
