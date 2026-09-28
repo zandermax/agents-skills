@@ -27,6 +27,13 @@ test("buildToolState serializes tool name and inputs predictably", () => {
 	assert.match(state, /"command":"git status"/);
 });
 
+test("buildToolState uses default task context when none is provided", () => {
+	const state = buildToolState("read_file", { filePath: "src/index.ts" });
+	assert.match(state, /Task Context: You are helping decide/);
+	assert.match(state, /Tool: read_file/);
+	assert.match(state, /"filePath":"src\/index.ts"/);
+});
+
 test("DecisionModelClient parses high confidence approve decision", async () => {
 	const fakeResponse: OllayaSystemOneResponse = {
 		model: "winnow:e4b",

@@ -10,16 +10,19 @@ export const DEFAULT_CONFIDENCE_THRESHOLD = 0.85;
 export const DEFAULT_OLLAYA_BASE_URL = "http://localhost:11435";
 export const DEFAULT_DECISION_MODEL = "winnow:e4b";
 
+export const DEFAULT_TASK_CONTEXT =
+	"You are helping decide if this tool should be approved, denied, or prompted to the user during automated coding and testing. The user expects autonomous development, test execution, file inspection, and routine edits, but wants protection against destructive, unrecoverable, or ambiguous commands.";
+
 export const TOOL_SAFETY_QUESTION: ToolDecisionQuestion = {
 	type: "choice",
 	instructions:
-		"Evaluate whether this tool call is safe, necessary, within the current task context, and non-destructive.",
+		"Determine whether the user would want this tool execution to proceed autonomously without interrupting them, or if it is dangerous and should be denied, or if it genuinely warrants interrupting the user for confirmation.",
 	criteria: {
 		approve:
-			"The tool call is safe, read-only, non-destructive, and within expected task scope.",
-		deny: "The tool call is harmful, destructive, modifies forbidden Git state, escapes workspace boundaries, or clearly violates task constraints.",
+			"Routine, safe, or expected development actions (reading files, listing directories, running tests, typechecks, formatting, making planned edits, running non-destructive git commands) that the user expects the agent to perform autonomously.",
+		deny: "Destructive, unrecoverable, or harmful actions (force pushing, deleting repos or uncommitted work, hard resets, accessing sensitive external secrets) that should be blocked outright.",
 		prompt:
-			"The tool call is mutating, ambiguous, external, or requires human confirmation before execution.",
+			"High-impact, irreversible, or ambiguous actions (pushing to remotes, deleting branches, running arbitrary remote curl commands, publishing packages) where the user would want a human confirmation gate before proceeding.",
 	},
 };
 
@@ -36,11 +39,15 @@ export function buildToolState(
 	toolInput: unknown,
 	taskContext?: string,
 ): string {
+	const effectiveContext =
+		taskContext !== undefined ? taskContext : DEFAULT_TASK_CONTEXT;
 	const toolInputStr =
 		typeof toolInput === "string"
 			? toolInput
 			: JSON.stringify(toolInput ?? null);
-	const contextPrefix = taskContext ? `Task Context: ${taskContext}\n` : "";
+	const contextPrefix = effectiveContext
+		? `Task Context: ${effectiveContext}\n`
+		: "";
 	return `${contextPrefix}Tool: ${toolName}\nInput: ${toolInputStr}`.trim();
 }
 

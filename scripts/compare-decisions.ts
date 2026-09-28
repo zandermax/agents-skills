@@ -1,27 +1,50 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import path from "node:path";
+import { DecisionModelClient } from "../src/lib/decision-model/client.js";
 import {
 	generateExperimentSummaryReport,
 	type ModelEvaluationReport,
 } from "../src/lib/decision-model/comparison.js";
 import { DEFAULT_SHADOW_LOG_PATH } from "../src/lib/decision-model/shadow-logger.js";
-import type { ShadowLogRecord } from "../src/lib/decision-model/types.js";
+import type {
+	ShadowLogEvent,
+	ShadowLogRecord,
+} from "../src/lib/decision-model/types.js";
 
-function parseArgs(): { fixturePath: string } {
+interface CliOptions {
+	readonly fixturePath: string;
+	readonly reset: boolean;
+	readonly rescore: boolean;
+}
+
+function parseArgs(): CliOptions {
 	const args = process.argv.slice(2);
 	let fixturePath = DEFAULT_SHADOW_LOG_PATH;
+	let reset = false;
+	let rescore = false;
 
 	for (let i = 0; i < args.length; i++) {
+		const arg = args[i];
 		const nextArg = args[i + 1];
-		if (args[i] === "--fixture" && nextArg) {
+		if (arg === "--fixture" && nextArg) {
 			fixturePath = path.resolve(process.cwd(), nextArg);
 			i++;
+		} else if (arg === "--reset") {
+			reset = true;
+		} else if (arg === "--rescore" || arg === "--replay") {
+			rescore = true;
 		}
 	}
 
-	return { fixturePath };
+	return { fixturePath, reset, rescore };
 }
 
 function formatPercent(val: number): string {
@@ -101,7 +124,21 @@ function renderModelSummary(report: ModelEvaluationReport): void {
 }
 
 async function main(): Promise<void> {
-	const { fixturePath } = parseArgs();
+	const { fixturePath, reset, rescore } = parseArgs();
+
+	if (reset) {
+		if (existsSync(fixturePath)) {
+			rmSync(fixturePath, { force: true });
+			console.log(
+				`\n✔ Reset complete: deleted ${path.relative(process.cwd(), fixturePath)}`,
+			);
+		} else {
+			console.log(
+				`\nNo shadow log found at ${path.relative(process.cwd(), fixturePath)} to reset.`,
+			);
+		}
+		process.exit(0);
+	}
 
 	if (!existsSync(fixturePath)) {
 		console.error(`Log file not found: ${fixturePath}`);
@@ -120,6 +157,51 @@ async function main(): Promise<void> {
 	if (records.length === 0) {
 		console.log(`No records found in ${fixturePath}.`);
 		return;
+	}
+
+	if (rescore) {
+		console.log(
+			`\nRe-scoring records in ${path.relative(process.cwd(), fixturePath)} against local model using current prompt...`,
+		);
+		const client = new DecisionModelClient();
+		let updatedCount = 0;
+		for (const record of records) {
+			if (!("type" in record && record.type === "tool_execution")) {
+				const event = record as ShadowLogEvent;
+				let parsedInput: unknown = event.toolInputSnippet;
+				try {
+					parsedInput = JSON.parse(event.toolInputSnippet);
+				} catch {
+					// keep as string
+				}
+				const newResult = await client.evaluateToolCall(
+					event.toolName,
+					parsedInput,
+				);
+				if (newResult) {
+					const target = record as {
+						shadowDecision?: string;
+						rawChoice?: string;
+						confidence?: number;
+						probabilities?: Record<string, number>;
+						thresholdApplied?: boolean;
+						model?: string;
+						inputTokens?: number;
+						latencyMs?: number;
+					};
+					target.shadowDecision = newResult.decision;
+					target.rawChoice = newResult.rawChoice;
+					target.confidence = newResult.confidence;
+					target.probabilities = newResult.probabilities;
+					target.thresholdApplied = newResult.thresholdApplied;
+					target.model = newResult.model;
+					target.inputTokens = newResult.inputTokens;
+					target.latencyMs = newResult.latencyMs;
+					updatedCount++;
+				}
+			}
+		}
+		console.log(`Re-scored ${updatedCount} decisions with updated prompt.`);
 	}
 
 	const report = generateExperimentSummaryReport(fixturePath, records);

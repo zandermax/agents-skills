@@ -130,3 +130,28 @@ test("generateExperimentSummaryReport stratifies without pooling models", () => 
 		layaReport?.tokenComparison.totalOllayaInputTokens,
 	);
 });
+
+test("compare-decisions CLI --reset deletes the target fixture safely", async () => {
+	const { spawnSync } = await import("node:child_process");
+	const { copyFileSync, existsSync } = await import("node:fs");
+	const tempLog = path.join(
+		process.cwd(),
+		"results",
+		"tool-decisions",
+		`reset-test-${Date.now()}.jsonl`,
+	);
+
+	copyFileSync(FIXTURE_PATH, tempLog);
+	assert.ok(existsSync(tempLog));
+
+	const cliScript = path.resolve("scripts/compare-decisions.ts");
+	const proc = spawnSync(
+		process.execPath,
+		["--import", "tsx", cliScript, "--fixture", tempLog, "--reset"],
+		{ encoding: "utf8" },
+	);
+
+	assert.equal(proc.status, 0);
+	assert.match(proc.stdout, /Reset complete/);
+	assert.equal(existsSync(tempLog), false);
+});
