@@ -3,8 +3,8 @@ status: ready
 mode: interactive
 storage: docs/plans/laya-tool-decision-shadow-eval.md
 current_phase: "Phase 3: Decision & Token Comparison CLI"
-current_step: not started
-next_action: Elaborate Phase 3 steps upon continuation confirmation
+current_step: completed
+next_action: Run User Test checkpoint for comparison CLI and confirm final completion
 blockers: none
 ---
 
@@ -34,8 +34,8 @@ blockers: none
 ## Current State
 
 - Current phase: Phase 3: Decision & Token Comparison CLI
-- Current step: not started
-- Next action: Elaborate Phase 3 steps upon continuation confirmation
+- Current step: completed
+- Next action: Run User Test checkpoint for comparison CLI and confirm final completion
 - Blockers: none
 
 ## Execution Protocol
@@ -195,7 +195,31 @@ A standalone comparison CLI `npm run eval:decisions` that analyzes logged shadow
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+- [x] P3.S1: Implement comparison and calibration metrics library (`src/lib/decision-model/comparison.ts`) providing confusion matrix, Wilson score confidence intervals, Brier score, reliability binning, threshold sweep, and model-stratified aggregations.
+  - Files: `src/lib/decision-model/comparison.ts`
+  - Check: `npm run typecheck`
+  - Result: `npm run typecheck` passed cleanly.
+  - Depends: none
+- [x] P3.S2: Create deterministic test fixture (`test/fixtures/shadow-decisions-sample.jsonl`) with stratified examples (safe reads, mutations, denied commands, timeouts, low-confidence decisions).
+  - Files: `test/fixtures/shadow-decisions-sample.jsonl`
+  - Check: `node -e 'require("fs").readFileSync("test/fixtures/shadow-decisions-sample.jsonl","utf8").split("\n").filter(Boolean).forEach(l=>JSON.parse(l))'`
+  - Result: JSONL parsed 16 stratified records without errors.
+  - Depends: none
+- [x] P3.S3: Implement unit test suite (`test/compare-decisions.test.ts`) validating statistical calculations, Wilson intervals, Brier score, and report generation.
+  - Files: `test/compare-decisions.test.ts`
+  - Check: `npm test -- test/compare-decisions.test.ts`
+  - Result: `npm test -- test/compare-decisions.test.ts` passed (4 tests).
+  - Depends: P3.S1, P3.S2
+- [x] P3.S4: Implement comparison CLI (`scripts/compare-decisions.ts`) and register `eval:decisions` script in `package.json`, formatting summary tables and writing normalized JSON reports.
+  - Files: `scripts/compare-decisions.ts`, `package.json`
+  - Check: `npm run eval:decisions -- --fixture test/fixtures/shadow-decisions-sample.jsonl`
+  - Result: CLI generated stratified tables, Wilson intervals, Brier scores, and saved JSON report.
+  - Depends: P3.S3
+- [x] P3.S5: Run full Phase 3 validation and verify simulated report generation.
+  - Files: no source changes
+  - Check: `npm test -- test/compare-decisions.test.ts && npm run typecheck && npm run check`
+  - Result: 255 tests passed, typecheck, format, lint, customization, and drift checks passed cleanly.
+  - Depends: P3.S4
 
 ### Validation
 
@@ -222,3 +246,4 @@ Interactive User Test: Run comparison CLI against sample shadow log and inspect 
 - 2026-09-28: Phase 1 completed: decision model client, types, fail-safe shadow logger, and unit tests implemented and verified.
 - 2026-09-28: Phase 2 completed: pre-tool hook instrumented with detached worker (`scripts/shadow-worker.ts`), verified with parent exit regression test and check suite.
 - 2026-09-28: Phase 2 User Test passed: verified detached shadow worker records land in results/tool-decisions/shadow.jsonl after parent process exits.
+- 2026-09-28: Phase 3 completed: comparison library, test fixture, unit tests, and CLI runner implemented and verified with full check suite (255 tests).
