@@ -1,7 +1,7 @@
 ---
 name: Plan Scout
 description: Answers narrow codebase questions for the Executable Planner
-tools: ["search", "read"]
+tools: ["vscode/askQuestions", "search", "read", "web"]
 agents: []
 user-invocable: false
 disable-model-invocation: false

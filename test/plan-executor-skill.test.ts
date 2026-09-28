@@ -60,7 +60,7 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 	);
 	assert.match(
 		agent,
-		/tools:\s*\[\s*vscode\/askQuestions\s*,\s*search\s*,\s*read\s*,\s*edit\s*,\s*execute\s*,\s*agent\s*,\s*todo\s*\]/i,
+		/tools:\s*\[\s*vscode\/askQuestions\s*,\s*execute\s*,\s*read\s*,\s*agent\s*,\s*edit\s*,\s*search\s*,\s*web\s*,\s*atlassian\/atlassianUserInfo\s*,\s*atlassian\/fetch\s*,\s*atlassian\/getAccessibleAtlassianResources\s*,\s*atlassian\/getIssueLinkTypes\s*,\s*atlassian\/getJiraIssue\s*,\s*atlassian\/getJiraIssueRemoteIssueLinks\s*,\s*atlassian\/getJiraIssueTypeMetaWithFields\s*,\s*atlassian\/getJiraProjectIssueTypesMetadata\s*,\s*atlassian\/getTransitionsForJiraIssue\s*,\s*atlassian\/getVisibleJiraProjects\s*,\s*atlassian\/lookupJiraAccountId\s*,\s*atlassian\/search\s*,\s*atlassian\/searchJiraIssuesUsingJql\s*,\s*todo,?\s*\]/i,
 	);
 	assert.match(agent, /no canonical plan exists|malformed|incomplete/i);
 	assert.match(agent, /plan-checker admission and freshness gates/i);

@@ -13,12 +13,15 @@ a skill is long.
 
 ## Workspace Boundary
 
-Treat the active workspace folders as the default filesystem boundary. Do not
-read, search, execute against, or delegate discovery for `$HOME`, session
-history, parent directories, global configuration, or other external paths
-unless the user explicitly requests the exact path or the active plan names it
-as required. Before external access, state the exact path and reason and
-request approval. Do not perform optional history or context lookups merely
+Treat the active workspace folders as the default filesystem boundary for
+writes and command execution. Every agent has general read permission and `vscode/askQuestions`. Do not
+omit `read` or `vscode/askQuestions` from an agent tool list. Pre-tool hooks stop specific reads; do
+not refuse an ordinary file read or add a second approval gate for one.
+
+Do not execute against `$HOME`, session history, parent directories, global
+configuration, or other external paths unless the user explicitly requests the exact path or the active plan names it
+as required. Before external command execution, state the exact path and reason and
+request approval. All agents have web access by default for documentation, specifications, online references, and web URLs; web access does not require prior approval. Do not perform optional history or context lookups merely
 because a related tool or skill is available.
 
 For manifest-driven skills, run `npm run build` only after changing source
@@ -73,3 +76,4 @@ files and fresh task-specific checks to determine current state.
 - After making changes, detect and run the repository's available auto-format command before addressing format diagnostics. Address only the diagnostics that remain after formatting. If no auto-format command exists, record that unavailable check and continue with the applicable validation.
 - At a manual-test checkpoint, use the question mechanism with `Passed` and `Issues found` options; the issues option accepts free text. Record either the confirmation or the reported issues as user-provided evidence before continuing, and do not suggest an expected result.
 - Installed skill files (`SKILL.md`) under approved skill roots (such as `~/.agents/skills/`, `~/.copilot/`, `~/.claude/skills/`, `~/.vscode/extensions/`, and VS Code application directories) and memory skill files under `~/.memory/<skill-name>/SKILL.md` are approved read-only resources for all agents. Use that canonical layout; do not construct or read a root-level `/memories/...` path, and never write memory files unless the memory workflow explicitly requires it.
+- When an instruction, agent, or skill references loading a skill (or using the "Skill" tool), load the skill by reading its `SKILL.md` file using available file-reading tools (`read_file` or `read`). Try `.agents/skills/<name>/SKILL.md` in the workspace, then `~/.agents/skills/<name>/SKILL.md`. Never report that a skill cannot be loaded or halt execution simply because a tool named `Skill` does not exist in the session.

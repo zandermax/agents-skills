@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
 	checkGitHubMutationPolicy,
@@ -11,6 +13,40 @@ import {
 	checkToolInputPaths,
 	checkWorkspacePolicy,
 } from "./pre-tool-safety-workspace.js";
+
+function dispatchShadowWorker(data, decisionResult) {
+	try {
+		const currentDir = path.dirname(fileURLToPath(import.meta.url));
+		const workerScript = path.resolve(
+			currentDir,
+			"../../scripts/shadow-worker.ts",
+		);
+
+		if (!existsSync(workerScript)) {
+			return;
+		}
+
+		const payload = JSON.stringify({
+			toolName: data.tool_name,
+			toolInput: data.tool_input,
+			actualPermissionDecision: decisionResult.decision,
+			toolUseId: data.tool_use_id,
+			sessionId: data.session_id,
+		});
+
+		const child = spawn(
+			process.execPath,
+			["--import", "tsx", workerScript, payload],
+			{
+				detached: true,
+				stdio: "ignore",
+			},
+		);
+		child.unref();
+	} catch {
+		// Non-blocking fail-safe: never throw or alter hook decision
+	}
+}
 
 export function evaluateToolUse(toolName, toolInput) {
 	if (!toolName || !toolInput) {
@@ -80,7 +116,12 @@ export function runCli() {
 		return;
 	}
 
-	outputResult(evaluateToolUse(data.tool_name, data.tool_input));
+	const result = evaluateToolUse(data.tool_name, data.tool_input);
+	outputResult(result);
+
+	if (data.tool_name && data.tool_input) {
+		dispatchShadowWorker(data, result);
+	}
 }
 
 const isMainModule =

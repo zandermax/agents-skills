@@ -111,6 +111,15 @@ test("shared agent instructions keep filesystem access inside the workspace by d
 		normalizedInstructions,
 		/Do not perform optional history or context lookups merely because/i,
 	);
+	assert.match(
+		normalizedInstructions,
+		/Every agent has general read permission and `vscode\/askQuestions`/i,
+	);
+	assert.match(normalizedInstructions, /Pre-tool hooks stop specific reads/i);
+	assert.match(
+		normalizedInstructions,
+		/Try `\.agents\/skills\/<name>\/SKILL\.md` in the workspace, then `~\/\.agents\/skills\/<name>\/SKILL\.md`/i,
+	);
 });
 
 test("shared agent instructions bound tool output and format repair", async () => {

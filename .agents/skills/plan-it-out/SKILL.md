@@ -4,11 +4,13 @@ description: Runs interactive session-only planning ending with a plan document.
 disable-model-invocation: true
 ---
 
-Call the Skill tool with "executable-planning", then apply these overrides
-for the whole session; do not ask the user about interaction mode or storage,
-they are fixed by this skill. If the executable-planning skill cannot be loaded,
-tell the user and stop; do not attempt to plan without it, since the referenced
-sections define the required format.
+Load `executable-planning` before applying these overrides for the whole
+session. Use a skill-loading tool when one exists; otherwise read
+`.agents/skills/executable-planning/SKILL.md`, then
+`~/.agents/skills/executable-planning/SKILL.md`. If that skill cannot be
+read, tell the user and stop; do not attempt to plan without it, since the
+referenced sections define the required format. Do not ask about interaction
+mode or storage; they are fixed by this skill.
 
 ## Fixed Mode and Storage
 

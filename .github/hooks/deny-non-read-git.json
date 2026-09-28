@@ -6,6 +6,13 @@
 				"command": "node -e 'const fs = require(\"fs\"), path = require(\"path\"), cp = require(\"child_process\"); const names = [\"pre-tool-safety\", \"deny-non-read-git\"]; const p = names.map(name => [path.join(process.env.HOME||\"\", \".copilot/hooks/\"+name+\".json\"), path.join(process.env.HOME||\"\", \".agents/hooks/\"+name+\".json\"), \"./.github/hooks/\"+name+\".json\", \"./.agents/hooks/\"+name+\".json\"]).flat().find(f => fs.existsSync(f)); const target = p ? path.join(path.dirname(fs.realpathSync(p)), \"pre-tool-safety.mts\") : null; if (target) cp.spawnSync(process.execPath, [\"--import\", \"tsx\", target], { stdio: \"inherit\" });'",
 				"timeout": 15
 			}
+		],
+		"PostToolUse": [
+			{
+				"type": "command",
+				"command": "node -e 'const fs = require(\"fs\"), path = require(\"path\"), cp = require(\"child_process\"); const names = [\"post-tool-recorder\", \"deny-non-read-git\"]; const p = names.map(name => [path.join(process.env.HOME||\"\", \".copilot/hooks/\"+name+\".json\"), path.join(process.env.HOME||\"\", \".agents/hooks/\"+name+\".json\"), \"./.github/hooks/\"+name+\".json\", \"./.agents/hooks/\"+name+\".json\"]).flat().find(f => fs.existsSync(f)); const target = p ? path.join(path.dirname(fs.realpathSync(p)), \"post-tool-recorder.mts\") : null; if (target) cp.spawnSync(process.execPath, [\"--import\", \"tsx\", target], { stdio: \"inherit\" });'",
+				"timeout": 15
+			}
 		]
 	}
 }
