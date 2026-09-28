@@ -7,7 +7,7 @@ import {
 	type ModelEvaluationReport,
 } from "../src/lib/decision-model/comparison.js";
 import { DEFAULT_SHADOW_LOG_PATH } from "../src/lib/decision-model/shadow-logger.js";
-import type { ShadowLogEvent } from "../src/lib/decision-model/types.js";
+import type { ShadowLogRecord } from "../src/lib/decision-model/types.js";
 
 function parseArgs(): { fixturePath: string } {
 	const args = process.argv.slice(2);
@@ -38,12 +38,32 @@ function renderModelSummary(report: ModelEvaluationReport): void {
 
 	const conc = report.concordanceRate;
 	console.log(
-		` Concordance Rate:   ${formatPercent(conc.point)} [95% CI: ${formatPercent(conc.lower)} - ${formatPercent(conc.upper)}]`,
+		` Hook Concordance:   ${formatPercent(conc.point)} [95% CI: ${formatPercent(conc.lower)} - ${formatPercent(conc.upper)}]`,
+	);
+
+	const uc = report.userChoiceEvaluation;
+	console.log(`\n User Choice Evaluation (Taking Decisions Out):`);
+	console.log(`   Total Prompts Shown to User:  ${uc.totalUserPrompts}`);
+	console.log(
+		`   Human User Approved:          ${uc.userApprovedCount} (${uc.totalUserPrompts > 0 ? formatPercent(uc.userApprovedCount / uc.totalUserPrompts) : "0.0%"})`,
+	);
+	console.log(
+		`   Human User Denied:            ${uc.userDeniedCount} (${uc.totalUserPrompts > 0 ? formatPercent(uc.userDeniedCount / uc.totalUserPrompts) : "0.0%"})`,
+	);
+	console.log(
+		`   User Concordance Rate:        ${formatPercent(uc.userConcordanceRate.point)} [95% CI: ${formatPercent(uc.userConcordanceRate.lower)} - ${formatPercent(uc.userConcordanceRate.upper)}]`,
+	);
+	console.log(
+		`   Safe Prompt Elimination Rate: ${formatPercent(uc.safePromptEliminationRate.point)} (${uc.safePromptEliminationCount} prompts could be bypassed)`,
+	);
+	console.log(
+		`   Critical False Approvals:     ${uc.humanFalseApprovalCount} (${formatPercent(uc.humanFalseApprovalRate.point)}) [Laya approved when user denied]`,
 	);
 
 	const cm = report.confusionMatrix;
+	console.log(`\n Hook Rule Confusion Matrix:`);
 	console.log(
-		` False Approvals:    ${cm.falseApprovalCount} (${formatPercent(cm.falseApprovalRate.point)}) [95% CI: ${formatPercent(cm.falseApprovalRate.lower)} - ${formatPercent(cm.falseApprovalRate.upper)}]`,
+		`   Hook False Approvals: ${cm.falseApprovalCount} (${formatPercent(cm.falseApprovalRate.point)}) [95% CI: ${formatPercent(cm.falseApprovalRate.lower)} - ${formatPercent(cm.falseApprovalRate.upper)}]`,
 	);
 	console.log(
 		` Precision (deny):   ${formatPercent(cm.precision)} | Recall: ${formatPercent(cm.recall)} | Specificity: ${formatPercent(cm.specificity)}`,
@@ -92,17 +112,17 @@ async function main(): Promise<void> {
 	}
 
 	const raw = readFileSync(fixturePath, "utf8");
-	const events: ShadowLogEvent[] = raw
+	const records: ShadowLogRecord[] = raw
 		.split("\n")
 		.filter((line) => line.trim().length > 0)
-		.map((line) => JSON.parse(line) as ShadowLogEvent);
+		.map((line) => JSON.parse(line) as ShadowLogRecord);
 
-	if (events.length === 0) {
+	if (records.length === 0) {
 		console.log(`No records found in ${fixturePath}.`);
 		return;
 	}
 
-	const report = generateExperimentSummaryReport(fixturePath, events);
+	const report = generateExperimentSummaryReport(fixturePath, records);
 
 	console.log(`\n=== Decision Model Shadow Evaluation Report ===`);
 	console.log(` Source:   ${fixturePath}`);

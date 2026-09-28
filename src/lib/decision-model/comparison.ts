@@ -1,10 +1,21 @@
-import type { ShadowLogEvent } from "./types.js";
+import type { ShadowLogEvent, ToolExecutionLogEvent } from "./types.js";
 
 export interface ConfidenceInterval {
 	readonly point: number;
 	readonly lower: number;
 	readonly upper: number;
 	readonly confidenceLevel: number;
+}
+
+export interface UserChoiceEvaluationReport {
+	readonly totalUserPrompts: number;
+	readonly userApprovedCount: number;
+	readonly userDeniedCount: number;
+	readonly userConcordanceRate: ConfidenceInterval;
+	readonly safePromptEliminationCount: number;
+	readonly safePromptEliminationRate: ConfidenceInterval;
+	readonly humanFalseApprovalCount: number;
+	readonly humanFalseApprovalRate: ConfidenceInterval;
 }
 
 export interface BinaryConfusionMatrix {
@@ -59,6 +70,7 @@ export interface ModelEvaluationReport {
 	readonly errorCount: number;
 	readonly validEvaluationCount: number;
 	readonly concordanceRate: ConfidenceInterval;
+	readonly userChoiceEvaluation: UserChoiceEvaluationReport;
 	readonly confusionMatrix: BinaryConfusionMatrix;
 	readonly brierScore: number;
 	readonly reliabilityBins: readonly ReliabilityBin[];
@@ -114,6 +126,47 @@ export function calculatePercentile(
 	const valLower = sortedValues[lower] ?? 0;
 	const valUpper = sortedValues[upper] ?? 0;
 	return valLower * (1 - weight) + valUpper * weight;
+}
+
+export function reconcileUserOutcomes(
+	records: readonly (ShadowLogEvent | ToolExecutionLogEvent)[],
+): ShadowLogEvent[] {
+	const executedToolUseIds = new Set<string>();
+	const decisionEvents: ShadowLogEvent[] = [];
+
+	for (const record of records) {
+		if ("type" in record && record.type === "tool_execution") {
+			if (record.toolUseId) {
+				executedToolUseIds.add(record.toolUseId);
+			}
+		} else {
+			decisionEvents.push(record as ShadowLogEvent);
+		}
+	}
+
+	return decisionEvents.map((event) => {
+		if (
+			event.userOutcome !== undefined &&
+			event.userOutcome !== "unspecified"
+		) {
+			return event;
+		}
+
+		let userOutcome: "approved" | "rejected" | "skipped" | "unspecified" =
+			"unspecified";
+		if (event.toolUseId && executedToolUseIds.has(event.toolUseId)) {
+			userOutcome = "approved";
+		} else if (event.actualPermissionDecision === "ask") {
+			userOutcome = "rejected";
+		} else if (event.actualPermissionDecision === "allow") {
+			userOutcome = "approved";
+		}
+
+		return {
+			...event,
+			userOutcome,
+		};
+	});
 }
 
 export function evaluateModelRecords(
@@ -228,6 +281,59 @@ export function evaluateModelRecords(
 
 	const brierScore = validCount > 0 ? brierSum / validCount : 0;
 
+	// User Choice Evaluation (focusing on calls that prompted the user: actualPermissionDecision === "ask")
+	const promptEvents = validEvents.filter(
+		(e) => e.actualPermissionDecision === "ask",
+	);
+	const totalUserPrompts = promptEvents.length;
+	let userApprovedCount = 0;
+	let userDeniedCount = 0;
+	let userConcordantCount = 0;
+	let safePromptEliminationCount = 0;
+	let humanFalseApprovalCount = 0;
+
+	for (const e of promptEvents) {
+		const wasApprovedByUser = e.userOutcome === "approved";
+		if (wasApprovedByUser) {
+			userApprovedCount++;
+			if (e.shadowDecision === "approve") {
+				userConcordantCount++;
+				safePromptEliminationCount++;
+			}
+		} else {
+			userDeniedCount++;
+			if (e.shadowDecision !== "approve") {
+				userConcordantCount++;
+			} else {
+				humanFalseApprovalCount++;
+			}
+		}
+	}
+
+	const userConcordanceRate = calculateWilsonScoreInterval(
+		userConcordantCount,
+		totalUserPrompts,
+	);
+	const safePromptEliminationRate = calculateWilsonScoreInterval(
+		safePromptEliminationCount,
+		totalUserPrompts,
+	);
+	const humanFalseApprovalRate = calculateWilsonScoreInterval(
+		humanFalseApprovalCount,
+		totalUserPrompts,
+	);
+
+	const userChoiceEvaluation: UserChoiceEvaluationReport = {
+		totalUserPrompts,
+		userApprovedCount,
+		userDeniedCount,
+		userConcordanceRate,
+		safePromptEliminationCount,
+		safePromptEliminationRate,
+		humanFalseApprovalCount,
+		humanFalseApprovalRate,
+	};
+
 	const reliabilityBins: ReliabilityBin[] = binCounts.map(
 		(bin, index): ReliabilityBin => {
 			const lower = index / 10;
@@ -330,6 +436,7 @@ export function evaluateModelRecords(
 		errorCount,
 		validEvaluationCount: validCount,
 		concordanceRate,
+		userChoiceEvaluation,
 		confusionMatrix,
 		brierScore,
 		reliabilityBins,
@@ -341,8 +448,9 @@ export function evaluateModelRecords(
 
 export function generateExperimentSummaryReport(
 	logSource: string,
-	events: readonly ShadowLogEvent[],
+	records: readonly (ShadowLogEvent | ToolExecutionLogEvent)[],
 ): ExperimentSummaryReport {
+	const events = reconcileUserOutcomes(records);
 	const modelNames = Array.from(
 		new Set(events.map((e) => e.model || "unknown")),
 	);

@@ -9,6 +9,7 @@ import {
 import {
 	formatShadowLogEvent,
 	logShadowDecision,
+	logToolExecution,
 } from "../src/lib/decision-model/shadow-logger.js";
 import type {
 	OllayaSystemOneResponse,
@@ -169,6 +170,30 @@ test("formatShadowLogEvent and logShadowDecision write valid jsonl safely", asyn
 	const contents = await readFile(tempLog, "utf8");
 	assert.match(contents, /"shadowDecision":"deny"/);
 	assert.match(contents, /"toolName":"run_in_terminal"/);
+
+	await rm(tempLog, { force: true });
+});
+
+test("logToolExecution appends valid tool_execution records", async () => {
+	const tempLog = path.join(
+		process.cwd(),
+		"results",
+		"tool-decisions",
+		`test-exec-${Date.now()}.jsonl`,
+	);
+
+	const logged = await logToolExecution({
+		toolUseId: "call_exec_999",
+		toolName: "run_in_terminal",
+		sessionId: "sess_exec_888",
+		logFilePath: tempLog,
+	});
+	assert.equal(logged, true);
+
+	const contents = await readFile(tempLog, "utf8");
+	assert.match(contents, /"type":"tool_execution"/);
+	assert.match(contents, /"toolUseId":"call_exec_999"/);
+	assert.match(contents, /"status":"executed"/);
 
 	await rm(tempLog, { force: true });
 });

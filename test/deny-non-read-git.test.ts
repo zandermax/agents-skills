@@ -25,13 +25,14 @@ describe("deny-non-read-git hook", () => {
 			);
 		});
 
-		it("keeps one registered PreToolUse entrypoint per config", async () => {
+		it("keeps one registered PreToolUse and PostToolUse entrypoint per config", async () => {
 			for (const path of [
 				"../.github/hooks/deny-non-read-git.json",
 				"../.agents/hooks/deny-non-read-git.json",
 			]) {
 				const config = await import(path, { with: { type: "json" } });
 				assert.equal(config.default.hooks.PreToolUse.length, 1);
+				assert.equal(config.default.hooks.PostToolUse.length, 1);
 			}
 		});
 
@@ -99,6 +100,39 @@ describe("deny-non-read-git hook", () => {
 				assert.match(content, /"sessionId":"session_test_456"/);
 				await rm(testLog, { force: true });
 			}
+		});
+
+		it("post-tool-recorder records execution for tool_use_id", async () => {
+			const { spawnSync } = await import("node:child_process");
+			const { readFile, rm } = await import("node:fs/promises");
+			const testLog = path.join(
+				os.tmpdir(),
+				`post-tool-test-${Date.now()}.jsonl`,
+			);
+
+			const hookScript = path.resolve(".github/hooks/post-tool-recorder.js");
+			const stdinPayload = JSON.stringify({
+				hook_event_name: "PostToolUse",
+				tool_name: "run_in_terminal",
+				tool_use_id: "call_post_test_789",
+				session_id: "session_post_000",
+			});
+
+			const proc = spawnSync(process.execPath, [hookScript], {
+				input: stdinPayload,
+				encoding: "utf8",
+				env: { ...process.env, SHADOW_LOG_PATH: testLog },
+			});
+
+			assert.equal(proc.status, 0);
+			const stdoutData = JSON.parse(proc.stdout);
+			assert.equal(stdoutData.hookSpecificOutput?.hookEventName, "PostToolUse");
+
+			const content = await readFile(testLog, "utf8");
+			assert.match(content, /"type":"tool_execution"/);
+			assert.match(content, /"toolUseId":"call_post_test_789"/);
+			assert.match(content, /"status":"executed"/);
+			await rm(testLog, { force: true });
 		});
 	});
 

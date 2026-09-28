@@ -78,3 +78,30 @@ export async function logShadowDecision(
 		return false;
 	}
 }
+
+export async function logToolExecution(params: {
+	readonly toolUseId: string;
+	readonly toolName?: string | undefined;
+	readonly sessionId?: string | undefined;
+	readonly logFilePath?: string | undefined;
+}): Promise<boolean> {
+	try {
+		const targetPath = params.logFilePath ?? DEFAULT_SHADOW_LOG_PATH;
+		const event = {
+			type: "tool_execution" as const,
+			timestamp: new Date().toISOString(),
+			toolUseId: params.toolUseId,
+			toolName: params.toolName,
+			sessionId: params.sessionId,
+			status: "executed" as const,
+		};
+		const line = `${JSON.stringify(event)}\n`;
+
+		await mkdir(path.dirname(targetPath), { recursive: true });
+		await appendFile(targetPath, line, "utf8");
+		return true;
+	} catch {
+		// Non-blocking fail-safe: never throw or bubble error
+		return false;
+	}
+}

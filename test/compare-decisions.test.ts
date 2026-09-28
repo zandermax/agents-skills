@@ -7,8 +7,12 @@ import {
 	calculateWilsonScoreInterval,
 	evaluateModelRecords,
 	generateExperimentSummaryReport,
+	reconcileUserOutcomes,
 } from "../src/lib/decision-model/comparison.js";
-import type { ShadowLogEvent } from "../src/lib/decision-model/types.js";
+import type {
+	ShadowLogEvent,
+	ShadowLogRecord,
+} from "../src/lib/decision-model/types.js";
 
 const FIXTURE_PATH = path.join(
 	process.cwd(),
@@ -17,12 +21,16 @@ const FIXTURE_PATH = path.join(
 	"shadow-decisions-sample.jsonl",
 );
 
-function loadSampleEvents(): ShadowLogEvent[] {
+function loadSampleRecords(): ShadowLogRecord[] {
 	const raw = readFileSync(FIXTURE_PATH, "utf8");
 	return raw
 		.split("\n")
 		.filter((line) => line.trim().length > 0)
-		.map((line) => JSON.parse(line) as ShadowLogEvent);
+		.map((line) => JSON.parse(line) as ShadowLogRecord);
+}
+
+function loadSampleEvents(): ShadowLogEvent[] {
+	return reconcileUserOutcomes(loadSampleRecords());
 }
 
 test("calculateWilsonScoreInterval handles boundary cases and calculates intervals", () => {
@@ -79,9 +87,28 @@ test("evaluateModelRecords produces stratified metrics for winnow:e4b", () => {
 	assert.ok(report.latency.p50Ms > 0);
 	assert.equal(report.latency.p99Ms, undefined); // under 100 records
 
+	// User choice evaluation
+	assert.equal(report.userChoiceEvaluation.totalUserPrompts, 6);
+	assert.equal(report.userChoiceEvaluation.userApprovedCount, 3);
+	assert.equal(report.userChoiceEvaluation.userDeniedCount, 3);
+	assert.equal(report.userChoiceEvaluation.safePromptEliminationCount, 1);
+	assert.equal(report.userChoiceEvaluation.humanFalseApprovalCount, 0);
+
 	// Token comparison
 	assert.ok(report.tokenComparison.netTokensSaved > 0);
 	assert.ok(report.tokenComparison.tokenSavingsPercentage > 60);
+});
+
+test("reconcileUserOutcomes correlates PostToolUse executions to userOutcome approved", () => {
+	const records = loadSampleRecords();
+	const events = reconcileUserOutcomes(records);
+	assert.equal(events.length, 16);
+
+	const call07 = events.find((e) => e.toolUseId === "call_07");
+	assert.equal(call07?.userOutcome, "approved");
+
+	const call08 = events.find((e) => e.toolUseId === "call_08");
+	assert.equal(call08?.userOutcome, "rejected");
 });
 
 test("generateExperimentSummaryReport stratifies without pooling models", () => {

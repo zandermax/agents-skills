@@ -71,3 +71,14 @@ export interface ShadowLogEvent {
 		  }
 		| undefined;
 }
+
+export interface ToolExecutionLogEvent {
+	readonly type: "tool_execution";
+	readonly timestamp: string;
+	readonly toolUseId: string;
+	readonly toolName?: string | undefined;
+	readonly sessionId?: string | undefined;
+	readonly status: "executed";
+}
+
+export type ShadowLogRecord = ShadowLogEvent | ToolExecutionLogEvent;
