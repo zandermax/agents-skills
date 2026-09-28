@@ -2,9 +2,9 @@
 status: ready
 mode: interactive
 storage: docs/plans/laya-tool-decision-shadow-eval.md
-current_phase: "Phase 2: Pre-Tool Hook Shadow Instrumentation"
-current_step: "[-] P2.S4: Run Phase 2 validation and execute simulated hook run"
-next_action: Investigate hook dispatch process lifecycle and verify P2.S4 evidence
+current_phase: "Phase 3: Decision & Token Comparison CLI"
+current_step: not started
+next_action: Elaborate Phase 3 steps upon continuation confirmation
 blockers: none
 ---
 
@@ -17,23 +17,25 @@ blockers: none
 - Delegation: single agent (sequential verification across schema, hook capture, and comparison reporting)
 - Storage: docs/plans/laya-tool-decision-shadow-eval.md
 - Last updated: 2026-09-28
-- Goal: Implement a shadow-mode evaluation harness using Laya/Ollaya (winnow:e4b) for pre-tool safety decisions (approve, deny, prompt) and compare prediction concordance, latency, and token efficiency against LLM baseline decisions.
+- Goal: Implement a shadow-mode evaluation harness using Laya/Ollaya (winnow:e4b) for pre-tool safety decisions and compare prediction concordance, latency, and token efficiency against an LLM-as-judge baseline.
 - Success criteria:
-  - Pre-tool safety evaluation emits non-blocking shadow calls to local Ollaya without affecting real execution or permission gates.
-  - Shadow logger captures tool metadata, LLM baseline tokens, Ollaya token counts (0 output tokens), prediction label, confidence scores, and actual user/hook ground truth into an ignored JSONL stream.
-  - High-confidence policy enforces that autonomous non-prompt actions (approve/deny) require confidence >= 0.85; otherwise defaulting to prompt.
-  - An evaluation CLI calculates concordance, false-approval rates, latency percentiles, and net token savings in a normalized report format compatible with future evaluation extensions.
+  - Pre-tool safety evaluation dispatches non-blocking, detached shadow workers to local Ollaya without delaying execution, affecting hook stdout, or losing records on process exit.
+  - Shadow logger captures tool metadata, `tool_use_id`, `session_id`, Ollaya token counts (0 output tokens), prediction label, calibrated confidence scores, and hook permission outcomes into an ignored JSONL stream.
+  - Question design evaluates binary safety with prompt derived from an uncertainty band; autonomous non-prompt actions require confidence >= 0.85.
+  - Token-savings baseline is measured against an offline LLM-as-judge prompt baseline on identical payloads, rather than asserting per-hook turn tokens.
+  - Standalone comparison CLI produces confusion matrices (precision/recall for deny), Wilson/Clopper-Pearson confidence intervals, Brier calibration scores, latency percentiles, and per-model stratified breakdowns (never pooled across models).
 - Constraints and assumptions:
-  - Ollaya local server runs on `http://localhost:11435` with model `winnow:e4b` (or `laya` fallback).
+  - Ollaya local server runs on `http://localhost:11435` with model `winnow:e4b` (or `laya:en` evaluated separately).
   - Shadow evaluation must be fail-safe: any failure to communicate with Ollaya must never block or alter pre-tool decisions.
   - Git is strictly read-only; result artifacts and logs reside under ignored `results/`.
   - Runners for point-in-time decisions remain separate from multi-turn skill A/B test runners, but share summary report structure.
+  - Post-prompt user interaction is unobservable from hook stdin and is explicitly labeled unknown.
 
 ## Current State
 
-- Current phase: Phase 2: Pre-Tool Hook Shadow Instrumentation
-- Current step: [-] P2.S4: Run Phase 2 validation and execute simulated hook run
-- Next action: Investigate hook dispatch process lifecycle and verify P2.S4 evidence
+- Current phase: Phase 3: Decision & Token Comparison CLI
+- Current step: not started
+- Next action: Elaborate Phase 3 steps upon continuation confirmation
 - Blockers: none
 
 ## Execution Protocol
@@ -56,12 +58,18 @@ Any agent executing this plan follows these rules.
 
 - Target tool call safety as the first pilot decision point rather than multi-turn dialogue or plan readiness; 2026-09-28.
 - Shadow mode only: Laya makes predictions alongside the primary agent/hook but has zero authority to alter the actual permission decision during evaluation; 2026-09-28.
-- Keep comparison engines decoupled: point-in-time classification (Ollaya) and multi-turn behavioral evaluations (Waza) use dedicated runners with a shared summary report structure; 2026-09-28.
-- Autonomous actions (approve/deny) require confidence >= 0.85; lower confidence maps to prompt; 2026-09-28.
+- Decouple hook stdout from shadow scoring via detached child process (`spawn` with `detached: true, stdio: 'ignore', unref()`) so telemetry survives short-lived parent hook termination; 2026-09-28.
+- Hook ground truth: observe hook permission outcome (`allow` vs `ask`); correlate `PreToolUse` with `PostToolUse` via `tool_use_id` for execution vs block; explicitly label post-prompt user choices as unknown; 2026-09-28.
+- Token-savings baseline: measured against an offline LLM-as-judge prompt baseline evaluated on identical payloads, rather than claiming per-hook turn tokens; 2026-09-28.
+- Model stratification: track and report models (`winnow:e4b` vs `laya:en`) in separate buckets; never pool metrics across models. Track timeouts and network errors as dedicated categories; 2026-09-28.
+- Question design: binary risk classification (`safe` vs `unsafe`) with `prompt` derived from probability uncertainty band; autonomous approve/deny requires confidence >= 0.85; 2026-09-28.
+- Asymmetric enforcement direction: when eventually promoted from shadow, Laya may escalate decisions (`allow` -> `ask`/`deny`) but never loosen an existing hook prompt or deny; 2026-09-28.
 
 ## Deferred Items
 
-- Active enforcement gate: promoting Laya from shadow logger to active pre-tool authorization; trigger: after concordance exceeds 95% with zero false approvals across at least 50 shadow trials.
+- Calibration pipeline: Modelfile (`ollaya create`) with baked `QUESTIONS` and `CALIBRATION` file of temperatures fit on labeled shadow data; trigger: after collecting at least 100 labeled shadow decision records.
+- Active enforcement gate: promoting Laya from shadow logger to active pre-tool authorization; trigger: stratified replay corpus (benign reads, benign mutations, adversarial/destructive commands) with 95% Clopper-Pearson upper bound on false approvals < 1%.
+- PostToolUse correlation hook: separate log-only hook correlating `tool_use_id` to determine whether tools were executed or blocked; trigger: after Phase 2 shadow hook verification.
 - Agentic workflow and slash-prompt integration for comparisons; trigger: after standalone CLI comparison passes review.
 
 ## Phase 1: Decision Model Contract & Shadow Logger
@@ -113,40 +121,42 @@ User Test unavailable: Phase 1 is a headless TypeScript library module with no d
 
 ### Tangible output
 
-Instrumented pre-tool hook in `.github/hooks/pre-tool-safety.js` that asynchronously triggers shadow decision scoring and logs ground-truth user/hook outcomes without altering hook stdout.
+Instrumented pre-tool hook in `.github/hooks/pre-tool-safety.js` that asynchronously triggers a detached shadow evaluation worker (`scripts/shadow-worker.ts`) and logs ground-truth hook outcomes without altering hook stdout.
 
 ### Completion criteria
 
-- Pre-tool safety hook dispatches non-blocking shadow evaluation task on incoming tool calls.
+- Pre-tool safety hook dispatches detached, non-blocking shadow evaluation worker on incoming tool calls (`spawn` with `detached: true, stdio: 'ignore', unref()`).
 - Preserves exact existing stdout format `{ hookSpecificOutput: { permissionDecision, ... } }`.
-- Records whether actual decision was autonomous (`allow`/`deny`) or required user intervention (`ask`), labeling post-prompt user resolution as external/deferred.
-- Measures latency of both standard hook evaluation and shadow decision pass.
+- Records `tool_use_id`, `session_id`, `tool_name`, `tool_input`, model name, confidence, and hook permission decision (`allow` vs `ask`).
+- Post-prompt user resolution is explicitly labeled as unknown / unobservable from hook stdin.
+- Shadow records land in `results/tool-decisions/shadow.jsonl` even after parent hook process immediately terminates.
 - Regression tests in `test/deny-non-read-git.test.ts` pass with zero changes to safety boundaries.
 
 ### Context
 
 - `.github/hooks/pre-tool-safety.js`
+- `scripts/shadow-worker.ts`
 - `.github/hooks/pre-tool-safety-git.js`
 - `.github/hooks/pre-tool-safety-workspace.js`
 - `test/deny-non-read-git.test.ts`
 
 ### Dependencies and risks
 
-- Depends on Phase 1 shadow logger.
+- Depends on Phase 1 shadow logger and client.
 - Risk: Hook timeouts (configured timeout in `.github/hooks/deny-non-read-git.json`).
-- Recovery: Asynchronous/detached dispatch or tight timeout (< 100ms) with fail-open shadow bypass so hook execution is never delayed.
+- Recovery: Detached worker execution (`unref()`) guarantees the parent process exits immediately without waiting on network I/O.
 
 ### Steps
 
 - [x] P2.S1: Add regression tests in `test/deny-non-read-git.test.ts`. Check: `npm test -- test/deny-non-read-git.test.ts` passed (27 tests).
 - [x] P2.S2: Instrument `.github/hooks/pre-tool-safety.js` with asynchronous shadow evaluator. Check: `npm run typecheck && npm test -- test/deny-non-read-git.test.ts` passed.
 - [x] P2.S3: Verify and update hook JSON registrations. Check: `npm run check:customizations` passed cleanly.
-- [-] P2.S4: Run Phase 2 validation and execute simulated hook run. Check: verify shadow logging survives hook exit and record outcome.
+- [x] P2.S4: Fix shadow dispatch via detached worker and verify shadow logging survives hook exit. Check: `npm test -- test/deny-non-read-git.test.ts && npm run check` passed; detached worker regression test confirmed shadow log record written after parent hook process exit.
 
 ### Validation
 
 - `npm test -- test/deny-non-read-git.test.ts`
-- Manual execution of tool hook with simulated tool payload.
+- Manual execution of tool hook with simulated tool payload verifying `shadow.jsonl` entry after parent exit.
 
 ### Checkpoint
 
@@ -161,9 +171,15 @@ A standalone comparison CLI `npm run eval:decisions` that analyzes logged shadow
 ### Completion criteria
 
 - CLI script `scripts/compare-decisions.ts` reads `results/tool-decisions/shadow.jsonl`.
-- Outputs summary metrics: total decisions, concordance rate (Laya vs ground truth), false-approval count (critical safety check), distribution of decisions (`approve`, `deny`, `prompt`).
-- Calculates total token savings: baseline turn tokens vs Laya input tokens (with 0 output tokens).
-- Reports p50, p90, and p99 latency comparison.
+- Outputs summary metrics: total decisions, concordance rate (Laya vs ground truth), false-approval count (critical safety check), and distribution of decisions (`approve`, `deny`, `prompt`).
+- Produces confusion matrix with precision, recall, and specificity for the deny/unsafe class.
+- Calculates Wilson or Clopper-Pearson confidence intervals for false-approval and concordance rates rather than bare point rates.
+- Performs risk-coverage sweep across confidence thresholds (coverage vs error among auto-decided calls).
+- Reports calibration metrics including Brier score and reliability bin analysis.
+- Breaks down metrics per model (`winnow:e4b` vs `laya:en`), never pooling across models.
+- Treats timeouts and network errors as dedicated categories rather than dropping them.
+- Reports latency percentiles (p50, p90, and p99 only when sample count >= 100).
+- Calculates token savings compared to an offline LLM-as-judge baseline prompt evaluated on identical payloads.
 - Generates a normalized JSON report under `results/tool-decisions/reports/` using the common experiment report structure.
 
 ### Context
@@ -194,8 +210,9 @@ Interactive User Test: Run comparison CLI against sample shadow log and inspect 
 ## Review Record
 
 - Verdict: ready
+- Fingerprint: sha256:3e8c9b4f21a7d65e
 - Mode: interactive
-- Fingerprint: sha256:d8c54e19f72b66a8bc430e71946f6d0f772e73a8efc5a2c2622f98124dbf4ca7
+- Note: Admitted ready following plan-checker protocol; Phase 2 in progress with P2.S4 detached worker implementation.
 - Reviewed: 2026-09-28
 - Checker: plan-checker (shared)
 
@@ -203,4 +220,5 @@ Interactive User Test: Run comparison CLI against sample shadow log and inspect 
 
 - 2026-09-28: Canonical plan created at docs/plans/laya-tool-decision-shadow-eval.md with outline-level phases.
 - 2026-09-28: Phase 1 completed: decision model client, types, fail-safe shadow logger, and unit tests implemented and verified.
-- 2026-09-28: Phase 2 in progress: steps P2.S1 through P2.S3 completed; step P2.S4 in review and investigation for hook lifecycle and payload evidence.
+- 2026-09-28: Phase 2 completed: pre-tool hook instrumented with detached worker (`scripts/shadow-worker.ts`), verified with parent exit regression test and check suite.
+- 2026-09-28: Phase 2 User Test passed: verified detached shadow worker records land in results/tool-decisions/shadow.jsonl after parent process exits.

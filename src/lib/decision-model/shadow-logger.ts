@@ -13,13 +13,22 @@ export interface LogShadowDecisionParams {
 	readonly toolName: string;
 	readonly toolInput: unknown;
 	readonly result: ToolDecisionResult;
-	readonly actualPermissionDecision?: "allow" | "ask" | "deny";
-	readonly userOutcome?: "approved" | "rejected" | "skipped" | "unspecified";
-	readonly llmBaselineTokens?: {
-		readonly inputTokens?: number;
-		readonly outputTokens?: number;
-	};
-	readonly logFilePath?: string;
+	readonly toolUseId?: string | undefined;
+	readonly sessionId?: string | undefined;
+	readonly actualPermissionDecision?: "allow" | "ask" | "deny" | undefined;
+	readonly userOutcome?:
+		| "approved"
+		| "rejected"
+		| "skipped"
+		| "unspecified"
+		| undefined;
+	readonly llmBaselineTokens?:
+		| {
+				readonly inputTokens?: number | undefined;
+				readonly outputTokens?: number | undefined;
+		  }
+		| undefined;
+	readonly logFilePath?: string | undefined;
 }
 
 export function formatShadowLogEvent(
@@ -45,6 +54,8 @@ export function formatShadowLogEvent(
 		inputTokens: params.result.inputTokens,
 		outputTokens: params.result.outputTokens,
 		latencyMs: params.result.latencyMs,
+		toolUseId: params.toolUseId,
+		sessionId: params.sessionId,
 		actualPermissionDecision: params.actualPermissionDecision,
 		userOutcome: params.userOutcome,
 		llmBaselineTokens: params.llmBaselineTokens,

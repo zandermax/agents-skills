@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { spawn } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
 	checkGitHubMutationPolicy,
@@ -12,23 +14,35 @@ import {
 	checkWorkspacePolicy,
 } from "./pre-tool-safety-workspace.js";
 
-async function dispatchShadowEvaluation(toolName, toolInput, decisionResult) {
+function dispatchShadowWorker(data, decisionResult) {
 	try {
-		const { DecisionModelClient } =
-			await import("../../src/lib/decision-model/client.js");
-		const { logShadowDecision } =
-			await import("../../src/lib/decision-model/shadow-logger.js");
+		const currentDir = path.dirname(fileURLToPath(import.meta.url));
+		const workerScript = path.resolve(
+			currentDir,
+			"../../scripts/shadow-worker.ts",
+		);
 
-		const client = new DecisionModelClient({ timeoutMs: 2500 });
-		const shadowResult = await client.evaluateToolCall(toolName, toolInput);
-		if (shadowResult) {
-			await logShadowDecision({
-				toolName,
-				toolInput,
-				result: shadowResult,
-				actualPermissionDecision: decisionResult.decision,
-			});
+		if (!existsSync(workerScript)) {
+			return;
 		}
+
+		const payload = JSON.stringify({
+			toolName: data.tool_name,
+			toolInput: data.tool_input,
+			actualPermissionDecision: decisionResult.decision,
+			toolUseId: data.tool_use_id,
+			sessionId: data.session_id,
+		});
+
+		const child = spawn(
+			process.execPath,
+			["--import", "tsx", workerScript, payload],
+			{
+				detached: true,
+				stdio: "ignore",
+			},
+		);
+		child.unref();
 	} catch {
 		// Non-blocking fail-safe: never throw or alter hook decision
 	}
@@ -106,10 +120,7 @@ export function runCli() {
 	outputResult(result);
 
 	if (data.tool_name && data.tool_input) {
-		// Non-blocking background shadow evaluation
-		dispatchShadowEvaluation(data.tool_name, data.tool_input, result).catch(
-			() => {},
-		);
+		dispatchShadowWorker(data, result);
 	}
 }
 

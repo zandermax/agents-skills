@@ -55,6 +55,8 @@ export interface ShadowLogEvent {
 	readonly inputTokens: number;
 	readonly outputTokens: number;
 	readonly latencyMs: number;
+	readonly toolUseId?: string | undefined;
+	readonly sessionId?: string | undefined;
 	readonly actualPermissionDecision?: "allow" | "ask" | "deny" | undefined;
 	readonly userOutcome?:
 		| "approved"

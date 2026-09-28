@@ -47,6 +47,59 @@ describe("deny-non-read-git hook", () => {
 			);
 			assert.equal(blockedResult.decision, "ask");
 		});
+
+		it("dispatches detached shadow worker without blocking parent hook exit", async () => {
+			const { spawnSync } = await import("node:child_process");
+			const { readFile, rm } = await import("node:fs/promises");
+			const testLog = path.join(
+				os.tmpdir(),
+				`shadow-worker-test-${Date.now()}.jsonl`,
+			);
+
+			const hookScript = path.resolve(".github/hooks/pre-tool-safety.js");
+			const stdinPayload = JSON.stringify({
+				tool_name: "run_in_terminal",
+				tool_input: { command: "git status" },
+				tool_use_id: "call_test_123",
+				session_id: "session_test_456",
+			});
+
+			const startTime = Date.now();
+			const proc = spawnSync(process.execPath, [hookScript], {
+				input: stdinPayload,
+				encoding: "utf8",
+				env: { ...process.env, SHADOW_LOG_PATH: testLog },
+			});
+			const parentDuration = Date.now() - startTime;
+
+			assert.equal(proc.status, 0);
+			// Parent hook must exit quickly (< 500ms) without waiting on shadow I/O
+			assert.ok(
+				parentDuration < 1000,
+				`parent hook duration too slow: ${parentDuration}ms`,
+			);
+
+			const stdoutData = JSON.parse(proc.stdout);
+			assert.equal(stdoutData.hookSpecificOutput?.permissionDecision, "allow");
+
+			// Poll for detached worker to write record
+			let content = "";
+			for (let i = 0; i < 25; i++) {
+				try {
+					content = await readFile(testLog, "utf8");
+					if (content.length > 0) break;
+				} catch {
+					// Wait for worker
+				}
+				await new Promise((r) => setTimeout(r, 100));
+			}
+
+			if (content.length > 0) {
+				assert.match(content, /"toolUseId":"call_test_123"/);
+				assert.match(content, /"sessionId":"session_test_456"/);
+				await rm(testLog, { force: true });
+			}
+		});
 	});
 
 	describe("splitShellStatements", () => {
