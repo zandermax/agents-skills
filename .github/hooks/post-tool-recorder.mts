@@ -1,6 +1,16 @@
-import { recordToolExecution, runCli } from "./post-tool-recorder.js";
+import {
+	formatDateTimeSlug,
+	recordToolExecution,
+	resolveShadowLogPath,
+	runCli,
+} from "./post-tool-recorder.js";
 
-export { recordToolExecution, runCli };
+export {
+	formatDateTimeSlug,
+	recordToolExecution,
+	resolveShadowLogPath,
+	runCli,
+};
 
 if (process.argv[1]?.endsWith("post-tool-recorder.mts")) {
 	runCli();

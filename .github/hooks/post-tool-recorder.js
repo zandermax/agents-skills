@@ -1,8 +1,87 @@
 #!/usr/bin/env node
 
-import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
+import {
+	appendFileSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	writeFileSync,
+} from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+
+export function formatDateTimeSlug(date = new Date()) {
+	return date.toISOString().replace(/[:.]/g, "-");
+}
+
+export function resolveShadowLogPath(sessionId, baseDir) {
+	if (
+		process.env.SHADOW_LOG_PATH &&
+		process.env.SHADOW_LOG_PATH.trim().length > 0
+	) {
+		return process.env.SHADOW_LOG_PATH.trim();
+	}
+
+	const dir = baseDir || path.join(os.homedir(), ".decisions");
+	const sessionsDir = path.join(dir, ".sessions");
+
+	try {
+		mkdirSync(sessionsDir, { recursive: true });
+
+		if (sessionId && String(sessionId).trim().length > 0) {
+			const safeSessionId = String(sessionId)
+				.trim()
+				.replace(/[^a-zA-Z0-9_-]/g, "_");
+			const sessionFile = path.join(sessionsDir, `${safeSessionId}.txt`);
+
+			if (existsSync(sessionFile)) {
+				const existing = readFileSync(sessionFile, "utf8").trim();
+				if (existing.length > 0) {
+					return existing;
+				}
+			}
+
+			const timestamp = formatDateTimeSlug();
+			const newRunPath = path.join(dir, `${timestamp}_shadow.jsonl`);
+			try {
+				writeFileSync(sessionFile, `${newRunPath}\n`, {
+					encoding: "utf8",
+					flag: "wx",
+				});
+				return newRunPath;
+			} catch (writeErr) {
+				if (writeErr && writeErr.code === "EEXIST") {
+					const existing = readFileSync(sessionFile, "utf8").trim();
+					if (existing.length > 0) {
+						return existing;
+					}
+				}
+			}
+			return newRunPath;
+		}
+
+		const latestPointerFile = path.join(sessionsDir, "latest_session.txt");
+		if (existsSync(latestPointerFile)) {
+			const candidatePath = readFileSync(latestPointerFile, "utf8").trim();
+			if (candidatePath.length > 0 && existsSync(candidatePath)) {
+				return candidatePath;
+			}
+		}
+
+		const timestamp = formatDateTimeSlug();
+		const newRunPath = path.join(dir, `${timestamp}_shadow.jsonl`);
+		try {
+			writeFileSync(latestPointerFile, `${newRunPath}\n`, "utf8");
+		} catch {
+			// ignore fail-safe
+		}
+		return newRunPath;
+	} catch {
+		const timestamp = formatDateTimeSlug();
+		return path.join(dir, `${timestamp}_shadow.jsonl`);
+	}
+}
 
 export function recordToolExecution(data, customLogPath) {
 	if (!data || typeof data !== "object") {
@@ -14,10 +93,9 @@ export function recordToolExecution(data, customLogPath) {
 		return;
 	}
 
-	const logPath =
-		customLogPath ||
-		process.env.SHADOW_LOG_PATH ||
-		path.join(process.cwd(), "results", "tool-decisions", "shadow.jsonl");
+	const sessionId =
+		typeof data.session_id === "string" ? data.session_id : undefined;
+	const logPath = customLogPath || resolveShadowLogPath(sessionId);
 
 	const event = {
 		type: "tool_execution",

@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import {
+	archiveDecisionFiles,
+	getActiveDecisionFiles,
+} from "../scripts/compare-decisions.js";
+import {
 	calculatePercentile,
 	calculateWilsonScoreInterval,
 	evaluateModelRecords,
@@ -131,9 +135,11 @@ test("generateExperimentSummaryReport stratifies without pooling models", () => 
 	);
 });
 
-test("compare-decisions CLI --reset deletes the target fixture safely", async () => {
+test("compare-decisions CLI --reset archives the target fixture safely", async () => {
 	const { spawnSync } = await import("node:child_process");
-	const { copyFileSync, existsSync } = await import("node:fs");
+	const { copyFileSync, existsSync, readdirSync, rmSync } = await import(
+		"node:fs"
+	);
 	const tempLog = path.join(
 		process.cwd(),
 		"results",
@@ -152,6 +158,72 @@ test("compare-decisions CLI --reset deletes the target fixture safely", async ()
 	);
 
 	assert.equal(proc.status, 0);
-	assert.match(proc.stdout, /Reset complete/);
+	assert.match(proc.stdout, /Reset complete: archived/);
 	assert.equal(existsSync(tempLog), false);
+
+	// Confirm archived copy exists in archive subdirectory
+	const archiveBase = path.join(path.dirname(tempLog), "archive");
+	assert.ok(existsSync(archiveBase));
+	const archiveDirs = readdirSync(archiveBase);
+	assert.ok(archiveDirs.length > 0);
+	const foundArchivedFile = archiveDirs.some((d) =>
+		existsSync(path.join(archiveBase, d, path.basename(tempLog))),
+	);
+	assert.ok(foundArchivedFile);
+
+	// Clean up temp test archive
+	for (const d of archiveDirs) {
+		const targetArchived = path.join(archiveBase, d, path.basename(tempLog));
+		if (existsSync(targetArchived)) {
+			rmSync(path.join(archiveBase, d), { recursive: true, force: true });
+		}
+	}
+});
+
+test("getActiveDecisionFiles filters for jsonl and ignores subdirectories", async () => {
+	const { mkdtemp, mkdir, writeFile, rm } = await import("node:fs/promises");
+	const os = await import("node:os");
+	const tempDir = await mkdtemp(path.join(os.tmpdir(), "decisions-filter-"));
+
+	try {
+		await writeFile(
+			path.join(tempDir, "2026-09-28T10-00-00Z_shadow.jsonl"),
+			"{}\n",
+		);
+		await writeFile(
+			path.join(tempDir, "2026-09-28T11-00-00Z_shadow.jsonl"),
+			"{}\n",
+		);
+		await writeFile(path.join(tempDir, "not-a-log.txt"), "hello\n");
+		await mkdir(path.join(tempDir, "archive", "2026-09-27"), {
+			recursive: true,
+		});
+		await writeFile(
+			path.join(tempDir, "archive", "2026-09-27", "archived.jsonl"),
+			"{}\n",
+		);
+		await mkdir(path.join(tempDir, "reports"), { recursive: true });
+
+		const active = getActiveDecisionFiles(tempDir);
+		assert.equal(active.length, 2);
+		assert.match(active[0] ?? "", /2026-09-28T10-00-00Z_shadow\.jsonl$/);
+		assert.match(active[1] ?? "", /2026-09-28T11-00-00Z_shadow\.jsonl$/);
+
+		// Archive active files
+		const archiveBase = path.join(tempDir, "archive");
+		const { archiveDir, archivedFiles } = archiveDecisionFiles(
+			active,
+			archiveBase,
+			"2026-09-28T12-00-00Z",
+		);
+
+		assert.equal(archivedFiles.length, 2);
+		assert.match(archiveDir, /archive\/2026-09-28T12-00-00Z$/);
+
+		// No active files should remain
+		const remaining = getActiveDecisionFiles(tempDir);
+		assert.equal(remaining.length, 0);
+	} finally {
+		await rm(tempDir, { recursive: true, force: true });
+	}
 });

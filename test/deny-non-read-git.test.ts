@@ -134,6 +134,25 @@ describe("deny-non-read-git hook", () => {
 			assert.match(content, /"status":"executed"/);
 			await rm(testLog, { force: true });
 		});
+
+		it("post-tool-recorder resolveShadowLogPath resolves consistently per session", async () => {
+			const { resolveShadowLogPath } = await import(
+				"../.github/hooks/post-tool-recorder.js"
+			);
+			const { mkdtemp, rm } = await import("node:fs/promises");
+			const tempDir = await mkdtemp(
+				path.join(os.tmpdir(), "post-tool-session-"),
+			);
+
+			try {
+				const path1 = resolveShadowLogPath("session_alpha", tempDir);
+				assert.match(path1, /_shadow\.jsonl$/);
+				const path2 = resolveShadowLogPath("session_alpha", tempDir);
+				assert.equal(path1, path2);
+			} finally {
+				await rm(tempDir, { recursive: true, force: true });
+			}
+		});
 	});
 
 	describe("splitShellStatements", () => {

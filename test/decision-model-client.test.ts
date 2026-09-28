@@ -7,9 +7,11 @@ import {
 	DecisionModelClient,
 } from "../src/lib/decision-model/client.js";
 import {
+	formatDateTimeSlug,
 	formatShadowLogEvent,
 	logShadowDecision,
 	logToolExecution,
+	resolveShadowLogPath,
 } from "../src/lib/decision-model/shadow-logger.js";
 import type {
 	OllayaSystemOneResponse,
@@ -203,4 +205,60 @@ test("logToolExecution appends valid tool_execution records", async () => {
 	assert.match(contents, /"status":"executed"/);
 
 	await rm(tempLog, { force: true });
+});
+
+test("formatDateTimeSlug formats ISO datetime safely without colons", () => {
+	const fixedDate = new Date("2026-09-28T13:45:30.123Z");
+	const slug = formatDateTimeSlug(fixedDate);
+	assert.equal(slug, "2026-09-28T13-45-30-123Z");
+	assert.equal(slug.includes(":"), false);
+});
+
+test("resolveShadowLogPath maps session ID to consistent run file in target directory", async () => {
+	const { mkdtemp } = await import("node:fs/promises");
+	const os = await import("node:os");
+	const tempDir = await mkdtemp(path.join(os.tmpdir(), "decisions-test-"));
+
+	try {
+		const fixedDate = new Date("2026-09-28T12:00:00.000Z");
+		const path1 = resolveShadowLogPath("session-abc-123", {
+			baseDir: tempDir,
+			now: fixedDate,
+		});
+		assert.match(path1, /2026-09-28T12-00-00-000Z_shadow\.jsonl$/);
+
+		// Subsequent call for the same session ID returns the exact same file even with a later timestamp
+		const laterDate = new Date("2026-09-28T12:05:00.000Z");
+		const path2 = resolveShadowLogPath("session-abc-123", {
+			baseDir: tempDir,
+			now: laterDate,
+		});
+		assert.equal(path1, path2);
+
+		// Different session ID receives a different run file
+		const path3 = resolveShadowLogPath("session-xyz-789", {
+			baseDir: tempDir,
+			now: laterDate,
+		});
+		assert.notEqual(path1, path3);
+		assert.match(path3, /2026-09-28T12-05-00-000Z_shadow\.jsonl$/);
+	} finally {
+		await rm(tempDir, { recursive: true, force: true });
+	}
+});
+
+test("resolveShadowLogPath prioritizes SHADOW_LOG_PATH environment variable", async () => {
+	const customOverride = "/custom/override/shadow.jsonl";
+	const previous = process.env.SHADOW_LOG_PATH;
+	try {
+		process.env.SHADOW_LOG_PATH = customOverride;
+		const resolved = resolveShadowLogPath("some-session");
+		assert.equal(resolved, customOverride);
+	} finally {
+		if (previous !== undefined) {
+			process.env.SHADOW_LOG_PATH = previous;
+		} else {
+			delete process.env.SHADOW_LOG_PATH;
+		}
+	}
 });
