@@ -1,10 +1,10 @@
 ---
-status: ready
+status: completed
 mode: interactive
-storage: docs/plans/laya-tool-decision-shadow-eval.md
-current_phase: "Phase 3: Decision & Token Comparison CLI"
+canonical_location: docs/plans/archive/laya-tool-decision-shadow-eval.md
+current_phase: completed
 current_step: completed
-next_action: Run User Test checkpoint for comparison CLI and confirm final completion
+next_action: none
 blockers: none
 ---
 
@@ -12,10 +12,10 @@ blockers: none
 
 ## Plan Metadata
 
-- Status: ready
+- Status: completed
 - Mode: interactive
 - Delegation: single agent (sequential verification across schema, hook capture, and comparison reporting)
-- Storage: docs/plans/laya-tool-decision-shadow-eval.md
+- Canonical location: docs/plans/archive/laya-tool-decision-shadow-eval.md
 - Last updated: 2026-09-28
 - Goal: Implement a shadow-mode evaluation harness using Laya/Ollaya (winnow:e4b) for pre-tool safety decisions and compare prediction concordance, latency, and token efficiency against an LLM-as-judge baseline.
 - Success criteria:
@@ -33,9 +33,9 @@ blockers: none
 
 ## Current State
 
-- Current phase: Phase 3: Decision & Token Comparison CLI
+- Current phase: completed
 - Current step: completed
-- Next action: Run User Test checkpoint for comparison CLI and confirm final completion
+- Next action: none
 - Blockers: none
 
 ## Execution Protocol
@@ -247,3 +247,4 @@ Interactive User Test: Run comparison CLI against sample shadow log and inspect 
 - 2026-09-28: Phase 2 completed: pre-tool hook instrumented with detached worker (`scripts/shadow-worker.ts`), verified with parent exit regression test and check suite.
 - 2026-09-28: Phase 2 User Test passed: verified detached shadow worker records land in results/tool-decisions/shadow.jsonl after parent process exits.
 - 2026-09-28: Phase 3 completed: comparison library, test fixture, unit tests, and CLI runner implemented and verified with full check suite (255 tests).
+- 2026-09-28: Phase 3 User Test passed: verified comparison CLI report and calibration metrics. Plan completed and archived.
