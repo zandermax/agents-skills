@@ -34,6 +34,19 @@ describe("deny-non-read-git hook", () => {
 				assert.equal(config.default.hooks.PreToolUse.length, 1);
 			}
 		});
+
+		it("pre-tool-safety evaluateToolUse preserves decision contract with shadow options", () => {
+			const safeInput = { command: "git status" };
+			const result = evaluatePreToolSafety("run_in_terminal", safeInput);
+			assert.equal(result.decision, "allow");
+
+			const mutatingInput = { command: "git commit -m 'feat'" };
+			const blockedResult = evaluatePreToolSafety(
+				"run_in_terminal",
+				mutatingInput,
+			);
+			assert.equal(blockedResult.decision, "ask");
+		});
 	});
 
 	describe("splitShellStatements", () => {

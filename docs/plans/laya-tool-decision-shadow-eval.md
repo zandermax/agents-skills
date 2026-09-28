@@ -3,8 +3,8 @@ status: ready
 mode: interactive
 storage: docs/plans/laya-tool-decision-shadow-eval.md
 current_phase: "Phase 2: Pre-Tool Hook Shadow Instrumentation"
-current_step: not started
-next_action: Elaborate Phase 2 steps and present for user confirmation
+current_step: "[-] P2.S4: Run Phase 2 validation and execute simulated hook run"
+next_action: Investigate hook dispatch process lifecycle and verify P2.S4 evidence
 blockers: none
 ---
 
@@ -32,8 +32,8 @@ blockers: none
 ## Current State
 
 - Current phase: Phase 2: Pre-Tool Hook Shadow Instrumentation
-- Current step: not started
-- Next action: Elaborate Phase 2 steps and present for user confirmation
+- Current step: [-] P2.S4: Run Phase 2 validation and execute simulated hook run
+- Next action: Investigate hook dispatch process lifecycle and verify P2.S4 evidence
 - Blockers: none
 
 ## Execution Protocol
@@ -138,7 +138,10 @@ Instrumented pre-tool hook in `.github/hooks/pre-tool-safety.js` that asynchrono
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+- [x] P2.S1: Add regression tests in `test/deny-non-read-git.test.ts`. Check: `npm test -- test/deny-non-read-git.test.ts` passed (27 tests).
+- [x] P2.S2: Instrument `.github/hooks/pre-tool-safety.js` with asynchronous shadow evaluator. Check: `npm run typecheck && npm test -- test/deny-non-read-git.test.ts` passed.
+- [x] P2.S3: Verify and update hook JSON registrations. Check: `npm run check:customizations` passed cleanly.
+- [-] P2.S4: Run Phase 2 validation and execute simulated hook run. Check: verify shadow logging survives hook exit and record outcome.
 
 ### Validation
 
@@ -200,3 +203,4 @@ Interactive User Test: Run comparison CLI against sample shadow log and inspect 
 
 - 2026-09-28: Canonical plan created at docs/plans/laya-tool-decision-shadow-eval.md with outline-level phases.
 - 2026-09-28: Phase 1 completed: decision model client, types, fail-safe shadow logger, and unit tests implemented and verified.
+- 2026-09-28: Phase 2 in progress: steps P2.S1 through P2.S3 completed; step P2.S4 in review and investigation for hook lifecycle and payload evidence.

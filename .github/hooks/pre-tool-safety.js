@@ -12,6 +12,28 @@ import {
 	checkWorkspacePolicy,
 } from "./pre-tool-safety-workspace.js";
 
+async function dispatchShadowEvaluation(toolName, toolInput, decisionResult) {
+	try {
+		const { DecisionModelClient } =
+			await import("../../src/lib/decision-model/client.js");
+		const { logShadowDecision } =
+			await import("../../src/lib/decision-model/shadow-logger.js");
+
+		const client = new DecisionModelClient({ timeoutMs: 2500 });
+		const shadowResult = await client.evaluateToolCall(toolName, toolInput);
+		if (shadowResult) {
+			await logShadowDecision({
+				toolName,
+				toolInput,
+				result: shadowResult,
+				actualPermissionDecision: decisionResult.decision,
+			});
+		}
+	} catch {
+		// Non-blocking fail-safe: never throw or alter hook decision
+	}
+}
+
 export function evaluateToolUse(toolName, toolInput) {
 	if (!toolName || !toolInput) {
 		return { decision: "allow" };
@@ -80,7 +102,15 @@ export function runCli() {
 		return;
 	}
 
-	outputResult(evaluateToolUse(data.tool_name, data.tool_input));
+	const result = evaluateToolUse(data.tool_name, data.tool_input);
+	outputResult(result);
+
+	if (data.tool_name && data.tool_input) {
+		// Non-blocking background shadow evaluation
+		dispatchShadowEvaluation(data.tool_name, data.tool_input, result).catch(
+			() => {},
+		);
+	}
 }
 
 const isMainModule =
