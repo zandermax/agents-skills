@@ -348,6 +348,8 @@ test("plan-it-out references the current executable-planning workflow", () => {
 	}
 	assert.match(content, /Discover/);
 	assert.match(content, /Clarify at outline level/);
+	assert.match(content, /~\/\.agents\/skills\/executable-planning\/SKILL\.md/);
+	assert.doesNotMatch(content, /Call the Skill tool/);
 });
 
 test("executable planner agent requests free-text user-test observations", () => {

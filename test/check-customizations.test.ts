@@ -75,11 +75,11 @@ const EXECUTABLE_PLANNER_BODY = [
 	"",
 	"You are a planner. You create and maintain executable plans; you never implement project work.",
 	"",
-	"**Required skill:** load `executable-planning` before doing anything else, along with any other skill this agent names. Use the Skill tool when available; otherwise read `.agents/skills/executable-planning/SKILL.md` with the `read` tool. A search for deferred tools returning no matches does not mean `read` is unavailable. If the skill file cannot be read, report the failure and stop rather than reconstructing it from memory.",
+	"**Required skill:** load `executable-planning` before doing anything else, along with any other skill this agent names. Use a skill-loading tool when one exists. Otherwise read `.agents/skills/executable-planning/SKILL.md`, then `~/.agents/skills/executable-planning/SKILL.md`. A missing skill-loading tool is not a load failure. If neither file can be read, report that and stop rather than reconstructing the skill from memory.",
 	"",
 	"The skill describes behavior through abstract mechanisms. In this harness they map to:",
 	"",
-	"- **Question mechanism**: `vscode_askQuestions`. Batch all unresolved questions into one call, with predefined options where answers are fixed. For a User Test, request a free-text observation and must not suggest an expected result. Whenever completing an operation or step while the plan is not yet complete, prompt the user for any test actions, or note \"No checkpoint tests yet.\" when there is nothing yet to test. Don't call it once autopilot execution has begun. Autopilot mode is active only when the user's request includes the word 'autopilot'. In autopilot mode, resolve any open question by choosing the most conservative option, record it under an 'Assumptions' heading in the plan, and continue; never block waiting for input.",
+	"- **Question mechanism**: `vscode/askQuestions`. Batch all unresolved questions into one call, with predefined options where answers are fixed. For a User Test, request a free-text observation and must not suggest an expected result. Whenever completing an operation or step while the plan is not yet complete, prompt the user for any test actions, or note \"No checkpoint tests yet.\" when there is nothing yet to test. Don't call it once autopilot execution has begun. Autopilot mode is active only when the user's request includes the word 'autopilot'. In autopilot mode, resolve any open question by choosing the most conservative option, record it under an 'Assumptions' heading in the plan, and continue; never block waiting for input.",
 	"- **Plan-review mechanism**: the `handoffs` frontmatter starts implementation through VS Code's native UI. This declarative adapter mapping applies after each response; the skill decides when a plan is ready. Other harnesses use their equivalent transition mechanism or present the plan in conversation.",
 	"- **Subagent mechanism**: the `agent` tool may use **Plan Scout** for read-only discovery and **Plan Checker** for the independent shared `plan-checker` risk review. Plan Scout is not a readiness reviewer. If Plan Checker is not exposed by the harness, execute the shared `plan-checker` protocol in the current context as `hone-the-plan` requires; do not report the checker as unavailable solely because no separately named reviewer tool is listed.",
 	"- **Persistence**: `edit`, only for files under `docs/plans/` (including `docs/plans/archive/`). Never edit any other path. In session-only mode, write no files at all.",
@@ -307,6 +307,60 @@ test("checkCustomizations accepts valid repository fixtures", async () => {
 
 	try {
 		await checkCustomizations(repoRoot);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
+test("checkCustomizations requires read on every declared agent tool list", async () => {
+	const repoRoot = await createFixtureRepo();
+	const agentDirectory = path.join(repoRoot, ".github", "agents");
+	await mkdir(agentDirectory, { recursive: true });
+	await writeFile(
+		path.join(agentDirectory, "no-read.agent.md"),
+		[
+			"---",
+			"name: No Read",
+			"description: Reviews plans.",
+			"tools: [edit]",
+			"---",
+			"",
+		].join("\n"),
+		"utf8",
+	);
+
+	try {
+		await assert.rejects(
+			checkCustomizations(repoRoot),
+			/tools must include read; hooks stop specific reads/,
+		);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
+test("checkCustomizations requires askQuestions on every declared agent tool list", async () => {
+	const repoRoot = await createFixtureRepo();
+	const agentDirectory = path.join(repoRoot, ".github", "agents");
+	await mkdir(agentDirectory, { recursive: true });
+	await writeFile(
+		path.join(agentDirectory, "no-questions.agent.md"),
+		[
+			"---",
+			"name: No Questions",
+			"description: Reviews plans.",
+			"tools: [read]",
+			"---",
+			"",
+		].join("\n"),
+		"utf8",
+	);
+
+	try {
+		await assert.rejects(
+			checkCustomizations(repoRoot),
+			/tools must include vscode\/askQuestions/,
+		);
 	} finally {
 		await rm(repoRoot, { recursive: true, force: true });
 	}
@@ -837,7 +891,7 @@ test("plan scout is a non-invocable read-only investigator", async () => {
 	assert.deepEqual(parsed.attributes, {
 		name: "Plan Scout",
 		description: "Answers narrow codebase questions for the Executable Planner",
-		tools: ["search", "read", "web"],
+		tools: ["vscode/askQuestions", "search", "read", "web"],
 		agents: [],
 		"user-invocable": false,
 		"disable-model-invocation": false,

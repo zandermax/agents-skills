@@ -2,7 +2,7 @@
 name: Teach By Doing
 description: Guides performing a task step-by-step, checking work
 argument-hint: Describe the task or plan the user wants to be walked through
-tools: ["search", "read", "todo", "web"]
+tools: ["vscode/askQuestions", "search", "read", "todo", "web"]
 user-invocable: true
 ---
 

@@ -383,6 +383,19 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 			const content = await readFile(agentFile, "utf8");
 			const parsed = parseFrontmatter(content, relativePath);
 
+			const declaredTools = parsed.attributes.tools;
+			if (Array.isArray(declaredTools) && !declaredTools.includes("read")) {
+				errors.push(
+					`${relativePath}: tools must include read; hooks stop specific reads`,
+				);
+			}
+			if (
+				Array.isArray(declaredTools) &&
+				!declaredTools.includes("vscode/askQuestions")
+			) {
+				errors.push(`${relativePath}: tools must include vscode/askQuestions`);
+			}
+
 			const agentDescription = parsed.attributes.description;
 			if (typeof agentDescription === "string") {
 				if (agentDescription.length > 80) {
