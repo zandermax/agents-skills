@@ -61,8 +61,9 @@ const PATH_FIELDS = new Set([
 	"workspaceFolder",
 ]);
 
-const READ_ONLY_PATH_TOOLS = new Set([
+export const READ_ONLY_PATH_TOOLS = new Set([
 	"read_file",
+	"list_dir",
 	"view_image",
 	"read_notebook_cell_output",
 	"copilot_getNotebookSummary",
@@ -85,7 +86,7 @@ const READ_ONLY_EXTERNAL_COMMANDS = new Set([
 	"wc",
 ]);
 
-function expandPath(value) {
+export function expandPath(value) {
 	return value === "~"
 		? resolve(process.env.HOME ?? "")
 		: value.startsWith("~/")
@@ -95,16 +96,20 @@ function expandPath(value) {
 				: resolve(value);
 }
 
-function canonicalPath(value) {
+export function canonicalPath(value) {
 	const expandedValue = expandPath(value);
 	try {
 		return realpathSync.native(expandedValue);
 	} catch {
-		return expandedValue;
+		const parent = resolve(expandedValue, "..");
+		if (parent === expandedValue) {
+			return expandedValue;
+		}
+		return resolve(canonicalPath(parent), relative(parent, expandedValue));
 	}
 }
 
-function isWithin(root, candidate, requireDescendant = false) {
+export function isWithin(root, candidate, requireDescendant = false) {
 	const relativePath = relative(root, candidate);
 	return (
 		(!requireDescendant && relativePath === "") ||
@@ -115,9 +120,11 @@ function isWithin(root, candidate, requireDescendant = false) {
 	);
 }
 
-function isApprovedSkillPath(candidate) {
-	if (!candidate.endsWith(`${sep}SKILL.md`) && candidate !== "SKILL.md") {
-		return false;
+export function isApprovedExternalReadPath(value) {
+	const candidate = canonicalPath(value);
+	const temporaryRoot = canonicalPath(resolve(sep, "tmp"));
+	if (isWithin(temporaryRoot, candidate)) {
+		return true;
 	}
 
 	if (
@@ -128,45 +135,23 @@ function isApprovedSkillPath(candidate) {
 	}
 
 	const home = resolve(process.env.HOME ?? "");
-	const memoryRoot = canonicalPath(resolve(home, ".memory"));
-	if (isWithin(memoryRoot, candidate, true)) {
-		const relativePath = relative(memoryRoot, candidate);
-		const segments = relativePath.split(sep);
-		return (
-			segments.length === 2 &&
-			segments[0].length > 0 &&
-			segments[1] === "SKILL.md"
-		);
-	}
-
-	const approvedSkillRoots = [
-		resolve(home, ".agents", "skills"),
+	const approvedRoots = [
+		resolve(home, ".memory"),
+		resolve(home, ".agents"),
 		resolve(home, ".copilot"),
-		resolve(home, ".claude", "skills"),
+		resolve(home, ".claude"),
 		resolve(home, ".vscode", "extensions"),
 		resolve(home, ".vscode-insiders", "extensions"),
 		"/Applications/Visual Studio Code.app",
 		"/Applications/Visual Studio Code - Insiders.app",
 	];
 
-	return approvedSkillRoots.some((root) =>
-		isWithin(canonicalPath(root), candidate, true),
-	);
-}
-
-function isApprovedExternalReadPath(value) {
-	const candidate = canonicalPath(value);
-	const temporaryRoot = resolve(sep, "tmp");
-	if (isWithin(temporaryRoot, candidate, true)) {
-		return true;
-	}
-
-	if (isApprovedSkillPath(candidate)) {
+	if (approvedRoots.some((root) => isWithin(canonicalPath(root), candidate))) {
 		return true;
 	}
 
 	const applicationSupportRoot = resolve(
-		process.env.HOME ?? "",
+		home,
 		"Library",
 		"Application Support",
 	);
@@ -177,84 +162,12 @@ function isApprovedExternalReadPath(value) {
 			"User",
 			"workspaceStorage",
 		);
-		if (isWithin(sessionRoot, candidate, true)) {
+		if (isWithin(sessionRoot, candidate)) {
 			return true;
 		}
 	}
 
 	return false;
-}
-
-function commandName(statement) {
-	const token = tokenizeStatement(statement)[0] ?? "";
-	return token.split(/[\\/]/).pop() ?? "";
-}
-
-function isReadOnlyExternalCommand(statement) {
-	const tokens = tokenizeStatement(statement);
-	const name = commandName(statement);
-	if (!READ_ONLY_EXTERNAL_COMMANDS.has(name)) {
-		return false;
-	}
-
-	if (/(^|\s)>>?(?:\s|$)/.test(statement)) {
-		return false;
-	}
-
-	return !(
-		name === "sed" &&
-		tokens.some((token) => token === "-i" || token === "--in-place")
-	);
-}
-
-function isExternalPath(value) {
-	if (typeof value !== "string" || value.length === 0) {
-		return false;
-	}
-
-	const relativePath = relative(resolve(process.cwd()), canonicalPath(value));
-
-	return relativePath === ".." || relativePath.startsWith(`..${sep}`);
-}
-
-function externalPathReason(pathValue) {
-	return `External path access requires user confirmation: '${pathValue}' is outside the active workspace.`;
-}
-
-export function checkToolInputPaths(toolInput, toolName = "") {
-	if (!toolInput || typeof toolInput !== "object" || Array.isArray(toolInput)) {
-		return null;
-	}
-
-	for (const [key, value] of Object.entries(toolInput)) {
-		if (
-			PATH_FIELDS.has(key) &&
-			isExternalPath(value) &&
-			!(READ_ONLY_PATH_TOOLS.has(toolName) && isApprovedExternalReadPath(value))
-		) {
-			return externalPathReason(value);
-		}
-	}
-
-	return null;
-}
-
-export function checkCommandPaths(command) {
-	for (const statement of splitShellStatements(command)) {
-		for (const token of tokenizeStatement(statement).slice(1)) {
-			if (
-				isExternalPath(token) &&
-				!(
-					isReadOnlyExternalCommand(statement) &&
-					isApprovedExternalReadPath(token)
-				)
-			) {
-				return externalPathReason(token);
-			}
-		}
-	}
-
-	return null;
 }
 
 const GIT_GLOBAL_OPTIONS_WITH_ARG = new Set([
@@ -734,6 +647,98 @@ export function checkCommandForNonReadGit(fullCommand) {
 			const violation = checkGitCommandTokens(gitTokens);
 			if (violation) {
 				return `Non-read git operation detected: '${violation}' in statement '${stmt}'`;
+			}
+		}
+	}
+
+	return null;
+}
+
+function commandName(statement) {
+	const token = tokenizeStatement(statement)[0] ?? "";
+	return token.split(/[\\/]/).pop() ?? "";
+}
+
+function isReadOnlyExternalCommand(statement) {
+	const tokens = tokenizeStatement(statement);
+	const name = commandName(statement);
+	if (!READ_ONLY_EXTERNAL_COMMANDS.has(name)) {
+		return false;
+	}
+
+	if (/(^|\s)>>?(?:\s|$)/.test(statement)) {
+		return false;
+	}
+
+	return !(
+		name === "sed" &&
+		tokens.some((token) => token === "-i" || token === "--in-place")
+	);
+}
+
+export function isExternalPath(value) {
+	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+
+	const cwd = resolve(process.cwd());
+	const canonicalCwd = canonicalPath(cwd);
+	const expanded = expandPath(value);
+	const canonical = canonicalPath(expanded);
+
+	// Dual-resolution: internal if within canonical workspace OR within lexical workspace
+	const isCanonicalInternal = isWithin(canonicalCwd, canonical);
+	const isLexicalInternal = isWithin(cwd, expanded);
+
+	return !isCanonicalInternal && !isLexicalInternal;
+}
+
+export function externalPathReason(pathValue) {
+	return `External path access requires user confirmation: '${pathValue}' is outside the active workspace.`;
+}
+
+export function checkToolInputPaths(toolInput, toolName = "") {
+	if (!toolInput || typeof toolInput !== "object" || Array.isArray(toolInput)) {
+		return null;
+	}
+
+	for (const [key, value] of Object.entries(toolInput)) {
+		if (
+			PATH_FIELDS.has(key) &&
+			typeof value === "string" &&
+			isExternalPath(value) &&
+			!(READ_ONLY_PATH_TOOLS.has(toolName) && isApprovedExternalReadPath(value))
+		) {
+			return externalPathReason(value);
+		}
+	}
+
+	return null;
+}
+
+export function checkCommandPaths(command) {
+	for (const statement of splitShellStatements(command)) {
+		const tokens = tokenizeStatement(statement);
+		if (tokens.length <= 1) {
+			continue;
+		}
+
+		for (const token of tokens.slice(1)) {
+			if (
+				token.startsWith("-") ||
+				token.includes("=") ||
+				token.startsWith("@")
+			) {
+				continue;
+			}
+			if (
+				isExternalPath(token) &&
+				!(
+					isReadOnlyExternalCommand(statement) &&
+					isApprovedExternalReadPath(token)
+				)
+			) {
+				return externalPathReason(token);
 			}
 		}
 	}

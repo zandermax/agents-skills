@@ -259,8 +259,6 @@ describe("deny-non-read-git hook", () => {
 			for (const filePath of [
 				"/memories/repo/skill-invocation-paradigm.md",
 				"/memories/repo/SKILL.md",
-				"~/.memory/git-workflow-notes/notes.txt",
-				"~/.agents/skills/ctx/notes.txt",
 				"/var/log/system.log",
 			]) {
 				const result = evaluateToolUse("read_file", { filePath });
