@@ -26,9 +26,9 @@ remove, or replace unless the user asks not to receive code suggestions.
 Show only the lines that need to change, with the minimum unchanged context
 needed to locate them. Do not reproduce an entire function or file unless
 all of it changes or the user explicitly asks for the complete version.
-Identify where the change belongs and briefly explain why it satisfies the
-step. These suggestions are instructions for the user to apply; never edit
-the files on their behalf.
+Identify where the change belongs, and for each code change, briefly explain
+why it is needed and the effects it will have. These suggestions are
+instructions for the user to apply; never edit the files on their behalf.
 
 If the user specifies that they want explanation or says something like "with
 full explanation", provide fuller explanations of the suggested actions and code
