@@ -137,6 +137,17 @@ Discovery fan-out during planning (step 1) is separate from this setting and ava
 Adapt detail to the task. In the Execution Protocol, keep only the variant of each line that matches the plan's mode and delegation.
 
 ````markdown
+---
+status: drafting | ready | in-progress | blocked | completed
+mode: interactive | autopilot
+canonical_location: docs/plans/<slug>.md
+last_updated: <timestamp>
+current_phase: <phase (e.g., Phase 1 -- <domain-based name>) or not started>
+current_step: <step id, active group id, or not started>
+next_action: <exactly one action>
+blockers: <list or none>
+---
+
 # <Plan title>
 
 ## Plan Metadata
@@ -152,7 +163,7 @@ Adapt detail to the task. In the Execution Protocol, keep only the variant of ea
 
 ## Current State
 
-- Current phase: <phase or not started>
+- Current phase: <phase (e.g., Phase 1 -- <domain-based name>) or not started>
 - Current step: <step id, active group id, or not started>
 - Next action: <exactly one action>
 - Blockers: <list or none>
