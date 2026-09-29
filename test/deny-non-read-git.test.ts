@@ -420,9 +420,10 @@ describe("deny-non-read-git hook", () => {
 					"allow",
 				);
 
-				// In-workspace symlink pointing to an external file
+				// In-workspace symlink pointing to an external file (placed in node_modules to avoid race conditions with workspace copying tests)
 				const inWorkspaceLink = path.join(
 					process.cwd(),
+					"node_modules",
 					"test-workspace-link-tmp.md",
 				);
 				const externalTarget = path.join(
