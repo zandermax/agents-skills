@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
+import { relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const STRICTLY_READ_ONLY_SUBCOMMANDS = new Set([
@@ -51,6 +52,119 @@ const MUTATING_GITHUB_TOOLS = new Set([
 	"mcp_github_mcp_se_delete_file",
 	"mcp_github_mcp_se_push_files",
 ]);
+
+const PATH_FIELDS = new Set([
+	"path",
+	"filePath",
+	"directory",
+	"cwd",
+	"workspaceFolder",
+]);
+
+export const READ_ONLY_PATH_TOOLS = new Set([
+	"read_file",
+	"list_dir",
+	"view_image",
+	"read_notebook_cell_output",
+	"copilot_getNotebookSummary",
+]);
+
+const READ_ONLY_EXTERNAL_COMMANDS = new Set([
+	"awk",
+	"cat",
+	"cut",
+	"file",
+	"grep",
+	"head",
+	"ls",
+	"sed",
+	"sort",
+	"stat",
+	"tail",
+	"tr",
+	"uniq",
+	"wc",
+]);
+
+export function expandPath(value) {
+	return value === "~"
+		? resolve(process.env.HOME ?? "")
+		: value.startsWith("~/")
+			? resolve(process.env.HOME ?? "", value.slice(2))
+			: value.startsWith("$HOME/") || value.startsWith("${HOME}/")
+				? resolve(process.env.HOME ?? "", value.replace(/^\$\{?HOME\}?\//, ""))
+				: resolve(value);
+}
+
+export function canonicalPath(value) {
+	const expandedValue = expandPath(value);
+	try {
+		return realpathSync.native(expandedValue);
+	} catch {
+		return expandedValue;
+	}
+}
+
+export function isWithin(root, candidate, requireDescendant = false) {
+	const relativePath = relative(root, candidate);
+	return (
+		(!requireDescendant && relativePath === "") ||
+		(relativePath !== "" &&
+			relativePath !== ".." &&
+			!relativePath.startsWith(`..${sep}`) &&
+			!relativePath.startsWith(sep))
+	);
+}
+
+export function isApprovedExternalReadPath(value) {
+	const candidate = canonicalPath(value);
+	const temporaryRoot = resolve(sep, "tmp");
+	if (isWithin(temporaryRoot, candidate)) {
+		return true;
+	}
+
+	if (
+		candidate.startsWith(`${sep}memories${sep}`) ||
+		candidate === `${sep}memories`
+	) {
+		return false;
+	}
+
+	const home = resolve(process.env.HOME ?? "");
+	const approvedRoots = [
+		resolve(home, ".memory"),
+		resolve(home, ".agents"),
+		resolve(home, ".copilot"),
+		resolve(home, ".claude"),
+		resolve(home, ".vscode", "extensions"),
+		resolve(home, ".vscode-insiders", "extensions"),
+		"/Applications/Visual Studio Code.app",
+		"/Applications/Visual Studio Code - Insiders.app",
+	];
+
+	if (approvedRoots.some((root) => isWithin(canonicalPath(root), candidate))) {
+		return true;
+	}
+
+	const applicationSupportRoot = resolve(
+		home,
+		"Library",
+		"Application Support",
+	);
+	for (const codeVariant of ["Code", "Code - Insiders"]) {
+		const sessionRoot = resolve(
+			applicationSupportRoot,
+			codeVariant,
+			"User",
+			"workspaceStorage",
+		);
+		if (isWithin(sessionRoot, candidate)) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 const GIT_GLOBAL_OPTIONS_WITH_ARG = new Set([
 	"-C",
@@ -536,6 +650,98 @@ export function checkCommandForNonReadGit(fullCommand) {
 	return null;
 }
 
+function commandName(statement) {
+	const token = tokenizeStatement(statement)[0] ?? "";
+	return token.split(/[\\/]/).pop() ?? "";
+}
+
+function isReadOnlyExternalCommand(statement) {
+	const tokens = tokenizeStatement(statement);
+	const name = commandName(statement);
+	if (!READ_ONLY_EXTERNAL_COMMANDS.has(name)) {
+		return false;
+	}
+
+	if (/(^|\s)>>?(?:\s|$)/.test(statement)) {
+		return false;
+	}
+
+	return !(
+		name === "sed" &&
+		tokens.some((token) => token === "-i" || token === "--in-place")
+	);
+}
+
+export function isExternalPath(value) {
+	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+
+	const cwd = resolve(process.cwd());
+	const canonicalCwd = canonicalPath(cwd);
+	const expanded = expandPath(value);
+	const canonical = canonicalPath(expanded);
+
+	// Dual-resolution: internal if within canonical workspace OR within lexical workspace
+	const isCanonicalInternal = isWithin(canonicalCwd, canonical);
+	const isLexicalInternal = isWithin(cwd, expanded);
+
+	return !isCanonicalInternal && !isLexicalInternal;
+}
+
+export function externalPathReason(pathValue) {
+	return `External path access requires user confirmation: '${pathValue}' is outside the active workspace.`;
+}
+
+export function checkToolInputPaths(toolInput, toolName = "") {
+	if (!toolInput || typeof toolInput !== "object" || Array.isArray(toolInput)) {
+		return null;
+	}
+
+	for (const [key, value] of Object.entries(toolInput)) {
+		if (
+			PATH_FIELDS.has(key) &&
+			typeof value === "string" &&
+			isExternalPath(value) &&
+			!(READ_ONLY_PATH_TOOLS.has(toolName) && isApprovedExternalReadPath(value))
+		) {
+			return externalPathReason(value);
+		}
+	}
+
+	return null;
+}
+
+export function checkCommandPaths(command) {
+	for (const statement of splitShellStatements(command)) {
+		const tokens = tokenizeStatement(statement);
+		if (tokens.length <= 1) {
+			continue;
+		}
+
+		for (const token of tokens.slice(1)) {
+			if (
+				token.startsWith("-") ||
+				token.includes("=") ||
+				token.startsWith("@")
+			) {
+				continue;
+			}
+			if (
+				isExternalPath(token) &&
+				!(
+					isReadOnlyExternalCommand(statement) &&
+					isApprovedExternalReadPath(token)
+				)
+			) {
+				return externalPathReason(token);
+			}
+		}
+	}
+
+	return null;
+}
+
 export function evaluateToolUse(toolName, toolInput) {
 	if (!toolName || !toolInput) {
 		return { decision: "allow" };
@@ -546,6 +752,11 @@ export function evaluateToolUse(toolName, toolInput) {
 			decision: "ask",
 			reason: `Mutating Git/GitHub tool '${toolName}' requires user confirmation.`,
 		};
+	}
+
+	const pathViolation = checkToolInputPaths(toolInput, toolName);
+	if (pathViolation) {
+		return { decision: "ask", reason: pathViolation };
 	}
 
 	const commandsToCheck = [];
@@ -564,6 +775,11 @@ export function evaluateToolUse(toolName, toolInput) {
 	}
 
 	for (const cmd of commandsToCheck) {
+		const externalPathViolation = checkCommandPaths(cmd);
+		if (externalPathViolation) {
+			return { decision: "ask", reason: externalPathViolation };
+		}
+
 		const violation = checkCommandForNonReadGit(cmd);
 		if (violation) {
 			return {
