@@ -157,10 +157,32 @@ export function buildArtifactLinks(
 ): readonly ResolvedLink[] {
 	const links: ResolvedLink[] = [];
 	for (const target of request.targets) {
-		for (const artifact of request.artifacts) {
-			if (artifact.collection !== target.collection) {
+		const targetArtifacts = request.artifacts.filter(
+			(artifact) => artifact.collection === target.collection,
+		);
+		if (targetArtifacts.length === 0) {
+			continue;
+		}
+		if (target.linkMode === "directory") {
+			const firstArtifact = targetArtifacts[0];
+			const sourcePath =
+				target.sourceDirectory ??
+				(firstArtifact !== undefined
+					? path.dirname(firstArtifact.sourcePath)
+					: "");
+			if (sourcePath.length === 0) {
 				continue;
 			}
+			links.push(
+				Object.freeze({
+					kind: "directory",
+					sourcePath,
+					destinationPath: target.directory,
+				}),
+			);
+			continue;
+		}
+		for (const artifact of targetArtifacts) {
 			links.push(
 				Object.freeze({
 					kind: artifact.entryKind,

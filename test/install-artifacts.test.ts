@@ -106,6 +106,43 @@ test("buildArtifactLinks maps artifacts only to targets in their collection", as
 	}
 });
 
+test("buildArtifactLinks creates a single directory link for directory linkMode targets", async () => {
+	const fixture = await createFixture("build-artifact-directory-links");
+	try {
+		const req: ArtifactRequest = {
+			listOnly: false,
+			artifacts: [
+				{
+					kind: "agent",
+					id: "copilot:planner",
+					name: "planner",
+					collection: "copilot",
+					sourcePath: fixture.sources.agent,
+					destinationName: "planner.agent.md",
+					entryKind: "file",
+				},
+			],
+			targets: [
+				{
+					collection: "copilot",
+					directory: path.join(fixture.root, "agents"),
+					linkMode: "directory",
+					sourceDirectory: path.dirname(fixture.sources.agent),
+				},
+			],
+		};
+		assert.deepEqual(buildArtifactLinks(req), [
+			{
+				kind: "directory",
+				sourcePath: path.dirname(fixture.sources.agent),
+				destinationPath: path.join(fixture.root, "agents"),
+			},
+		]);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
 test("installArtifacts creates file and directory links and is idempotent", async () => {
 	const fixture = await createFixture("install-artifacts-create");
 	try {
@@ -129,6 +166,19 @@ test("installArtifacts creates file and directory links and is idempotent", asyn
 			second.existing,
 			links.map((link) => link.destinationPath),
 		);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("installArtifacts removes legacy links passed in legacyDestinationPaths", async () => {
+	const fixture = await createFixture("install-artifacts-legacy");
+	const legacyLink = path.join(fixture.root, "legacy-link");
+	try {
+		await symlink(fixture.sources.skill, legacyLink, "dir");
+		const result = await installArtifacts([], [legacyLink]);
+		assert.deepEqual(result.removed, [legacyLink]);
+		await assert.rejects(lstat(legacyLink), /ENOENT/);
 	} finally {
 		await fixture.cleanup();
 	}

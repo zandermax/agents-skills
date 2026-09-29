@@ -13,6 +13,7 @@ import {
 	buildArtifactLinks,
 	installArtifacts,
 } from "../src/lib/install-artifacts.js";
+import { promptClientSelection } from "../src/lib/interactive-menu.js";
 
 function printResult(
 	result: Awaited<ReturnType<typeof installArtifacts>>,
@@ -46,15 +47,42 @@ export async function runCli(arguments_: readonly string[]): Promise<void> {
 		return;
 	}
 
-	const request = resolveArtifactRequest(parsed, catalog, artifacts, {
+	let parsedClients = parsed.clients;
+	const isInteractive =
+		!parsed.listOnly &&
+		parsed.clients.length === 0 &&
+		!parsed.hasDestinationArguments &&
+		parsed.skills.length === 0 &&
+		parsed.agents.length === 0 &&
+		parsed.hooks.length === 0 &&
+		Boolean(process.stdin.isTTY && process.stdout.isTTY);
+
+	if (isInteractive) {
+		parsedClients = await promptClientSelection();
+	}
+
+	const effectiveParsed =
+		parsedClients.length > 0 && parsed.clients.length === 0
+			? {
+					...parsed,
+					clients: parsedClients,
+					hasDestinationArguments: true,
+				}
+			: parsed;
+
+	const request = resolveArtifactRequest(effectiveParsed, catalog, artifacts, {
 		cwd: process.cwd(),
 		homeDirectory:
 			process.env.AGENTS_SKILLS_HOME ??
 			process.env.EXECUTABLE_PLANNING_HOME ??
 			os.homedir(),
+		repoRoot,
 	});
 	const legacyMemoryLinks = request.targets
-		.filter((target) => target.collection === "skills")
+		.filter(
+			(target) =>
+				target.collection === "skills" && target.linkMode !== "directory",
+		)
 		.map((target) => path.join(target.directory, "memory"));
 	printResult(
 		await installArtifacts(buildArtifactLinks(request), legacyMemoryLinks),
