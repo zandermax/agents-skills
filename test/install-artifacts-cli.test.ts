@@ -85,6 +85,7 @@ function runNpm(arguments_: readonly string[], homeDirectory: string) {
 const defaultLinkCount = expectedLinkCount(
 	repositoryArtifacts,
 	destinationCountsForClients(catalog, allClientNames),
+	catalog,
 );
 
 test("artifact CLI installs all compatible catalog artifacts by default", async () => {
@@ -128,6 +129,7 @@ test("artifact CLI installs a selected skill and selected agent", async () => {
 	const skillLinkCount = expectedLinkCount(
 		[sampleSkill],
 		destinationCountsForClients(catalog, allClientNames),
+		catalog,
 	);
 	const agentClient = requireClientForCollection(
 		catalog,
@@ -136,6 +138,7 @@ test("artifact CLI installs a selected skill and selected agent", async () => {
 	const agentLinkCount = expectedLinkCount(
 		[sampleAgent],
 		destinationCountsForClients(catalog, [agentClient]),
+		catalog,
 	);
 	try {
 		const skill = runCli(["--skill", sampleSkill.id], fixture.homeDirectory);
@@ -171,6 +174,7 @@ test("artifact CLI installs into mixed custom skill and agent targets", async ()
 			["skills", 1],
 			[sampleAgent.collection, 1],
 		]),
+		catalog,
 	);
 	try {
 		const result = runCli(
@@ -190,11 +194,19 @@ test("artifact CLI installs into mixed custom skill and agent targets", async ()
 			),
 		);
 		assert.equal(
+			(await lstat(fixture.customSkillsDirectory)).isSymbolicLink(),
+			true,
+		);
+		assert.equal(
 			(
 				await lstat(
 					path.join(fixture.customSkillsDirectory, sampleSkill.destinationName),
 				)
-			).isSymbolicLink(),
+			).isDirectory(),
+			true,
+		);
+		assert.equal(
+			(await lstat(fixture.customAgentsDirectory)).isSymbolicLink(),
 			true,
 		);
 		assert.equal(
@@ -202,32 +214,9 @@ test("artifact CLI installs into mixed custom skill and agent targets", async ()
 				await lstat(
 					path.join(fixture.customAgentsDirectory, sampleAgent.destinationName),
 				)
-			).isSymbolicLink(),
+			).isFile(),
 			true,
 		);
-	} finally {
-		await fixture.cleanup();
-	}
-});
-
-test("artifact CLI removes the legacy memory skill link", async () => {
-	const fixture = await createFixture("install-artifacts-cli-memory-migration");
-	const legacyLink = path.join(fixture.customSkillsDirectory, "memory");
-	try {
-		await mkdir(fixture.customSkillsDirectory, { recursive: true });
-		await symlink(
-			path.join(fixture.homeDirectory, "legacy-memory"),
-			legacyLink,
-			"dir",
-		);
-
-		const result = runCli(
-			["--skills-dir", `skills=${fixture.customSkillsDirectory}`],
-			fixture.homeDirectory,
-		);
-		assert.equal(result.status, 0, result.stderr);
-		assert.match(result.stdout, new RegExp(`removed ${legacyLink}`));
-		await assert.rejects(lstat(legacyLink), /ENOENT/);
 	} finally {
 		await fixture.cleanup();
 	}

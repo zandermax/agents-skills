@@ -119,6 +119,40 @@ test("resolveArtifactRequest defaults to all artifacts and catalog targets", () 
 	]);
 });
 
+test("resolveArtifactRequest supports directory linkMode collections", () => {
+	const directoryCatalog: InstallCatalog = {
+		collections: [
+			{
+				name: "copilot",
+				artifactKind: "agent",
+				source: ".github/agents",
+				linkMode: "directory",
+				entry: { kind: "file", suffix: ".agent.md" },
+			},
+		],
+		clients: [
+			{
+				name: "copilot",
+				destinations: [{ collection: "copilot", path: "~/.copilot/agents" }],
+			},
+		],
+	};
+	const result = resolveArtifactRequest(
+		parsed(),
+		directoryCatalog,
+		artifacts.filter((a) => a.collection === "copilot"),
+		{ cwd: "/current", homeDirectory: "/home/tester", repoRoot: "/repo" },
+	);
+	assert.deepEqual(result.targets, [
+		{
+			collection: "copilot",
+			directory: "/home/tester/.copilot/agents",
+			linkMode: "directory",
+			sourceDirectory: "/repo/.github/agents",
+		},
+	]);
+});
+
 test("resolveArtifactRequest custom destinations suppress catalog defaults", () => {
 	const result = resolveArtifactRequest(
 		parsed({

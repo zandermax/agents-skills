@@ -101,12 +101,26 @@ export function destinationCountsForClients(
 export function expectedLinkCount(
 	artifacts: readonly Artifact[],
 	destinationCounts: ReadonlyMap<string, number>,
+	catalog?: InstallCatalog,
 ): number {
-	return artifacts.reduce(
-		(total, artifact) =>
-			total + (destinationCounts.get(artifact.collection) ?? 0),
-		0,
+	const directoryCollections = new Set(
+		catalog?.collections
+			.filter((c) => c.linkMode === "directory")
+			.map((c) => c.name) ?? [],
 	);
+	let total = 0;
+	const countedDirectoryCollections = new Set<string>();
+	for (const artifact of artifacts) {
+		if (directoryCollections.has(artifact.collection)) {
+			if (!countedDirectoryCollections.has(artifact.collection)) {
+				countedDirectoryCollections.add(artifact.collection);
+				total += destinationCounts.get(artifact.collection) ?? 0;
+			}
+			continue;
+		}
+		total += destinationCounts.get(artifact.collection) ?? 0;
+	}
+	return total;
 }
 
 export function clientsForCollection(

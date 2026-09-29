@@ -4,6 +4,7 @@ import path from "node:path";
 
 export type ArtifactKind = "skill" | "agent" | "hook";
 export type ValidationStrategy = "copilot-agent";
+export type CollectionLinkMode = "entries" | "directory";
 
 export type CollectionEntryRule =
 	| { readonly kind: "directory"; readonly marker: string }
@@ -15,6 +16,7 @@ export interface ArtifactCollection {
 	readonly source: string;
 	readonly entry: CollectionEntryRule;
 	readonly validation?: ValidationStrategy;
+	readonly linkMode?: CollectionLinkMode;
 }
 
 export interface ClientDestination {
@@ -39,6 +41,7 @@ const COLLECTION_KEYS = new Set([
 	"source",
 	"entry",
 	"validation",
+	"linkMode",
 ]);
 const DIRECTORY_ENTRY_KEYS = new Set(["kind", "marker"]);
 const FILE_ENTRY_KEYS = new Set(["kind", "suffix"]);
@@ -219,6 +222,15 @@ function parseCollection(
 		}
 	}
 
+	let linkMode: CollectionLinkMode | undefined;
+	if (value.linkMode !== undefined) {
+		if (value.linkMode === "entries" || value.linkMode === "directory") {
+			linkMode = value.linkMode;
+		} else {
+			errors.push(`${label}.linkMode: must be one of: entries, directory`);
+		}
+	}
+
 	if (
 		name === undefined ||
 		artifactKind === undefined ||
@@ -228,10 +240,14 @@ function parseCollection(
 		return undefined;
 	}
 
-	const collection: ArtifactCollection =
-		validation === undefined
-			? { name, artifactKind, source, entry }
-			: { name, artifactKind, source, entry, validation };
+	const collection: ArtifactCollection = {
+		name,
+		artifactKind,
+		source,
+		entry,
+		...(validation !== undefined ? { validation } : {}),
+		...(linkMode !== undefined ? { linkMode } : {}),
+	};
 	return Object.freeze(collection);
 }
 

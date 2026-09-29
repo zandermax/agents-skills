@@ -2,11 +2,17 @@ import path from "node:path";
 
 import type { ParsedArtifactArguments } from "./artifact-arguments.js";
 import type { Artifact } from "./artifacts.js";
-import type { InstallCatalog } from "./catalog.js";
+import type {
+	ArtifactCollection,
+	CollectionLinkMode,
+	InstallCatalog,
+} from "./catalog.js";
 
 export interface InstallTarget {
 	readonly collection: string;
 	readonly directory: string;
+	readonly linkMode?: CollectionLinkMode;
+	readonly sourceDirectory?: string;
 }
 
 export interface ArtifactRequest {
@@ -18,6 +24,7 @@ export interface ArtifactRequest {
 export interface ResolveArtifactRequestOptions {
 	readonly cwd: string;
 	readonly homeDirectory: string;
+	readonly repoRoot?: string;
 }
 
 function resolveDirectory(
@@ -35,18 +42,37 @@ function resolveDirectory(
 function addTarget(
 	targets: InstallTarget[],
 	collectionsByDirectory: Map<string, string>,
-	collection: string,
+	collection: ArtifactCollection | undefined,
+	collectionName: string,
 	directory: string,
+	options: ResolveArtifactRequestOptions,
 ): void {
 	const existingCollection = collectionsByDirectory.get(directory);
-	if (existingCollection !== undefined && existingCollection !== collection) {
+	if (
+		existingCollection !== undefined &&
+		existingCollection !== collectionName
+	) {
 		throw new Error(
-			`conflicting collections mapped to ${directory}: ${existingCollection}, ${collection}`,
+			`conflicting collections mapped to ${directory}: ${existingCollection}, ${collectionName}`,
 		);
 	}
 	if (existingCollection === undefined) {
-		collectionsByDirectory.set(directory, collection);
-		targets.push(Object.freeze({ collection, directory }));
+		collectionsByDirectory.set(directory, collectionName);
+		if (collection?.linkMode === "directory") {
+			targets.push(
+				Object.freeze({
+					collection: collectionName,
+					directory,
+					linkMode: "directory",
+					sourceDirectory: path.resolve(
+						options.repoRoot ?? options.cwd,
+						collection.source,
+					),
+				}),
+			);
+		} else {
+			targets.push(Object.freeze({ collection: collectionName, directory }));
+		}
 	}
 }
 
@@ -133,21 +159,27 @@ export function resolveArtifactRequest(
 			throw new Error(`unknown client: ${clientName}`);
 		}
 		for (const destination of client.destinations) {
+			const collection = collectionsByName.get(destination.collection);
 			addTarget(
 				targets,
 				collectionsByDirectory,
+				collection,
 				destination.collection,
 				resolveDirectory(destination.path, options),
+				options,
 			);
 		}
 	}
 
 	for (const directory of parsed.skillDirectories) {
+		const collection = collectionsByName.get("skills");
 		addTarget(
 			targets,
 			collectionsByDirectory,
+			collection,
 			"skills",
 			resolveDirectory(directory, options),
+			options,
 		);
 	}
 	for (const agentDirectory of parsed.agentDirectories) {
@@ -158,16 +190,21 @@ export function resolveArtifactRequest(
 		addTarget(
 			targets,
 			collectionsByDirectory,
+			collection,
 			collection.name,
 			resolveDirectory(agentDirectory.directory, options),
+			options,
 		);
 	}
 	for (const directory of parsed.hookDirectories ?? []) {
+		const collection = collectionsByName.get("hooks");
 		addTarget(
 			targets,
 			collectionsByDirectory,
+			collection,
 			"hooks",
 			resolveDirectory(directory, options),
+			options,
 		);
 	}
 
