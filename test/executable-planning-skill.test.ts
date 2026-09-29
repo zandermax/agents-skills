@@ -252,6 +252,10 @@ test("repo-backed plans require lifecycle frontmatter on creation and updates", 
 		rendered,
 		/When creating or modifying a plan, preserve the frontmatter delimiters/,
 	);
+	assert.match(
+		rendered,
+		/current_phase: <phase \(e\.g\., Phase 1 -- <domain-based name>\) or not started>/,
+	);
 });
 
 test("commit suggestions are interactive-only and use a code block", async () => {
