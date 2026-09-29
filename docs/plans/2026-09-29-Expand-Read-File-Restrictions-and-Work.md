@@ -36,9 +36,9 @@ blockers: none
 
 ## Current State
 
-- Current phase: Phase 2: Hook Safety Tests & Verification
+- Current phase: Phase 3: Agent Guidelines and Documentation Consistency
 - Current step: not started
-- Next action: Elaborate Phase 2 steps and add test cases in `test/deny-non-read-git.test.ts`
+- Next action: Elaborate Phase 3 steps and update instruction files
 - Blockers: none
 
 ## Execution Protocol
@@ -141,7 +141,10 @@ Updated test suite in [test/deny-non-read-git.test.ts](test/deny-non-read-git.te
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+- [x] P2.S1: Add test cases in `test/deny-non-read-git.test.ts` verifying `list_dir` on workspace paths and approved external roots returns `allow`, while unapproved external paths return `ask`; check: `npx tsx --test --test-name-pattern="list_dir" test/deny-non-read-git.test.ts` (passed).
+- [x] P2.S2: Add test cases in `test/deny-non-read-git.test.ts` verifying `read_file` on approved roots (`~/.copilot`, `~/.agents`, `~/.claude`, `~/.memory`, VS Code extensions) returns `allow`, and arbitrary external paths return `ask`; check: `npx tsx --test --test-name-pattern="approved roots" test/deny-non-read-git.test.ts` (passed).
+- [x] P2.S3: Add test cases in `test/deny-non-read-git.test.ts` verifying symlink-aware dual-resolution workspace inspection for aliases and in-workspace symlinks; check: `npx tsx --test --test-name-pattern="symlink" test/deny-non-read-git.test.ts` (passed).
+- [x] P2.S4: Run the full `test/deny-non-read-git.test.ts` test suite; check: `npx tsx --test test/deny-non-read-git.test.ts` (passed, 18/18 tests pass).
 
 ### Validation
 

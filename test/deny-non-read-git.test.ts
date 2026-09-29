@@ -339,5 +339,111 @@ describe("deny-non-read-git hook", () => {
 			});
 			assert.equal(result.decision, "ask");
 		});
+
+		it("evaluates list_dir on workspace and external paths", () => {
+			assert.equal(
+				evaluateToolUse("list_dir", { path: process.cwd() }).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("list_dir", {
+					path: path.join(process.cwd(), "docs"),
+				}).decision,
+				"allow",
+			);
+			const extResult = evaluateToolUse("list_dir", {
+				path: "/var/log",
+			});
+			assert.equal(extResult.decision, "ask");
+			assert.match(extResult.reason ?? "", /outside the active workspace/);
+		});
+
+		it("allows read_file and list_dir on approved roots, denies unapproved", () => {
+			const home = process.env.HOME ?? "";
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: path.join(home, ".copilot", "agents", "foo.agent.md"),
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: path.join(home, ".agents", "skills", "test", "helper.txt"),
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("list_dir", {
+					path: path.join(home, ".claude", "skills"),
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: path.join(home, ".memory", "test-notes", "SKILL.md"),
+				}).decision,
+				"allow",
+			);
+			// Arbitrary system files require confirmation
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "/var/log/system.log",
+				}).decision,
+				"ask",
+			);
+			// Root-level /memories require confirmation
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "/memories/repo/test.md",
+				}).decision,
+				"ask",
+			);
+		});
+
+		it("handles symlink workspace inspection for aliases and in-workspace symlinks", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "symlink-workspace-test-"),
+			);
+
+			try {
+				const workspaceTarget = path.join(process.cwd(), "AGENTS.md");
+				const aliasWorkspaceDir = path.join(
+					temporaryDirectory,
+					"workspace-alias",
+				);
+				// Symlink pointing to the current workspace root (simulates ~/.copilot/repos <-> ~/repos/work)
+				await symlink(process.cwd(), aliasWorkspaceDir);
+
+				const inAliasFile = path.join(aliasWorkspaceDir, "AGENTS.md");
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: inAliasFile }).decision,
+					"allow",
+				);
+
+				// In-workspace symlink pointing to an external file
+				const inWorkspaceLink = path.join(
+					process.cwd(),
+					"test-workspace-link-tmp.md",
+				);
+				const externalTarget = path.join(
+					temporaryDirectory,
+					"external-target.txt",
+				);
+				await symlink(externalTarget, inWorkspaceLink);
+
+				try {
+					// Lexical check permits the in-workspace symlink path
+					assert.equal(
+						evaluateToolUse("read_file", { filePath: inWorkspaceLink })
+							.decision,
+						"allow",
+					);
+				} finally {
+					await rm(inWorkspaceLink, { force: true });
+				}
+			} finally {
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
+		});
 	});
 });
