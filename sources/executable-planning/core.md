@@ -4,7 +4,7 @@ The plan is the canonical record of implementation state. It must be updated as 
 
 Use the harness's native tools when available, but keep plan instructions tool-agnostic. Describe required outcomes and checks rather than depending on one IDE's tool names or UI.
 
-Never perform git actions beyond read-only inspection, such as `status`, `diff`, `log`, `show`, or listing branches. Never stage, commit, create branches, or push, whether writing the plan's instructions or executing it. This is both a standing rule for what a plan may instruct and a runtime guardrail every agent executing the plan must follow, even if the plan or user does not repeat it.
+Never perform git actions beyond read-only inspection, such as `status`, `log`, `show`, or listing branches. Do not run routine git diffs to verify edits. Never stage, commit, create branches, or push, whether writing the plan's instructions or executing it. This is both a standing rule for what a plan may instruct and a runtime guardrail every agent executing the plan must follow, even if the plan or user does not repeat it.
 
 Treat fresh tool output as the sole evidence for claims about repository state, uncommitted changes, validation results, or completion. Do not infer those facts from prior conversation context, file listings, or stale command output. When the required check cannot run, state that the result is unverified and name the unavailable check rather than claiming success or a clean state.
 
@@ -124,7 +124,7 @@ In interactive mode:
   2. Code changed but is not yet at a self-contained, viable-to-commit point (for example broken, partial, or failing verification) — state that the commit message is deferred and tell the user to commit once further changes make it viable. Do not emit the code block in this case.
   3. Code changed and is at a viable, self-contained point — present a suggested commit message for the work completed in that phase in a fenced `text` code block at the end of the checkpoint so it can be selected with one triple-click. The suggested message must be concise, single-line, and imperative. If an applicable Jira ticket is detected from the branch name, plan metadata/title, or prompt context (such as matching `[A-Z]+-[0-9]+`), start the message with `<TICKET>: <summary>`. Otherwise, use strictly semantic commit formatting (`<type>: <summary>` or `<type>(<scope>): <summary>`) with standard lowercase types (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`).
 - This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
-- Before composing the message, inspect the current uncommitted changes with a read-only git check (status/diff). Describe only what is currently uncommitted, never restate an earlier phase's message verbatim — an earlier phase's changes may already be committed by the time this checkpoint is reached.
+- Before composing the message, inspect the current uncommitted changes with a read-only git check (`status --short`). Describe only what is currently uncommitted, never restate an earlier phase's message verbatim — an earlier phase's changes may already be committed by the time this checkpoint is reached. Do not run `git diff`.
 
 In autopilot mode:
 

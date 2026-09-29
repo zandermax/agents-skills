@@ -101,7 +101,11 @@ export function canonicalPath(value) {
 	try {
 		return realpathSync.native(expandedValue);
 	} catch {
-		return expandedValue;
+		const parent = resolve(expandedValue, "..");
+		if (parent === expandedValue) {
+			return expandedValue;
+		}
+		return resolve(canonicalPath(parent), relative(parent, expandedValue));
 	}
 }
 

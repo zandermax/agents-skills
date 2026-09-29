@@ -1,5 +1,4 @@
 import {
-	READ_ONLY_PATH_TOOLS,
 	canonicalPath,
 	checkCommandForNonReadGit,
 	checkCommandPaths,
@@ -10,13 +9,13 @@ import {
 	isApprovedExternalReadPath,
 	isExternalPath,
 	isWithin,
+	READ_ONLY_PATH_TOOLS,
 	runCli,
 	splitShellStatements,
 	tokenizeStatement,
 } from "./deny-non-read-git.js";
 
 export {
-	READ_ONLY_PATH_TOOLS,
 	canonicalPath,
 	checkCommandForNonReadGit,
 	checkCommandPaths,
@@ -27,6 +26,7 @@ export {
 	isApprovedExternalReadPath,
 	isExternalPath,
 	isWithin,
+	READ_ONLY_PATH_TOOLS,
 	runCli,
 	splitShellStatements,
 	tokenizeStatement,
