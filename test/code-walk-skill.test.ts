@@ -33,6 +33,13 @@ test("code walk suggests concrete code for each step by default", async () => {
 	);
 });
 
+test("code walk explains the purpose and effects of each code change", async () => {
+	const skill = await readFile(skillPath, "utf8");
+
+	assert.match(skill, /why it is needed/i);
+	assert.match(skill, /effects it will have/i);
+});
+
 test("code walk keeps suggestions separate from applying edits", async () => {
 	const agent = await readFile(agentPath, "utf8");
 
