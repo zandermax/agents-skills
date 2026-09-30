@@ -16,7 +16,9 @@ while referencing public skills as read-only topic anchors.
 - **Strict Separation of Storage**:
   - Public skill definitions reside in `agents-skills/.agents/skills/`.
     This repository is strictly read-only during memory operations. Never
-    create, edit, or delete any file in `agents-skills`.
+    create, edit, or delete any file in `agents-skills` **as part of routing
+    a captured preference** (see the explicit-instruction exception under
+    Curated Instruction Immutability below, which applies here too).
   - Private memory notes reside in the directory specified by `$MEMORY_DIR`
     (defaulting to `~/.memory`). All captured notes, conventions, and personal
     preferences must be written to this location only, except for symlinks
@@ -25,8 +27,15 @@ while referencing public skills as read-only topic anchors.
     `~/.memory/<skill-name>/SKILL.md`; this read access does not permit writes
     and does not use a root-level `/memories/...` path.
 - **Curated Instruction Immutability**:
-  - Never write to `AGENTS.md` or `agents.local.md`. Universal paradigms are
-    curated manually by the human operator, never auto-appended to.
+  - Never write to `AGENTS.md` or `agents.local.md` **as part of this
+    skill's routing logic** (i.e. never choose to append there because a
+    captured preference happens to match their topic). Universal paradigms
+    are curated manually by the human operator, never auto-appended to.
+  - This restriction does not apply when the human operator gives an
+    explicit, direct instruction to edit one of these files for that exact
+    purpose. Such an instruction overrides this skill's default and is
+    followed directly, outside the Routing and Matching steps below — report
+    the file path and diff exactly as for any other capture.
 - **Evidence and Transparency**:
   - Always report the exact file path created or updated.
   - Always output the unified diff showing the exact changes made.

@@ -2,7 +2,7 @@
 name: Code Walk
 description: Guides writing code step-by-step with verification
 argument-hint: Describe the coding task the user wants to implement themselves
-tools: ["search", "read", "todo", "execute", "web"]
+tools: ["search", "read", "todo", "execute", "web", "vscode/askQuestions"]
 user-invocable: true
 ---
 

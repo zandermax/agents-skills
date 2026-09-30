@@ -2,7 +2,7 @@
 name: Remember That
 description: Captures and organizes personal preferences into private memory.
 argument-hint: Describe the preference, pattern, or note to record
-tools: ["search", "read", "edit", "execute", "web"]
+tools: ["search", "read", "edit", "execute", "web", "vscode/askQuestions"]
 user-invocable: true
 ---
 

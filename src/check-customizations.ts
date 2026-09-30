@@ -17,6 +17,22 @@ const AGENT_ONLY_FRONTMATTER_KEYS = new Set([
 	"model",
 ]);
 
+const REQUIRED_AGENT_BASELINE_TOOLS = [
+	"read",
+	"search",
+	"web",
+	"vscode/askQuestions",
+] as const;
+
+function missingAgentBaselineTools(tools: unknown): readonly string[] {
+	if (!Array.isArray(tools) || tools.some((tool) => typeof tool !== "string")) {
+		return REQUIRED_AGENT_BASELINE_TOOLS;
+	}
+
+	const declared = new Set(tools);
+	return REQUIRED_AGENT_BASELINE_TOOLS.filter((tool) => !declared.has(tool));
+}
+
 const ALLOWED_SKILL_FRONTMATTER_KEYS = new Set([
 	"name",
 	"description",
@@ -382,6 +398,12 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		try {
 			const content = await readFile(agentFile, "utf8");
 			const parsed = parseFrontmatter(content, relativePath);
+
+			for (const tool of missingAgentBaselineTools(parsed.attributes.tools)) {
+				errors.push(
+					`${relativePath}: agent tools missing required baseline tool ${tool}`,
+				);
+			}
 
 			const agentDescription = parsed.attributes.description;
 			if (typeof agentDescription === "string") {

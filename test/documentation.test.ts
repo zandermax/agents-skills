@@ -49,6 +49,25 @@ test("README documents catalog-driven artifact installation and maintenance", as
 	);
 });
 
+test("shared agent instructions load matching memory notes on demand", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/Load a `<topic>-notes` skill when the task enters that topic, and only then/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Do not scan or re-read every memory note at the start of every turn/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Do not skip a matching note because the work appears routine/i,
+	);
+	assert.equal(normalizedInstructions.includes("discover all matching"), false);
+	assert.equal(normalizedInstructions.includes("Context Compaction"), false);
+});
+
 test("shared agent instructions expose canonical memory skills to all agents", async () => {
 	const instructions = await readFile(agentInstructionsPath, "utf8");
 	const normalizedInstructions = instructions.replace(/\s+/g, " ");

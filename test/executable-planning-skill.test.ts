@@ -352,6 +352,15 @@ test("plan-it-out references the current executable-planning workflow", () => {
 	}
 	assert.match(content, /Discover/);
 	assert.match(content, /Clarify at outline level/);
+	assert.match(
+		content,
+		/description: Runs interactive planning with session-only or repo-backed storage\./,
+	);
+	assert.doesNotMatch(content, /Storage is always session-only/);
+	assert.match(
+		content,
+		/Repo-backed, only when requested: create and update the canonical plan at\s+`docs\/plans\/<slug>\.md`/,
+	);
 });
 
 test("executable planner agent requests free-text user-test observations", () => {

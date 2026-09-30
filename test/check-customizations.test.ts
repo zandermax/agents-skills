@@ -148,6 +148,7 @@ async function createFixtureRepo(
 				"---",
 				"name: Executable Planner",
 				"description: Planning-only orchestrator.",
+				'tools: ["read", "search", "web", "vscode/askQuestions"]',
 				"---",
 				"# Executable Planner",
 				"",
@@ -558,12 +559,51 @@ test("checkCustomizations validates each Copilot agent against only its declared
 	);
 	await writeFile(
 		path.join(repoRoot, ".github", "agents", "reviewer.agent.md"),
-		"---\nname: Reviewer\ndescription: Review work.\n---\n\n**REQUIRED SKILL:** Use reviewing for review behavior.\n",
+		'---\nname: Reviewer\ndescription: Review work.\ntools: ["read", "search", "web", "vscode/askQuestions"]\n---\n\n**REQUIRED SKILL:** Use reviewing for review behavior.\n',
 		"utf8",
 	);
 
 	try {
 		await checkCustomizations(repoRoot);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
+test("checkCustomizations rejects a Copilot agent missing a baseline tool", async () => {
+	const repoRoot = await createFixtureRepo();
+	await writeFile(
+		path.join(repoRoot, ".github", "agents", "executable-planner.agent.md"),
+		[
+			"---",
+			"name: Executable Planner",
+			"description: Planning-only orchestrator.",
+			'tools: ["read", "search", "web"]',
+			"---",
+			"# Executable Planner",
+			"",
+			"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+			"",
+			"Keep this agent thin and delegate planning workflow to the skill.",
+		].join("\n"),
+		"utf8",
+	);
+
+	try {
+		await assert.rejects(
+			async () => checkCustomizations(repoRoot),
+			(error: unknown) => {
+				assert.match(
+					String(error),
+					/\.github\/agents\/executable-planner\.agent\.md:/,
+				);
+				assert.match(
+					String(error),
+					/agent tools missing required baseline tool vscode\/askQuestions/,
+				);
+				return true;
+			},
+		);
 	} finally {
 		await rm(repoRoot, { recursive: true, force: true });
 	}
@@ -837,7 +877,7 @@ test("plan scout is a non-invocable read-only investigator", async () => {
 	assert.deepEqual(parsed.attributes, {
 		name: "Plan Scout",
 		description: "Answers narrow codebase questions for the Executable Planner",
-		tools: ["search", "read", "web"],
+		tools: ["search", "read", "web", "vscode/askQuestions"],
 		agents: [],
 		"user-invocable": false,
 		"disable-model-invocation": false,
