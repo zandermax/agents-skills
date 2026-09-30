@@ -248,6 +248,38 @@ describe("deny-non-read-git hook", () => {
 				"allow",
 			);
 			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/Library/Application Support/Code/User/prompts/remember-that.agent.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/Library/Application Support/Code/copilot-terminal-output/copilot-terminal-output-test.txt",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: String.raw`grep "SKILL.md" /Users/zander/Library/Application\ Support/Code/copilot-terminal-output/copilot-terminal-output-1ab8913c-40dc-419c-b3e2-0352d39bc089.txt | head -n 30`,
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read", {
+					filePath: "~/.agents/skills/ctx/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("readFile", {
+					filePath: "~/.agents/skills/ctx/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
 				evaluateToolUse("run_in_terminal", {
 					command: "grep -o pattern /tmp/diagnostic-output.txt | wc -l",
 				}).decision,
@@ -443,6 +475,38 @@ describe("deny-non-read-git hook", () => {
 					await rm(inWorkspaceLink, { force: true });
 				}
 			} finally {
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
+		});
+
+		it("permits reading symlinked skills inside approved roots from an external workspace", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "symlinked-skill-test-"),
+			);
+			const originalCwd = process.cwd();
+
+			try {
+				process.chdir(temporaryDirectory);
+
+				const symlinkedSkillPath = path.join(
+					os.homedir(),
+					".agents",
+					"skills",
+					"plan-checker",
+					"SKILL.md",
+				);
+
+				const result = evaluateToolUse("read_file", {
+					filePath: symlinkedSkillPath,
+				});
+				assert.equal(result.decision, "allow");
+
+				const readResult = evaluateToolUse("read", {
+					filePath: symlinkedSkillPath,
+				});
+				assert.equal(readResult.decision, "allow");
+			} finally {
+				process.chdir(originalCwd);
 				await rm(temporaryDirectory, { recursive: true, force: true });
 			}
 		});

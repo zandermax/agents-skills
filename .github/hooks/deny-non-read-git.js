@@ -56,14 +56,20 @@ const MUTATING_GITHUB_TOOLS = new Set([
 const PATH_FIELDS = new Set([
 	"path",
 	"filePath",
+	"file_path",
 	"directory",
+	"dirPath",
+	"dir_path",
 	"cwd",
 	"workspaceFolder",
 ]);
 
 export const READ_ONLY_PATH_TOOLS = new Set([
 	"read_file",
+	"read",
+	"readFile",
 	"list_dir",
+	"listDir",
 	"view_image",
 	"read_notebook_cell_output",
 	"copilot_getNotebookSummary",
@@ -121,7 +127,8 @@ export function isWithin(root, candidate, requireDescendant = false) {
 }
 
 export function isApprovedExternalReadPath(value) {
-	const candidate = canonicalPath(value);
+	const expanded = expandPath(value);
+	const candidate = canonicalPath(expanded);
 	const temporaryRoot = canonicalPath(resolve(sep, "tmp"));
 	if (isWithin(temporaryRoot, candidate)) {
 		return true;
@@ -129,7 +136,9 @@ export function isApprovedExternalReadPath(value) {
 
 	if (
 		candidate.startsWith(`${sep}memories${sep}`) ||
-		candidate === `${sep}memories`
+		candidate === `${sep}memories` ||
+		expanded.startsWith(`${sep}memories${sep}`) ||
+		expanded === `${sep}memories`
 	) {
 		return false;
 	}
@@ -146,24 +155,44 @@ export function isApprovedExternalReadPath(value) {
 		"/Applications/Visual Studio Code - Insiders.app",
 	];
 
-	if (approvedRoots.some((root) => isWithin(canonicalPath(root), candidate))) {
+	if (
+		approvedRoots.some((root) => {
+			const canonicalRoot = canonicalPath(root);
+			return (
+				isWithin(canonicalRoot, candidate) ||
+				isWithin(canonicalRoot, expanded) ||
+				isWithin(root, candidate) ||
+				isWithin(root, expanded)
+			);
+		})
+	) {
 		return true;
 	}
 
-	const applicationSupportRoot = resolve(
-		home,
-		"Library",
-		"Application Support",
-	);
-	for (const codeVariant of ["Code", "Code - Insiders"]) {
-		const sessionRoot = resolve(
-			applicationSupportRoot,
-			codeVariant,
-			"User",
-			"workspaceStorage",
-		);
-		if (isWithin(sessionRoot, candidate)) {
-			return true;
+	const configRoots = [
+		resolve(home, "Library", "Application Support"),
+		resolve(home, ".config"),
+	];
+	for (const baseRoot of configRoots) {
+		for (const codeVariant of ["Code", "Code - Insiders"]) {
+			const appRoots = [
+				resolve(baseRoot, codeVariant, "copilot-terminal-output"),
+				resolve(baseRoot, codeVariant, "logs"),
+				resolve(baseRoot, codeVariant, "User", "workspaceStorage"),
+				resolve(baseRoot, codeVariant, "User", "prompts"),
+				resolve(baseRoot, codeVariant, "User", "globalStorage"),
+			];
+			for (const storageRoot of appRoots) {
+				const canonicalStorageRoot = canonicalPath(storageRoot);
+				if (
+					isWithin(canonicalStorageRoot, candidate) ||
+					isWithin(canonicalStorageRoot, expanded) ||
+					isWithin(storageRoot, candidate) ||
+					isWithin(storageRoot, expanded)
+				) {
+					return true;
+				}
+			}
 		}
 	}
 
