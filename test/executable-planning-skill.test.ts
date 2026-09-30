@@ -267,6 +267,7 @@ test("commit suggestions are interactive-only and use a code block", async () =>
 		rendered,
 		/if no source code changed, provide no commit message or commit-like text/,
 	);
+	assert.match(rendered, /No commit yet, unless you're feeling froggy 🐸/);
 });
 
 test("completed repo-backed plans must be relocated, not copied", async () => {
@@ -322,6 +323,14 @@ test("workflow defines mode combinations and durable state updates precisely", a
 	assert.match(
 		rendered,
 		/verify each evidence pair appears only on its owning step/,
+	);
+	assert.match(
+		rendered,
+		/Next task = the first `- \[ \]` line \(leaf-level, not a section\/phase header\) encountered scanning the plan document top to bottom/,
+	);
+	assert.match(
+		rendered,
+		/Ignore step numbering\/lettering, section titles, and conversational context entirely when determining "next\."/,
 	);
 });
 
