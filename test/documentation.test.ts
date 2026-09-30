@@ -58,6 +58,10 @@ test("shared agent instructions expose canonical memory skills to all agents", a
 	);
 	assert.match(
 		normalizedInstructions,
+		/Reading files \(`read_file`\) and directory listing \(`list_dir`\) under these approved roots and within the active workspace are permitted/i,
+	);
+	assert.match(
+		normalizedInstructions,
 		/do not construct or read a root-level `\/memories\/\.\.\.` path/i,
 	);
 });

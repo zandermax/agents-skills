@@ -1,11 +1,11 @@
 ---
-status: in-progress
+status: completed
 mode: interactive
-canonical_location: docs/plans/2026-09-29-Expand-Read-File-Restrictions-and-Work.md
-last_updated: 2026-09-29
-current_phase: "Phase 2: Hook Safety Tests & Verification"
-current_step: not started
-next_action: Elaborate Phase 2 steps and add test cases in test/deny-non-read-git.test.ts
+canonical_location: docs/plans/archive/2026-09-29-Expand-Read-File-Restrictions-and-Work.md
+last_updated: 2026-09-30
+current_phase: completed
+current_step: complete
+next_action: none
 blockers: none
 ---
 
@@ -37,8 +37,8 @@ blockers: none
 ## Current State
 
 - Current phase: Phase 3: Agent Guidelines and Documentation Consistency
-- Current step: not started
-- Next action: Elaborate Phase 3 steps and update instruction files
+- Current step: complete
+- Next action: Move completed plan to archive and provide final handoff
 - Blockers: none
 
 ## Execution Protocol
@@ -182,7 +182,9 @@ Updated instruction files ([AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md), [.git
 
 ### Steps
 
-_Not yet elaborated. Populate immediately before this phase starts._
+- [x] P3.S1: Update `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` to explicitly permit reading any file and listing directories (`list_dir`) under approved agent/skill roots and within the active workspace; check: `node --input-type=module -e 'import { readFile } from "fs/promises"; for (const f of ["AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md"]) { const c = await readFile(f, "utf8"); if (!c.includes("list_dir") || !c.includes("approved")) process.exit(1); }'` (passed).
+- [x] P3.S2: Update `test/documentation.test.ts` to assert that instructions permit reading files and listing directories under approved roots and workspace paths; check: `npx tsx --test test/documentation.test.ts` (passed, 9/9 tests pass).
+- [x] P3.S3: Run repository format and validation checks; check: `npm run check` (passed, 256/256 tests pass, 0 errors).
 
 ### Validation
 
