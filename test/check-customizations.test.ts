@@ -340,6 +340,29 @@ test("checkCustomizations requires archived plans to be terminal", async () => {
 	}
 });
 
+test("checkCustomizations rejects active plans that duplicate an archived plan", async () => {
+	const repoRoot = await createFixtureRepo({
+		planStatus: "in-progress",
+		planArchived: false,
+	});
+	try {
+		const archiveDir = path.join(repoRoot, "docs", "plans", "archive");
+		await mkdir(archiveDir, { recursive: true });
+		await writeFile(
+			path.join(archiveDir, "fixture.md"),
+			"---\nstatus: completed\n---\n# Archived Fixture Plan\n",
+			"utf8",
+		);
+
+		await assert.rejects(
+			checkCustomizations(repoRoot),
+			/duplicate plan exists in archive at docs\/plans\/archive\/fixture\.md/,
+		);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
 test("checkCustomizations rejects skill folder and frontmatter name mismatches", async () => {
 	const repoRoot = await createFixtureRepo({
 		skillFolderName: "different-name",

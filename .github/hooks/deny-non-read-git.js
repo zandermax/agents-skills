@@ -536,6 +536,15 @@ function evaluateSymbolicRefCommand(tokens) {
 	return null;
 }
 
+function evaluateReflogCommand(tokens) {
+	const nonFlag = tokens.find((t) => !t.startsWith("-"));
+	if (nonFlag === "expire" || nonFlag === "delete" || nonFlag === "drop") {
+		return `git reflog ${nonFlag}`;
+	}
+
+	return null;
+}
+
 export function checkGitCommandTokens(tokens) {
 	let idx = 0;
 
@@ -618,6 +627,10 @@ export function checkGitCommandTokens(tokens) {
 
 	if (subcommand === "symbolic-ref") {
 		return evaluateSymbolicRefCommand(subTokens);
+	}
+
+	if (subcommand === "reflog") {
+		return evaluateReflogCommand(subTokens);
 	}
 
 	return `git ${subcommand}`;

@@ -70,6 +70,10 @@ describe("deny-non-read-git hook", () => {
 			assert.equal(checkCommandForNonReadGit("git rev-parse HEAD"), null);
 			assert.equal(checkCommandForNonReadGit("git --no-pager diff"), null);
 			assert.equal(checkCommandForNonReadGit("git -C /tmp status"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog -n 30"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog show"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog exists HEAD"), null);
 		});
 
 		it("allows read-only branch, tag, remote, and stash subcommands", () => {
@@ -117,6 +121,17 @@ describe("deny-non-read-git hook", () => {
 			assert.match(
 				checkCommandForNonReadGit("git stash pop") ?? "",
 				/git stash pop/,
+			);
+		});
+
+		it("denies mutating reflog operations", () => {
+			assert.match(
+				checkCommandForNonReadGit("git reflog expire --all") ?? "",
+				/git reflog expire/,
+			);
+			assert.match(
+				checkCommandForNonReadGit("git reflog delete HEAD@{1}") ?? "",
+				/git reflog delete/,
 			);
 		});
 
