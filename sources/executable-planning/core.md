@@ -136,7 +136,7 @@ In autopilot mode:
 
 Use this structure, adapting detail to the task:
 
-````markdown
+```markdown
 # <Plan title>
 
 ## Plan Metadata
@@ -196,7 +196,8 @@ Suggested commit message:
 ## Progress Log
 
 - <timestamp>: <state change and evidence>
-````
+
+```
 
 Use stable step identifiers so updates remain easy to audit. Status must be unambiguous: `[ ]` pending, `[-]` in progress, `[x]` complete, `[!]` blocked, and `[?]` awaiting user. Keep exactly one current step and one next action whenever work is active.
 
