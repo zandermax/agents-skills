@@ -136,7 +136,7 @@ In autopilot mode:
 
 Use this structure, adapting detail to the task:
 
-```markdown
+````markdown
 # <Plan title>
 
 ## Plan Metadata
@@ -189,8 +189,6 @@ Suggested commit message:
 <single-line message>
 ```
 
-```
-
 <!-- Omit the commit message entirely when no code changed. If code changed but is not yet viable to commit, state that the commit message is deferred until further changes make it viable, instead of the code block above. -->
 
 <!-- Add subsequent domain-based phases only when the work warrants them. -->
@@ -198,8 +196,7 @@ Suggested commit message:
 ## Progress Log
 
 - <timestamp>: <state change and evidence>
-
-```
+````
 
 Use stable step identifiers so updates remain easy to audit. Status must be unambiguous: `[ ]` pending, `[-]` in progress, `[x]` complete, `[!]` blocked, and `[?]` awaiting user. Keep exactly one current step and one next action whenever work is active.
 
@@ -219,5 +216,3 @@ Before presenting the plan, verify that:
 - When session-only storage is in effect, the complete plan is ready to be presented in full as one self-contained markdown document, with no unresolved question left implicit.
 
 Present the plan's location, current state, and next action concisely. Once the plan is ready to begin, present it through the harness's native plan-review mechanism whenever one exists, so the user starts execution with the harness's own affordances instead of a free-form reply. Fall back to presenting in conversation only when the harness exposes no such mechanism. In interactive mode, ask for confirmation only when the plan or a phase has reached its documented checkpoint. When session-only storage is in effect, always close by presenting the complete plan as a single self-contained markdown document instead of a location reference, in addition to any confirmation the mode still requires.
-
-```
