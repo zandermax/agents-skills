@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const testFilePath = fileURLToPath(import.meta.url);
 const projectRoot = path.resolve(path.dirname(testFilePath), "..");
+const agentInstructionsPath = path.join(projectRoot, "AGENTS.md");
 const readmePath = path.join(projectRoot, "README.md");
 
 const REQUIRED_MARKERS = [
@@ -46,6 +47,128 @@ test("README documents catalog-driven artifact installation and maintenance", as
 		),
 		false,
 	);
+});
+
+test("shared agent instructions load matching memory notes on demand", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/Load a `<topic>-notes` skill when the task enters that topic, and only then/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Do not scan or re-read every memory note at the start of every turn/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Do not skip a matching note because the work appears routine/i,
+	);
+	assert.equal(normalizedInstructions.includes("discover all matching"), false);
+	assert.equal(normalizedInstructions.includes("Context Compaction"), false);
+});
+
+test("shared agent instructions expose canonical memory skills to all agents", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/memory skill files under `~\/\.memory\/<skill-name>\/SKILL\.md` are approved read-only resources for all agents/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Reading files \(`read_file`\) and directory listing \(`list_dir`\) under these approved roots and within the active workspace are permitted/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/do not construct or read a root-level `\/memories\/\.\.\.` path/i,
+	);
+});
+
+test("shared agent instructions treat staging as semantically neutral", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/stage changes at any time solely to monitor them/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/carry no signal about progress.*desired file state/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Never mutate Git or try to make the index and worktree match/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/working files and fresh task-specific checks/i,
+	);
+});
+
+test("shared agent instructions prohibit speculative skill builds", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/Never run `npm run build` unless you have modified a source file under `sources\/` or a `skill\.json` manifest/i,
+	);
+});
+
+test("shared agent instructions keep filesystem access inside the workspace by default", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/active workspace folders as the default filesystem boundary/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/explicitly requests the exact path.*active plan names it as required/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/state the exact path and reason and request approval/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Do not perform optional history or context lookups merely because/i,
+	);
+});
+
+test("shared agent instructions bound tool output and format repair", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/minimize tool-output context by default.*filtered commands or concise success, failure, and evidence reporting/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Retain full output when it is needed to diagnose a failure, interpret results, make a decision, or preserve audit evidence/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/auto-format command before addressing format diagnostics.*only the diagnostics that remain after formatting/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/If no auto-format command exists, record that unavailable check/i,
+	);
+});
+
+test("shared agent instructions define manual-test response options", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/manual-test checkpoint.*Passed.*Issues found.*free text/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Record either the confirmation or the reported issues as user-provided evidence before continuing/i,
+	);
+	assert.match(normalizedInstructions, /do not suggest an expected result/i);
 });
 
 test("repository keeps active and archived plans beside specifications under docs", async () => {

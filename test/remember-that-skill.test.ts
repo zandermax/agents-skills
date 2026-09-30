@@ -11,6 +11,17 @@ const agentPath = new URL(
 	import.meta.url,
 );
 
+test("remember-that skill exposes canonical memory skills as read-only to all agents", async () => {
+	const skill = await readFile(skillPath, "utf8");
+
+	assert.match(
+		skill,
+		/every agent may read memory skill files at[\s\S]*~\/\.memory\/<skill-name>\/SKILL\.md/i,
+	);
+	assert.match(skill, /does not permit writes/i);
+	assert.match(skill, /does not use a root-level `\/memories\/\.\.\.` path/i);
+});
+
 test("remember-that skill consults ctx only when capturing", async () => {
 	const skill = await readFile(skillPath, "utf8");
 

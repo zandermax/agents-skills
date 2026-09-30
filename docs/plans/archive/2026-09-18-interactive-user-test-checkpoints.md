@@ -112,11 +112,11 @@ conditional, independent User Tests at interactive checkpoints.
 ### Steps
 
 - [x] P1.S1: Add failing contract assertions to
-  `test/executable-planning-skill.test.ts` for the conditional interactive
-  User Test schema, required free-text observation prompt, unavailable
-  rationale, and no-autopilot-prompt rule. Add a new planner behavioral rule
-  identifier and fixture/task that requires a UI or end-to-end User Test
-  without suggesting an answer.
+      `test/executable-planning-skill.test.ts` for the conditional interactive
+      User Test schema, required free-text observation prompt, unavailable
+      rationale, and no-autopilot-prompt rule. Add a new planner behavioral rule
+      identifier and fixture/task that requires a UI or end-to-end User Test
+      without suggesting an answer.
   - Files: `test/executable-planning-skill.test.ts`,
     `test/fixtures/behavioral-scenarios.json`,
     `evals/executable-planning/tasks/16-user-test-checkpoint.yaml`
@@ -125,19 +125,19 @@ conditional, independent User Tests at interactive checkpoints.
     at the new missing-`User Test` contract assertion.
   - Depends: none
 - [x] P1.S2: Update `sources/executable-planning/executable-planning.md` and
-  the checkpoint template to require a conditional, independent User Test for
-  interactive phases, with an action, free-text observation prompt, and
-  unavailable rationale. Preserve the automated autopilot gate. Regenerate
-  `.agents/skills/executable-planning/SKILL.md` through the existing build.
+      the checkpoint template to require a conditional, independent User Test for
+      interactive phases, with an action, free-text observation prompt, and
+      unavailable rationale. Preserve the automated autopilot gate. Regenerate
+      `.agents/skills/executable-planning/SKILL.md` through the existing build.
   - Files: `sources/executable-planning/executable-planning.md`,
     `.agents/skills/executable-planning/SKILL.md`
   - Check: `npm run build && npm test -- test/executable-planning-skill.test.ts`
   - Result: `npm run build` and `npm test -- test/executable-planning-skill.test.ts` passed.
   - Depends: P1.S1
 - [x] P1.S3: Update `.github/agents/executable-planner.agent.md` so the
-  Question mechanism uses free-text responses for User Test observations and
-  never pre-populates expected results. Add or extend assertions that cover
-  the agent wording.
+      Question mechanism uses free-text responses for User Test observations and
+      never pre-populates expected results. Add or extend assertions that cover
+      the agent wording.
   - Files: `.github/agents/executable-planner.agent.md`,
     `test/executable-planning-skill.test.ts`
   - Check: `npm test -- test/executable-planning-skill.test.ts`
@@ -147,7 +147,7 @@ conditional, independent User Tests at interactive checkpoints.
     194 tests after updating the adapter and its byte-stable fixture.
   - Depends: P1.S2
 - [x] P1.S4: Run the complete Phase 1 validation and record only each
-  command's result on its owning step.
+      command's result on its owning step.
   - Files: no source changes
   - Check: `npm test -- test/executable-planning-skill.test.ts && npm run build && npm run check:drift && npm run eval:waza -- run executable-planning -v`
   - Result: focused planner tests, build, and drift check passed. Waza is
@@ -204,11 +204,11 @@ collect, record, and assess User Test observations before phase continuation.
 ### Steps
 
 - [x] P2.S1: Add failing contract assertions for the Plan Executor skill and
-  agent requiring an interactive User Test gate after mechanical validation:
-  prompt for a free-text observation, record it as user-provided evidence,
-  compare it with completion criteria, and block or clarify insufficient
-  evidence before phase continuation. Add a Plan Executor behavioral task that
-  forbids continuing after mechanical validation alone.
+      agent requiring an interactive User Test gate after mechanical validation:
+      prompt for a free-text observation, record it as user-provided evidence,
+      compare it with completion criteria, and block or clarify insufficient
+      evidence before phase continuation. Add a Plan Executor behavioral task that
+      forbids continuing after mechanical validation alone.
   - Files: `test/plan-executor-skill.test.ts`,
     `evals/plan-executor/tasks/02-user-test-checkpoint.yaml`
   - Check: `npm test -- test/plan-executor-skill.test.ts`
@@ -218,16 +218,16 @@ collect, record, and assess User Test observations before phase continuation.
     new missing-`User Test` executor assertion.
   - Depends: P1.S4
 - [x] P2.S2: Update `.agents/skills/plan-executor/SKILL.md` and
-  `.github/agents/plan-executor.agent.md` to enforce the documented User Test
-  checkpoint in interactive mode, including the unavailable rationale
-  fallback. Do not add a blocking user checkpoint to autopilot behavior.
+      `.github/agents/plan-executor.agent.md` to enforce the documented User Test
+      checkpoint in interactive mode, including the unavailable rationale
+      fallback. Do not add a blocking user checkpoint to autopilot behavior.
   - Files: `.agents/skills/plan-executor/SKILL.md`,
     `.github/agents/plan-executor.agent.md`
   - Check: `npm test -- test/plan-executor-skill.test.ts`
   - Result: `npm test -- test/plan-executor-skill.test.ts` passed with 195 tests.
   - Depends: P2.S1
 - [x] P2.S3: Run the complete Phase 2 and repository validation, recording
-  each outcome on this step.
+      each outcome on this step.
   - Files: no source changes
   - Check: `npm test -- test/plan-executor-skill.test.ts && npm run eval:waza -- run plan-executor -v && npm run check`
   - Result: `npm run check` passed with 195 tests. Waza is unverified because

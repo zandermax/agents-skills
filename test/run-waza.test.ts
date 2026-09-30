@@ -14,8 +14,20 @@ import test from "node:test";
 import {
 	createMacosWazaSandboxProfile,
 	createWazaWorkspace,
+	isWazaAdapterError,
+	isWazaSandboxError,
 	runWaza,
 } from "../scripts/run-waza.js";
+
+test("Waza infrastructure classifiers identify adapter and sandbox failures", () => {
+	assert.equal(
+		isWazaAdapterError("tool argument format wasn't recognized"),
+		true,
+	);
+	assert.equal(isWazaAdapterError("scenario failed"), false);
+	assert.equal(isWazaSandboxError("Operation not permitted"), true);
+	assert.equal(isWazaSandboxError("scenario failed"), false);
+});
 
 test("createWazaWorkspace copies the repository without Git metadata or dependencies", async (t) => {
 	const sourceDirectory = await mkdtemp(path.join(os.tmpdir(), "waza-source-"));

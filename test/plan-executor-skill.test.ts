@@ -39,6 +39,11 @@ test("plan-executor skill frontmatter and core structure", async () => {
 		skill,
 		/before.*implementation write|implementation write.*before/i,
 	);
+	assert.match(
+		skill,
+		/user confirmation.*satisfies readiness|supersedes automated re-admission/i,
+	);
+	assert.match(skill, /step completion markers.*recorded execution evidence/i);
 });
 
 test("plan-executor agent frontmatter and required skill reference", async () => {
@@ -55,12 +60,13 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 	);
 	assert.match(
 		agent,
-		/tools:\s*\[\s*["']search["']\s*,\s*["']read["']\s*,\s*["']edit["']\s*,\s*["']execute["']\s*,\s*["']agent["']\s*,\s*["']todo["']\s*\]/i,
+		/tools:\s*\[\s*vscode\/askQuestions\s*,\s*search\s*,\s*read\s*,\s*edit\s*,\s*execute\s*,\s*agent\s*,\s*todo\s*,\s*web\s*\]/i,
 	);
 	assert.match(agent, /no canonical plan exists|malformed|incomplete/i);
 	assert.match(agent, /plan-checker admission and freshness gates/i);
 	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
 	assert.match(agent, /fingerprint mismatch/i);
+	assert.match(agent, /user confirmation.*satisfies readiness/i);
 });
 
 test("plan executor collects user-test evidence before phase continuation", async () => {
@@ -69,14 +75,44 @@ test("plan executor collects user-test evidence before phase continuation", asyn
 		readFile(agentPath, "utf8"),
 	]);
 
-	assert.match(skill, /User Test.*free-text observation/i);
+	assert.match(skill, /User Test.*free text for issues/i);
 	assert.match(skill, /user-provided evidence/i);
 	assert.match(skill, /insufficient.*blocker|blocker.*insufficient/i);
 	assert.match(skill, /Autopilot[\s\S]*no.*User Test/i);
 	assert.match(skill, /No checkpoint tests yet\./);
-	assert.match(agent, /User Test.*free-text observation/i);
+	assert.match(skill, /`Passed` and `Issues found` options/i);
+	assert.match(skill, /accept free text for issues/i);
+	assert.match(skill, /response will be recorded as user-provided evidence/i);
+	assert.match(agent, /User Test.*free text for issues/i);
 	assert.match(agent, /must not.*expected result/i);
 	assert.match(agent, /No checkpoint tests yet\./);
+	assert.match(agent, /`Passed` and `Issues found` options/i);
+	assert.match(agent, /accept free text for issues/i);
+	assert.match(agent, /response will be recorded as user-provided evidence/i);
+	assert.match(
+		skill,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free text for issues.*record.*user-provided evidence.*before phase continuation/i,
+	);
+	assert.match(
+		agent,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free text for issues.*record.*user-provided evidence.*before phase continuation/i,
+	);
+	assert.match(
+		skill,
+		/This response takes precedence over the Plan existence gate/i,
+	);
+	assert.match(
+		agent,
+		/This response takes precedence over the plan-existence gate/i,
+	);
+	assert.match(
+		skill,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free text for issues.*user-provided evidence/i,
+	);
+	assert.match(
+		agent,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free text for issues.*user-provided evidence/i,
+	);
 });
 
 test("plan executor archives completed repo-backed plans before handoff", async () => {
@@ -115,4 +151,12 @@ test("plan executor stops before using Git mutation to investigate", async () =>
 	assert.match(agent, /explicit authorization/i);
 	assert.match(agent, /must perform.*exact.*Git command.*themselves/i);
 	assert.match(agent, /cannot determine.*pre-existing/i);
+	assert.match(
+		skill,
+		/establishing a baseline.*requires explicit user authorization or user action/i,
+	);
+	assert.match(
+		agent,
+		/establishing a baseline.*requires explicit user authorization or user action/i,
+	);
 });

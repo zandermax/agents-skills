@@ -3,17 +3,16 @@ import {
 	checkCommandForNonReadGit,
 	checkCommandPaths,
 	checkGitCommandTokens,
-	checkToolInputPaths,
-	evaluateToolUse,
 	expandPath,
 	isApprovedExternalReadPath,
 	isExternalPath,
 	isWithin,
 	READ_ONLY_PATH_TOOLS,
-	runCli,
 	splitShellStatements,
 	tokenizeStatement,
 } from "./deny-non-read-git.js";
+import { evaluateToolUse, runCli } from "./pre-tool-safety.js";
+import { checkToolInputPaths } from "./pre-tool-safety-workspace.js";
 
 export {
 	canonicalPath,

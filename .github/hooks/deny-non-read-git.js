@@ -122,7 +122,7 @@ export function isWithin(root, candidate, requireDescendant = false) {
 
 export function isApprovedExternalReadPath(value) {
 	const candidate = canonicalPath(value);
-	const temporaryRoot = resolve(sep, "tmp");
+	const temporaryRoot = canonicalPath(resolve(sep, "tmp"));
 	if (isWithin(temporaryRoot, candidate)) {
 		return true;
 	}

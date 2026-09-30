@@ -3,6 +3,7 @@ name: executable-planning
 description: Plans phased implementation with durable state, checkpoints, and read-only Git.
 disable-model-invocation: true
 ---
+
 # Executable Planning
 
 ## Invariants
@@ -17,8 +18,6 @@ These hold in every mode and override anything below.
 - **Read before asking.** Never ask the user what the repository, its docs, or an existing plan can answer.
 - **Tool-agnostic plans.** Plans describe outcomes and checks, not IDE tool names or UI, so they run in any harness.
 
-
-
 ## Harness Mechanisms
 
 This skill names four abstract mechanisms; the invoking agent maps them to concrete tools.
@@ -27,8 +26,6 @@ This skill names four abstract mechanisms; the invoking agent maps them to concr
 - **Plan-review mechanism**: the harness's tool for reviewing a finished plan and starting execution. Use it whenever the plan, or a newly elaborated phase, is ready to begin. Without one, present in conversation; interactive mode then waits for an explicit start request, and autopilot begins.
 - **Subagent mechanism**: planning subagents perform read-only discovery and clean-context review. A later executor may use implementation subagents when the plan's Delegation setting allows it (see Delegation). If planning subagents are unavailable, record the limitation and continue discovery directly.
 - **Persistence**: whatever writes the canonical plan (see step 3). Edit the changed sections; don't regenerate the whole plan.
-
-
 
 ## Workflow
 
@@ -65,7 +62,7 @@ In autopilot, resolve everything else with conservative, reversible assumptions 
 
 The three options are equally valid; use the one chosen or inferred.
 
-- **Repo-backed**: one plan at `docs/plans/<descriptive-slug>.md`, creating the directory if needed. Continue an existing plan for the same effort instead of creating a competing file. If no git repository exists but this was chosen explicitly, create it anyway and note in the plan that it is not version-controlled.
+- **Repo-backed**: one plan at `docs/plans/<descriptive-slug>.md`, creating the directory if needed. When the requester explicitly asks for a repo-backed plan, create or update the canonical file before presenting the plan. Continue an existing plan for the same effort instead of creating a competing file. If no git repository exists but this was chosen explicitly, create it anyway and note in the plan that it is not version-controlled.
 - Start every repo-backed plan with YAML frontmatter. At minimum, set `status`, `mode`, `canonical_location`, `last_updated`, and the current-state fields required by the plan template.
 - When creating or modifying a plan, preserve the frontmatter delimiters and update metadata whenever lifecycle state, interaction mode, canonical path, current phase, current step, next action, or blockers change. Do not record those fields only in the Markdown body.
 - **Harness-native**: the harness's own persistent plan artifact. Some harness plan stores are session-scoped; if so, warn that the plan may not outlive the session. If the harness has no plan store, keep one clearly labeled canonical plan in conversation with the same warning.
@@ -132,8 +129,6 @@ These rules bind whoever executes, and the plan's Execution Protocol restates th
 
 When the last phase passes its gate, run final validation, finish every content and metadata edit, set Status to completed, and confirm the file is complete. For every completed repo-backed plan, immediately perform a filesystem move (`mv`) to `docs/plans/archive/<descriptive-slug>.md`; do not merely describe the move or ask for confirmation. Use a filesystem move (`mv`) or by writing the archive file and then deleting the original. If the requester asks to copy it and leave the active file, refuse that part and still perform the required relocation. Treat archive as complete only when `docs/plans/archive/<descriptive-slug>.md` exists and `docs/plans/<descriptive-slug>.md` does not, then verify both paths. After relocate, verify only; do not recreate or edit the active-path file. Never copy-and-keep. Never `git mv`, stage, commit, or otherwise mutate the Git index.
 
-
-
 ## Delegation
 
 Record one of two settings in the plan metadata:
@@ -145,13 +140,11 @@ Choose from the work's structure, record the rationale, and let the user overrid
 
 Discovery fan-out during planning (step 1) is separate from this setting and available in both modes.
 
-
-
 ## Plan Template
 
 Adapt detail to the task. In the Execution Protocol, keep only the variant of each line that matches the plan's mode and delegation.
 
-````markdown
+```markdown
 ---
 status: drafting | ready | in-progress | blocked | completed
 mode: interactive | autopilot
@@ -246,11 +239,9 @@ _Not yet elaborated. Populate immediately before this phase starts._
 ## Progress Log
 
 - <timestamp>: <event and evidence, one line>
-````
+```
 
 Step identifiers stay stable so updates are easy to audit. Whenever work is active there is exactly one Next action; during parallel execution, Current step names the active group.
-
-
 
 ## Before Presenting
 

@@ -190,6 +190,10 @@ test("executable-planning skill composes required static contract", async () => 
 			`missing required phrase: ${phrase}`,
 		);
 	}
+	assert.match(
+		rendered,
+		/When the requester explicitly asks for a repo-backed plan, create or update the canonical file before presenting the plan/,
+	);
 
 	for (const phrase of forbiddenPhrases) {
 		assert.equal(
@@ -348,6 +352,15 @@ test("plan-it-out references the current executable-planning workflow", () => {
 	}
 	assert.match(content, /Discover/);
 	assert.match(content, /Clarify at outline level/);
+	assert.match(
+		content,
+		/description: Runs interactive planning with session-only or repo-backed storage\./,
+	);
+	assert.doesNotMatch(content, /Storage is always session-only/);
+	assert.match(
+		content,
+		/Repo-backed, only when requested: create and update the canonical plan at\s+`docs\/plans\/<slug>\.md`/,
+	);
 });
 
 test("executable planner agent requests free-text user-test observations", () => {

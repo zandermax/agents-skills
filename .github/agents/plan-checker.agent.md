@@ -1,7 +1,7 @@
 ---
 name: Plan Checker
 description: Reviews plans for coherence, evidence, risk, and execution readiness
-tools: [read, edit]
+tools: [read, edit, web, search, vscode/askQuestions]
 agents: []
 user-invocable: false
 disable-model-invocation: false

@@ -14,4 +14,4 @@ done
 
 SCRIPT_DIR="$(cd -P "$(dirname "$TARGET")" && pwd)"
 
-exec node --import tsx "$SCRIPT_DIR/deny-non-read-git.mts"
+exec node --import tsx "$SCRIPT_DIR/pre-tool-safety.mts"

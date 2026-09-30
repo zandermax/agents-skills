@@ -44,7 +44,7 @@ Return one audit report with:
 - verdict: `ready`, `ready with follow-ups`, or `not ready`;
 - findings ordered as `blocking`, `important`, and `advisory`;
 - evidence label and concrete target reference for every finding;
-- coverage assessment; whenever behavioral coverage is missing, always propose at least one concrete, named maintained evaluation scenario for the target's stated core promise — for a high-risk or complex target, propose one per high-risk behavior — without creating or running them;
+- coverage assessment; label every rubric-based coverage judgment with `evidence: inferred`, explicitly classify absent behavioral coverage as advisory for low-risk targets or at least important for high-risk or complex targets, and whenever behavioral coverage is missing, always propose at least one concrete, named maintained evaluation scenario for the target's stated core promise — for a high-risk or complex target, propose one per high-risk behavior — without creating or running them;
 - an optional remediation brief that names changes without applying them.
 
 Use `not ready` when a blocking finding remains. Use `ready with follow-ups` when important findings remain. Use `ready` only when no blocking or important findings remain. Do not use a numeric score. Label the verdict line itself with its evidence, for example `Verdict: ready (evidence: inferred)`.

@@ -1,6 +1,15 @@
+import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import { cp, mkdir, mkdtemp, realpath, rm } from "node:fs/promises";
+import {
+	cp,
+	mkdir,
+	mkdtemp,
+	readFile,
+	realpath,
+	rm,
+	writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,6 +32,10 @@ const COPILOT_SDK_CACHE_DIRECTORY = path.join(
 );
 const WAZA_STATE_DIRECTORY = path.join(os.homedir(), ".waza");
 const COPILOT_STATE_DIRECTORY = path.join(os.homedir(), ".copilot");
+const WAZA_PREFLIGHT_TIMEOUT_MS = 10_000;
+const WAZA_ADAPTER_ERROR_PATTERN =
+	/tool argument format wasn't recognized|malformed apply_patch adapter input/i;
+const WAZA_SANDBOX_ERROR_PATTERN = /operation not permitted|permission denied/i;
 
 function isExcludedWorkspacePath(
 	repoRoot: string,
@@ -53,6 +66,59 @@ export async function createWazaWorkspace(repoRoot: string): Promise<string> {
 		await rm(temporaryDirectory, { force: true, recursive: true });
 		throw error;
 	}
+}
+
+export function isWazaAdapterError(output: string): boolean {
+	return WAZA_ADAPTER_ERROR_PATTERN.test(output);
+}
+
+export function isWazaSandboxError(output: string): boolean {
+	return WAZA_SANDBOX_ERROR_PATTERN.test(output);
+}
+
+async function runWazaPreflight(
+	command: string,
+	commandArguments: readonly string[],
+	workspaceDirectory: string,
+) {
+	const markerPath = path.join(
+		workspaceDirectory,
+		".waza-runtime",
+		".preflight",
+	);
+	await writeFile(markerPath, "ok");
+	assert.equal(await readFile(markerPath, "utf8"), "ok");
+	await rm(markerPath);
+
+	return await new Promise<string | undefined>((resolve) => {
+		const child = spawn(command, commandArguments, {
+			cwd: workspaceDirectory,
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		let output = "";
+		let settled = false;
+		const timer = setTimeout(() => {
+			child.kill("SIGTERM");
+		}, WAZA_PREFLIGHT_TIMEOUT_MS);
+		const finish = (version?: string) => {
+			if (settled) {
+				return;
+			}
+			settled = true;
+			clearTimeout(timer);
+			resolve(version);
+		};
+		child.stdout?.on("data", (chunk: Buffer) => {
+			output += chunk.toString();
+		});
+		child.stderr?.on("data", (chunk: Buffer) => {
+			output += chunk.toString();
+		});
+		child.on("error", () => finish());
+		child.on("close", (code) => {
+			finish(code === 0 ? output.trim() || undefined : undefined);
+		});
+	});
 }
 
 export function findWazaBinary(): string | null {
@@ -126,6 +192,20 @@ export async function runWaza(arguments_: readonly string[]): Promise<number> {
 	const keepWorkspace = arguments_.includes("--keep-workspace");
 	const sandboxExec = findMacosSandboxExec();
 	const command = sandboxExec ?? wazaPath;
+	const preflightArguments = sandboxExec
+		? [
+				"-p",
+				createMacosWazaSandboxProfile(workspaceDirectory),
+				wazaPath,
+				"--version",
+			]
+		: ["--version"];
+	const version = await runWazaPreflight(
+		command,
+		preflightArguments,
+		workspaceDirectory,
+	);
+	console.log(`Waza CLI: ${version ?? "version unavailable"}`);
 	const commandArguments = sandboxExec
 		? [
 				"-p",
@@ -140,8 +220,22 @@ export async function runWaza(arguments_: readonly string[]): Promise<number> {
 			const child = spawn(command, commandArguments, {
 				cwd: workspaceDirectory,
 				env: { ...process.env, TMPDIR: runtimeTemporaryDirectory },
-				stdio: "inherit",
+				stdio: ["inherit", "pipe", "pipe"],
 			});
+			let output = "";
+			const forward = (stream: NodeJS.WriteStream, chunk: Buffer) => {
+				stream.write(chunk);
+				output += chunk.toString();
+				if (isWazaAdapterError(output) || isWazaSandboxError(output)) {
+					child.kill("SIGTERM");
+				}
+			};
+			child.stdout?.on("data", (chunk: Buffer) =>
+				forward(process.stdout, chunk),
+			);
+			child.stderr?.on("data", (chunk: Buffer) =>
+				forward(process.stderr, chunk),
+			);
 
 			child.on("error", (error) => {
 				console.error(`Failed to start waza process: ${error.message}`);
@@ -149,6 +243,20 @@ export async function runWaza(arguments_: readonly string[]): Promise<number> {
 			});
 
 			child.on("close", (code) => {
+				if (isWazaAdapterError(output)) {
+					console.error(
+						"Waza stopped early: the evaluator adapter rejected a tool argument format. Update the Waza/Copilot adapter before retrying.",
+					);
+					resolve(1);
+					return;
+				}
+				if (isWazaSandboxError(output)) {
+					console.error(
+						"Waza stopped early: the evaluator attempted a write outside its sandbox workspace.",
+					);
+					resolve(1);
+					return;
+				}
 				resolve(code ?? 0);
 			});
 		});

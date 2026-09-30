@@ -38,20 +38,35 @@ const planScoutPath = path.join(
 	"agents",
 	"plan-scout.agent.md",
 );
+const planExecutorPath = path.join(
+	projectRoot,
+	".github",
+	"agents",
+	"plan-executor.agent.md",
+);
 
 const EXECUTABLE_PLANNER_FRONTMATTER_BLOCK = [
 	"---",
 	"name: Executable Planner",
 	"description: Create and maintain an executable plan without implementing project work",
 	'argument-hint: Goal and constraints; add "autopilot" for unattended runs and a storage choice (local/repo, native, or session-only)',
-	"tools: [vscode/askQuestions, vscode/toolSearch, read, agent, edit, search, todo]",
-	"agents: ['Plan Scout', 'Plan Checker']",
+	"tools:",
+	"  [vscode/askQuestions, vscode/toolSearch, read, web, agent, edit, search, todo]",
+	'agents: ["Plan Scout", "Plan Checker"]',
 	"user-invocable: true",
 	"disable-model-invocation: false",
 	"handoffs:",
-	"  - label: Start Implementation",
-	"    agent: agent",
-	"    prompt: Start implementation",
+	"  - label: Execute 💀",
+	"    agent: Plan Executor",
+	"    prompt: Execute the approved current phase. If it is not elaborated or confirmed, stop and request elaboration or confirmation.",
+	"    send: true",
+	"  - label: Elaborate 💬",
+	"    agent: Executable Planner",
+	"    prompt: Elaborate or clarify the current phase, then ask for confirmation before execution.",
+	"    send: true",
+	"  - label: Complete ✅",
+	"    agent: Plan Executor",
+	"    prompt: Complete the plan and archive it only when no steps remain and final validation passes.",
 	"    send: true",
 	"---",
 	"",
@@ -60,7 +75,7 @@ const EXECUTABLE_PLANNER_BODY = [
 	"",
 	"You are a planner. You create and maintain executable plans; you never implement project work.",
 	"",
-	"**Required skill:** load `executable-planning` before doing anything else, along with any other skill this agent names. If a required skill can't be loaded, report the failure and stop rather than reconstructing it from memory.",
+	"**Required skill:** load `executable-planning` before doing anything else, along with any other skill this agent names. Use the Skill tool when available; otherwise read `.agents/skills/executable-planning/SKILL.md` with the `read` tool. A search for deferred tools returning no matches does not mean `read` is unavailable. If the skill file cannot be read, report the failure and stop rather than reconstructing it from memory.",
 	"",
 	"The skill describes behavior through abstract mechanisms. In this harness they map to:",
 	"",
@@ -133,6 +148,7 @@ async function createFixtureRepo(
 				"---",
 				"name: Executable Planner",
 				"description: Planning-only orchestrator.",
+				'tools: ["read", "search", "web", "vscode/askQuestions"]',
 				"---",
 				"# Executable Planner",
 				"",
@@ -543,12 +559,51 @@ test("checkCustomizations validates each Copilot agent against only its declared
 	);
 	await writeFile(
 		path.join(repoRoot, ".github", "agents", "reviewer.agent.md"),
-		"---\nname: Reviewer\ndescription: Review work.\n---\n\n**REQUIRED SKILL:** Use reviewing for review behavior.\n",
+		'---\nname: Reviewer\ndescription: Review work.\ntools: ["read", "search", "web", "vscode/askQuestions"]\n---\n\n**REQUIRED SKILL:** Use reviewing for review behavior.\n',
 		"utf8",
 	);
 
 	try {
 		await checkCustomizations(repoRoot);
+	} finally {
+		await rm(repoRoot, { recursive: true, force: true });
+	}
+});
+
+test("checkCustomizations rejects a Copilot agent missing a baseline tool", async () => {
+	const repoRoot = await createFixtureRepo();
+	await writeFile(
+		path.join(repoRoot, ".github", "agents", "executable-planner.agent.md"),
+		[
+			"---",
+			"name: Executable Planner",
+			"description: Planning-only orchestrator.",
+			'tools: ["read", "search", "web"]',
+			"---",
+			"# Executable Planner",
+			"",
+			"**REQUIRED SKILL:** Use executable-planning for all planning behavior.",
+			"",
+			"Keep this agent thin and delegate planning workflow to the skill.",
+		].join("\n"),
+		"utf8",
+	);
+
+	try {
+		await assert.rejects(
+			async () => checkCustomizations(repoRoot),
+			(error: unknown) => {
+				assert.match(
+					String(error),
+					/\.github\/agents\/executable-planner\.agent\.md:/,
+				);
+				assert.match(
+					String(error),
+					/agent tools missing required baseline tool vscode\/askQuestions/,
+				);
+				return true;
+			},
+		);
 	} finally {
 		await rm(repoRoot, { recursive: true, force: true });
 	}
@@ -756,6 +811,7 @@ test("executable planner agent is a thin adapter with byte-stable frontmatter", 
 			"vscode/askQuestions",
 			"vscode/toolSearch",
 			"read",
+			"web",
 			"agent",
 			"edit",
 			"search",
@@ -766,9 +822,24 @@ test("executable planner agent is a thin adapter with byte-stable frontmatter", 
 		"disable-model-invocation": false,
 		handoffs: [
 			{
-				label: "Start Implementation",
-				agent: "agent",
-				prompt: "Start implementation",
+				label: "Execute 💀",
+				agent: "Plan Executor",
+				prompt:
+					"Execute the approved current phase. If it is not elaborated or confirmed, stop and request elaboration or confirmation.",
+				send: true,
+			},
+			{
+				label: "Elaborate 💬",
+				agent: "Executable Planner",
+				prompt:
+					"Elaborate or clarify the current phase, then ask for confirmation before execution.",
+				send: true,
+			},
+			{
+				label: "Complete ✅",
+				agent: "Plan Executor",
+				prompt:
+					"Complete the plan and archive it only when no steps remain and final validation passes.",
 				send: true,
 			},
 		],
@@ -806,11 +877,22 @@ test("plan scout is a non-invocable read-only investigator", async () => {
 	assert.deepEqual(parsed.attributes, {
 		name: "Plan Scout",
 		description: "Answers narrow codebase questions for the Executable Planner",
-		tools: ["search", "read"],
+		tools: ["search", "read", "web", "vscode/askQuestions"],
 		agents: [],
 		"user-invocable": false,
 		"disable-model-invocation": false,
 	});
 	assert.match(parsed.body, /Never edit files, run commands, or plan the work/);
 	assert.match(parsed.body, /aiming for under 400 words/);
+});
+
+test("plan executor declares structured-question capability in tools", async () => {
+	const content = await readFile(planExecutorPath, "utf8");
+	const parsed = parseFrontmatter(
+		content,
+		".github/agents/plan-executor.agent.md",
+	);
+
+	assert.ok(Array.isArray(parsed.attributes.tools));
+	assert.ok(parsed.attributes.tools.includes("vscode/askQuestions"));
 });
