@@ -1,5 +1,5 @@
 ---
-status: active
+status: completed
 mode: interactive
 canonical_location: docs/plans/2026-09-29-directory-agent-links-and-interactive-installer.md
 last_updated: 2026-09-29
