@@ -160,3 +160,29 @@ test("plan executor stops before using Git mutation to investigate", async () =>
 		/establishing a baseline.*requires explicit user authorization or user action/i,
 	);
 });
+
+test("plan executor determines next task scanning top-to-bottom for leaf - [ ] line", async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readFile(agentPath, "utf8"),
+	]);
+
+	assert.match(
+		skill,
+		/Next task = the first `- \[ \]` line \(leaf-level, not a section\/phase header\) encountered scanning the plan document top to bottom/i,
+	);
+	assert.match(
+		skill,
+		/Ignore step numbering\/lettering, section titles, and conversational context entirely when determining "next\."/i,
+	);
+	assert.match(
+		agent,
+		/Next task = the first `- \[ \]` line \(leaf-level, not a section\/phase header\) encountered scanning the plan document top to bottom/i,
+	);
+});
+
+test("plan executor states commit can wait when code changed but not yet viable", async () => {
+	const skill = await readFile(skillPath, "utf8");
+
+	assert.match(skill, /No commit yet, unless you're feeling froggy 🐸/);
+});
