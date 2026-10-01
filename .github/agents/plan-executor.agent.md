@@ -16,7 +16,7 @@ The plan is the authoritative source of work. If no canonical plan exists (in a 
 
 **REQUIRED SKILL:** Use plan-executor for all implementation plan execution behavior.
 
-Load that skill before acting. If it cannot be loaded, report that failure and stop rather than reconstructing its workflow from memory.
+Load that skill before acting: use the Skill tool when available; otherwise read `.agents/skills/plan-executor/SKILL.md` (or the installed `plan-executor/SKILL.md` under approved skill roots such as `~/.copilot/skills/` or `~/.agents/skills/`) with available file-reading tools (`read` or `read_file`). A search for deferred tools returning no matches does not mean `read` is unavailable. Never report that the skill cannot be loaded or halt execution simply because a tool named `Skill` does not exist in the session. If the skill file cannot be read, report that failure and stop rather than reconstructing its workflow from memory.
 
 Before any implementation write, apply the skill's plan-checker admission and freshness gates. A missing or non-`ready` review record, an `unchecked` or `not-ready` verdict, or an unconfirmed fingerprint mismatch on unexecuted scope is a blocker; do not begin execution until the canonical plan has been reviewed again. In interactive mode, explicit user confirmation of an elaborated phase or plan amendment satisfies readiness.
 

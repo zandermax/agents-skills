@@ -20,6 +20,16 @@ test("remember-that skill exposes canonical memory skills as read-only to all ag
 	);
 	assert.match(skill, /does not permit writes/i);
 	assert.match(skill, /does not use a root-level `\/memories\/\.\.\.` path/i);
+	assert.match(
+		skill,
+		/does not prompt the user\s+for permission to read memory paths/i,
+	);
+	assert.match(skill, /does not use\s+a harness-level memory\s+tool/i);
+	assert.match(
+		skill,
+		/proactively consult and load matching memory skills on demand without prompting/i,
+	);
+	assert.match(skill, /action-oriented trigger keywords/i);
 });
 
 test("remember-that skill consults ctx only when capturing", async () => {

@@ -67,6 +67,14 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
 	assert.match(agent, /fingerprint mismatch/i);
 	assert.match(agent, /user confirmation.*satisfies readiness/i);
+	assert.match(
+		agent,
+		/Use the Skill tool when available; otherwise read.*plan-executor\/SKILL\.md/i,
+	);
+	assert.match(
+		agent,
+		/Never report that the skill cannot be loaded or halt execution simply because a tool named `Skill` does not exist/i,
+	);
 });
 
 test("plan executor collects user-test evidence before phase continuation", async () => {

@@ -24,8 +24,10 @@ while referencing public skills as read-only topic anchors.
     preferences must be written to this location only, except for symlinks
     created in tool skill directories as required by the Lazy Loading Invariant.
   - Every agent may read memory skill files at
-    `~/.memory/<skill-name>/SKILL.md`; this read access does not permit writes
-    and does not use a root-level `/memories/...` path.
+    `~/.memory/<skill-name>/SKILL.md` on demand using available file-reading
+    tools; this read access does not permit writes, does not prompt the user
+    for permission to read memory paths, does not use a harness-level memory
+    tool, and does not use a root-level `/memories/...` path.
 - **Curated Instruction Immutability**:
   - Never write to `AGENTS.md` or `agents.local.md` **as part of this
     skill's routing logic** (i.e. never choose to append there because a
@@ -176,9 +178,11 @@ description: "Personal preferences, conventions, and learnings regarding <topic>
 ---
 ```
 
-Include targeted trigger keywords in the `description` (e.g. language,
-framework, tooling, or workflow names) so agent harnesses discover and load the
-note only when the current task touches those topics.
+Include targeted, action-oriented trigger keywords in the `description` (e.g.
+language, framework, tooling, or workflow tasks such as "Use when writing,
+modifying, or reviewing...", "Use when committing, branching, or pushing...")
+so agent harnesses proactively discover and load the note whenever the current
+task touches those topics.
 
 Inside the memory note, structure entries under clean markdown sections:
 
@@ -223,8 +227,10 @@ When appending preferences to an existing memory topic:
 
 Memory notes must never be loaded into global, always-on context. They exist as
 independent skills discoverable by their frontmatter `description`. Agents
-consult memory skills dynamically when a matching task arises, keeping base
-context lean.
+proactively consult and load matching memory skills on demand without prompting
+or asking the user for permission. When a task touches a relevant domain (such
+as git, testing, css, dependencies, or minimal changes), agents load the
+matching note immediately using available file-reading tools once per session.
 
 Whenever a new memory note directory is created, ensure it is symlinked into
 the tool skill directories (`~/.copilot/skills/<topic>-notes` and

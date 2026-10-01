@@ -54,11 +54,11 @@ test("shared agent instructions load matching memory notes on demand", async () 
 	const normalizedInstructions = instructions.replace(/\s+/g, " ");
 	assert.match(
 		normalizedInstructions,
-		/Load a `<topic>-notes` skill when the task enters that topic, and only then/i,
+		/Proactively consult topic-specific `<topic>-notes` skills/i,
 	);
 	assert.match(
 		normalizedInstructions,
-		/Do not scan or re-read every memory note at the start of every turn/i,
+		/load matching notes immediately on demand without asking the user/i,
 	);
 	assert.match(
 		normalizedInstructions,
@@ -82,6 +82,10 @@ test("shared agent instructions expose canonical memory skills to all agents", a
 	assert.match(
 		normalizedInstructions,
 		/do not construct or read a root-level `\/memories\/\.\.\.` path/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/do not use the VS Code `memory` tool or prompt the user for permission to read memory paths/i,
 	);
 });
 
