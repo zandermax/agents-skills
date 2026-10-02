@@ -1,25 +1,27 @@
 ---
 name: plan-it-out
-description: Runs interactive session-only planning ending with a plan document.
+description: Runs interactive planning with session-only or repo-backed storage.
 disable-model-invocation: true
 ---
 
 Call the Skill tool with "executable-planning", then apply these overrides
-for the whole session; do not ask the user about interaction mode or storage,
-they are fixed by this skill. If the executable-planning skill cannot be loaded,
+for the whole session. Do not ask about interaction mode or storage; both are
+set by this skill, with repo-backed storage only when the user requests it.
+If the executable-planning skill cannot be loaded,
 tell the user and stop; do not attempt to plan without it, since the referenced
 sections define the required format.
 
 ## Fixed Mode and Storage
 
-- Interaction mode is always interactive.
-- Storage is always session-only: never create or update a file under
-  `docs/plans/`, and never rely on a harness-native plan artifact either.
-  Hold the canonical plan only in this conversation, per the session-only
-  rules in Choose storage.
+- Interaction mode is always interactive. Do not ask about interaction mode.
+- Do not ask about storage. Session-only is the default. Repo-backed storage is
+  used only when the user requests it. Do not use harness-native plan storage.
+- Session-only: never create or update a planning file. Hold the canonical plan
+  only in this conversation, per the session-only rules in Choose storage.
+- Repo-backed, only when requested: create and update the canonical plan at
+  `docs/plans/<slug>.md`, per the repo-backed rules in Choose storage.
 - Still ask the Clarify at outline level questions about outcome, scope, success
-  criteria, and constraints; only the interaction-mode and storage questions
-  are skipped, since they are fixed above.
+  criteria, and constraints.
 
 ## Table of Contents First
 
@@ -35,9 +37,10 @@ user's confirmation of the table of contents before elaborating any phase.
 ## Elaborate Every Phase in This Session
 
 After the table of contents is confirmed, elaborate every phase in order,
-in this same conversation, using the Interactive + session-only handoff rule in
-Workflow step 5: do not wait for a separate later request to start each phase,
-since there is no later session to return to for this plan. For each phase:
+in this same conversation. For session-only, use the Interactive + session-only
+handoff rule in Workflow step 5. For repo-backed, persist each confirmed phase
+to the canonical file. Do not wait for a separate later request to start each
+phase. For each phase:
 
 1. Ask that phase's focused clarifying questions, scoped only to what it
    still leaves unresolved.
@@ -48,11 +51,12 @@ since there is no later session to return to for this plan. For each phase:
 
 Once every phase is elaborated and confirmed, always close the session by
 presenting one complete, self-contained markdown plan document in the
-Plan Template format, in full, in the conversation. Do not skip this even if
-the user only asked about part of the plan. Resolve every open question or
-record it as an explicit assumption or decision first, so a brand-new agent
-session with no access to this conversation can execute the plan end to end
-without further clarification.
+Plan Template format, in full, in the conversation. When storage is repo-backed,
+that same document is the canonical file at `docs/plans/<slug>.md`. Do not skip
+this even if the user only asked about part of the plan. Resolve every open
+question or record it as an explicit assumption or decision first, so a
+brand-new agent session with no access to this conversation can execute the
+plan end to end without further clarification.
 
 If the user asks to stop before all phases are elaborated, present the current
 partial plan, mark unelaborated phases as such, and preserve unresolved questions

@@ -77,6 +77,9 @@ test("plan-checker defines a persistence-stable freshness fingerprint", async ()
 	assert.match(checker, /normalized reviewable plan content/);
 	assert.match(checker, /Equivalent conversational and persisted plans/);
 	assert.match(checker, /Any semantic plan change invalidates a prior verdict/);
+	assert.match(checker, /step completion markers/);
+	assert.match(checker, /recorded execution evidence/);
+	assert.match(checker, /user confirmation.*satisfies readiness/i);
 });
 
 test("hone-the-plan delegates to plan-checker in autopilot mode", async () => {

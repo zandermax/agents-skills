@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { parseFrontmatter } from "../src/lib/frontmatter.js";
+
 const skillPath = new URL(
 	"../.agents/skills/plan-executor/SKILL.md",
 	import.meta.url,
 );
 const agentPath = new URL(
-	"../.github/agents/plan-executor.agent.md",
+	"../.claude/agents/plan-executor.agent.md",
 	import.meta.url,
 );
 
@@ -39,6 +41,11 @@ test("plan-executor skill frontmatter and core structure", async () => {
 		skill,
 		/before.*implementation write|implementation write.*before/i,
 	);
+	assert.match(
+		skill,
+		/user confirmation.*satisfies readiness|supersedes automated re-admission/i,
+	);
+	assert.match(skill, /step completion markers.*recorded execution evidence/i);
 });
 
 test("plan-executor agent frontmatter and required skill reference", async () => {
@@ -53,14 +60,34 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 		agent,
 		/\*\*REQUIRED SKILL:\*\*\s+Use\s+plan-executor\s+for all implementation plan execution behavior\./,
 	);
-	assert.match(
-		agent,
-		/tools:\s*\[\s*["']search["']\s*,\s*["']read["']\s*,\s*["']edit["']\s*,\s*["']execute["']\s*,\s*["']agent["']\s*,\s*["']todo["']\s*\]/i,
+	assert.deepEqual(
+		parseFrontmatter(agent, "plan-executor.agent.md").attributes.tools,
+		[
+			"AskUserQuestion",
+			"Glob",
+			"Grep",
+			"Read",
+			"Edit",
+			"Write",
+			"Bash",
+			"Agent",
+			"TodoWrite",
+			"WebFetch",
+			"WebSearch",
+			"Skill",
+			"ToolSearch",
+		],
 	);
 	assert.match(agent, /no canonical plan exists|malformed|incomplete/i);
 	assert.match(agent, /plan-checker admission and freshness gates/i);
 	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
 	assert.match(agent, /fingerprint mismatch/i);
+	assert.match(agent, /user confirmation.*satisfies readiness/i);
+	assert.match(agent, /Load that skill before acting/i);
+	assert.match(
+		agent,
+		/If the skill is entirely unavailable, report that failure and stop rather than reconstructing/i,
+	);
 });
 
 test("plan executor collects user-test evidence before phase continuation", async () => {
@@ -69,14 +96,44 @@ test("plan executor collects user-test evidence before phase continuation", asyn
 		readFile(agentPath, "utf8"),
 	]);
 
-	assert.match(skill, /User Test.*free-text observation/i);
+	assert.match(skill, /User Test.*free text for issues/i);
 	assert.match(skill, /user-provided evidence/i);
 	assert.match(skill, /insufficient.*blocker|blocker.*insufficient/i);
 	assert.match(skill, /Autopilot[\s\S]*no.*User Test/i);
 	assert.match(skill, /No checkpoint tests yet\./);
-	assert.match(agent, /User Test.*free-text observation/i);
+	assert.match(skill, /`Passed` and `Issues found` options/i);
+	assert.match(skill, /accept free text for issues/i);
+	assert.match(skill, /response will be recorded as user-provided evidence/i);
+	assert.match(agent, /User Test.*free text for issues/i);
 	assert.match(agent, /must not.*expected result/i);
 	assert.match(agent, /No checkpoint tests yet\./);
+	assert.match(agent, /`Passed` and `Issues found` options/i);
+	assert.match(agent, /accept free text for issues/i);
+	assert.match(agent, /response will be recorded as user-provided evidence/i);
+	assert.match(
+		skill,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free text for issues.*record.*user-provided evidence.*before phase continuation/i,
+	);
+	assert.match(
+		agent,
+		/Mechanical validation passed.*supplies an interactive User Test.*sufficient in-context scope.*request.*free text for issues.*record.*user-provided evidence.*before phase continuation/i,
+	);
+	assert.match(
+		skill,
+		/This response takes precedence over the Plan existence gate/i,
+	);
+	assert.match(
+		agent,
+		/This response takes precedence over the plan-existence gate/i,
+	);
+	assert.match(
+		skill,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free text for issues.*user-provided evidence/i,
+	);
+	assert.match(
+		agent,
+		/Mechanical validation passed.*User Test.*do not use tools.*immediately.*free text for issues.*user-provided evidence/i,
+	);
 });
 
 test("plan executor archives completed repo-backed plans before handoff", async () => {
@@ -89,4 +146,64 @@ test("plan executor archives completed repo-backed plans before handoff", async 
 	assert.match(skill, /completed repo-backed plan.*immediately.*move/i);
 	assert.match(skill, /archive path.*exists.*active path.*does not/i);
 	assert.match(agent, /completed repo-backed plan[\s\S]*archive/i);
+});
+
+test("plan executor supports plans directly in context without requiring a plan file", async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readFile(agentPath, "utf8"),
+	]);
+
+	assert.match(skill, /do not require writing an in-context plan to a file/i);
+	assert.match(agent, /argument-hint:.*docs\/plans\/.*context/i);
+});
+
+test("plan executor stops before using Git mutation to investigate", async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readFile(agentPath, "utf8"),
+	]);
+
+	assert.match(skill, /Git mutation.*diagnostic|diagnostic.*Git mutation/i);
+	assert.match(skill, /explicit authorization/i);
+	assert.match(skill, /must perform.*exact.*Git command.*themselves/i);
+	assert.match(skill, /cannot determine.*pre-existing/i);
+	assert.match(agent, /Git mutation.*diagnostic|diagnostic.*Git mutation/i);
+	assert.match(agent, /explicit authorization/i);
+	assert.match(agent, /must perform.*exact.*Git command.*themselves/i);
+	assert.match(agent, /cannot determine.*pre-existing/i);
+	assert.match(
+		skill,
+		/establishing a baseline.*requires explicit user authorization or user action/i,
+	);
+	assert.match(
+		agent,
+		/establishing a baseline.*requires explicit user authorization or user action/i,
+	);
+});
+
+test("plan executor determines next task scanning top-to-bottom for leaf - [ ] line", async () => {
+	const [skill, agent] = await Promise.all([
+		readFile(skillPath, "utf8"),
+		readFile(agentPath, "utf8"),
+	]);
+
+	assert.match(
+		skill,
+		/Next task = the first `- \[ \]` line \(leaf-level, not a section\/phase header\) encountered scanning the plan document top to bottom/i,
+	);
+	assert.match(
+		skill,
+		/Ignore step numbering\/lettering, section titles, and conversational context entirely when determining "next\."/i,
+	);
+	assert.match(
+		agent,
+		/Next task = the first `- \[ \]` line \(leaf-level, not a section\/phase header\) encountered scanning the plan document top to bottom/i,
+	);
+});
+
+test("plan executor states commit can wait when code changed but not yet viable", async () => {
+	const skill = await readFile(skillPath, "utf8");
+
+	assert.match(skill, /No commit yet, unless you're feeling froggy 🐸/);
 });

@@ -190,6 +190,10 @@ test("executable-planning skill composes required static contract", async () => 
 			`missing required phrase: ${phrase}`,
 		);
 	}
+	assert.match(
+		rendered,
+		/When the requester explicitly asks for a repo-backed plan, create or update the canonical file before presenting the plan/,
+	);
 
 	for (const phrase of forbiddenPhrases) {
 		assert.equal(
@@ -248,6 +252,10 @@ test("repo-backed plans require lifecycle frontmatter on creation and updates", 
 		rendered,
 		/When creating or modifying a plan, preserve the frontmatter delimiters/,
 	);
+	assert.match(
+		rendered,
+		/current_phase: <phase \(e\.g\., Phase 1 -- <domain-based name>\) or not started>/,
+	);
 });
 
 test("commit suggestions are interactive-only and use a code block", async () => {
@@ -259,6 +267,7 @@ test("commit suggestions are interactive-only and use a code block", async () =>
 		rendered,
 		/if no source code changed, provide no commit message or commit-like text/,
 	);
+	assert.match(rendered, /No commit yet, unless you're feeling froggy 🐸/);
 });
 
 test("completed repo-backed plans must be relocated, not copied", async () => {
@@ -315,6 +324,14 @@ test("workflow defines mode combinations and durable state updates precisely", a
 		rendered,
 		/verify each evidence pair appears only on its owning step/,
 	);
+	assert.match(
+		rendered,
+		/Next task = the first `- \[ \]` line \(leaf-level, not a section\/phase header\) encountered scanning the plan document top to bottom/,
+	);
+	assert.match(
+		rendered,
+		/Ignore step numbering\/lettering, section titles, and conversational context entirely when determining "next\."/,
+	);
 });
 
 test("interactive checkpoints require independent user-test evidence", async () => {
@@ -344,11 +361,20 @@ test("plan-it-out references the current executable-planning workflow", () => {
 	}
 	assert.match(content, /Discover/);
 	assert.match(content, /Clarify at outline level/);
+	assert.match(
+		content,
+		/description: Runs interactive planning with session-only or repo-backed storage\./,
+	);
+	assert.doesNotMatch(content, /Storage is always session-only/);
+	assert.match(
+		content,
+		/Repo-backed, only when requested: create and update the canonical plan at\s+`docs\/plans\/<slug>\.md`/,
+	);
 });
 
 test("executable planner agent requests free-text user-test observations", () => {
 	const agent = readFileSync(
-		path.join(REPO_ROOT, ".github", "agents", "executable-planner.agent.md"),
+		path.join(REPO_ROOT, ".claude", "agents", "executable-planner.agent.md"),
 		"utf8",
 	);
 

@@ -17,6 +17,7 @@ import {
 	buildArtifactLinks,
 	installArtifacts,
 	type ResolvedLink,
+	uninstallArtifacts,
 } from "../src/lib/install-artifacts.js";
 
 async function createFixture(label: string): Promise<{
@@ -106,6 +107,43 @@ test("buildArtifactLinks maps artifacts only to targets in their collection", as
 	}
 });
 
+test("buildArtifactLinks creates a single directory link for directory linkMode targets", async () => {
+	const fixture = await createFixture("build-artifact-directory-links");
+	try {
+		const req: ArtifactRequest = {
+			listOnly: false,
+			artifacts: [
+				{
+					kind: "agent",
+					id: "copilot:planner",
+					name: "planner",
+					collection: "copilot",
+					sourcePath: fixture.sources.agent,
+					destinationName: "planner.agent.md",
+					entryKind: "file",
+				},
+			],
+			targets: [
+				{
+					collection: "copilot",
+					directory: path.join(fixture.root, "agents"),
+					linkMode: "directory",
+					sourceDirectory: path.dirname(fixture.sources.agent),
+				},
+			],
+		};
+		assert.deepEqual(buildArtifactLinks(req), [
+			{
+				kind: "directory",
+				sourcePath: path.dirname(fixture.sources.agent),
+				destinationPath: path.join(fixture.root, "agents"),
+			},
+		]);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
 test("installArtifacts creates file and directory links and is idempotent", async () => {
 	const fixture = await createFixture("install-artifacts-create");
 	try {
@@ -128,6 +166,111 @@ test("installArtifacts creates file and directory links and is idempotent", asyn
 		assert.deepEqual(
 			second.existing,
 			links.map((link) => link.destinationPath),
+		);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("uninstallArtifacts removes an explicitly owned legacy link", async () => {
+	const fixture = await createFixture("install-artifacts-legacy");
+	const legacyLink = path.join(fixture.root, "legacy-link");
+	try {
+		await symlink(fixture.sources.skill, legacyLink, "dir");
+		const removed = await uninstallArtifacts([
+			{
+				kind: "directory",
+				sourcePath: fixture.sources.skill,
+				destinationPath: legacyLink,
+			},
+		]);
+		assert.deepEqual(removed, [legacyLink]);
+		await assert.rejects(lstat(legacyLink), /ENOENT/);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("installArtifacts validates collisions before migrating owned directory links", async () => {
+	const fixture = await createFixture("install-artifacts-preflight");
+	try {
+		const directory = path.join(fixture.root, "skills");
+		const migration: ResolvedLink = {
+			kind: "directory",
+			sourcePath: path.dirname(fixture.sources.skill),
+			destinationPath: directory,
+		};
+		await symlink(migration.sourcePath, directory, "dir");
+		const collision = path.join(fixture.root, "collision");
+		await writeFile(collision, "preserve");
+		const link: ResolvedLink = {
+			kind: "directory",
+			sourcePath: fixture.sources.skill,
+			destinationPath: path.join(directory, "planning"),
+		};
+		await assert.rejects(
+			installArtifacts(
+				[link, { ...link, destinationPath: collision }],
+				[],
+				[migration],
+			),
+			/not a symlink/,
+		);
+		await assertLinkPointsTo(directory, migration.sourcePath);
+		const result = await installArtifacts([link], [], [migration]);
+		assert.deepEqual(result.removed, [directory]);
+		assert.equal((await lstat(directory)).isSymbolicLink(), false);
+		await assertLinkPointsTo(link.destinationPath, fixture.sources.skill);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("uninstallArtifacts removes owned links only, preserving sources and unrelated entries", async () => {
+	const fixture = await createFixture("uninstall-artifacts-owned");
+	try {
+		const links = buildArtifactLinks(request(fixture.root, fixture.sources));
+		await installArtifacts(links);
+		const unrelated = path.join(fixture.root, "skills", "unrelated");
+		await symlink(fixture.root, unrelated, "dir");
+		const removed = await uninstallArtifacts([
+			...links,
+			{
+				kind: "directory",
+				sourcePath: fixture.sources.skill,
+				destinationPath: unrelated,
+			},
+		]);
+		assert.deepEqual(
+			removed,
+			links.map((link) => link.destinationPath),
+		);
+		assert.equal((await lstat(unrelated)).isSymbolicLink(), true);
+		assert.equal((await lstat(fixture.sources.skill)).isDirectory(), true);
+		assert.deepEqual(await uninstallArtifacts(links), []);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("installArtifacts rejects a destination parent linked into the source catalog", async () => {
+	const fixture = await createFixture("install-artifacts-parent-boundary");
+	try {
+		const skills = path.join(fixture.root, "skills");
+		await symlink(path.dirname(fixture.sources.skill), skills, "dir");
+		await assert.rejects(
+			installArtifacts([
+				{
+					kind: "directory",
+					sourcePath: fixture.sources.skill,
+					destinationPath: path.join(skills, "private-notes"),
+				},
+			]),
+			/Destination parent resolves inside an artifact source/,
+		);
+		await assert.rejects(
+			lstat(path.join(path.dirname(fixture.sources.skill), "private-notes")),
+			/ENOENT/,
 		);
 	} finally {
 		await fixture.cleanup();

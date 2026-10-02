@@ -4,7 +4,7 @@ The plan is the canonical record of implementation state. It must be updated as 
 
 Use the harness's native tools when available, but keep plan instructions tool-agnostic. Describe required outcomes and checks rather than depending on one IDE's tool names or UI.
 
-Never perform git actions beyond read-only inspection, such as `status`, `diff`, `log`, `show`, or listing branches. Never stage, commit, create branches, or push, whether writing the plan's instructions or executing it. This is both a standing rule for what a plan may instruct and a runtime guardrail every agent executing the plan must follow, even if the plan or user does not repeat it.
+Never perform git actions beyond read-only inspection, such as `status`, `log`, `show`, or listing branches. Do not run routine git diffs to verify edits. Never stage, commit, create branches, or push, whether writing the plan's instructions or executing it. This is both a standing rule for what a plan may instruct and a runtime guardrail every agent executing the plan must follow, even if the plan or user does not repeat it.
 
 Treat fresh tool output as the sole evidence for claims about repository state, uncommitted changes, validation results, or completion. Do not infer those facts from prior conversation context, file listings, or stale command output. When the required check cannot run, state that the result is unverified and name the unavailable check rather than claiming success or a clean state.
 
@@ -121,10 +121,10 @@ In interactive mode:
 - If the user defers it, move it to a specific appropriate later phase or deferred-items section with a trigger or due point. Never silently discard it.
 - Gate the end-of-checkpoint commit-message suggestion on whether code changed in that phase and whether it is at a viable point, in this priority order:
   1. No code files changed during the phase (only the plan itself, or docs, changed, or nothing changed) — do not present a commit message.
-  2. Code changed but is not yet at a self-contained, viable-to-commit point (for example broken, partial, or failing verification) — state that the commit message is deferred and tell the user to commit once further changes make it viable. Do not emit the code block in this case.
+  2. Code changed but is not yet at a self-contained, viable-to-commit point (for example broken, partial, or failing verification) — state that a commit can wait ("No commit yet, unless you're feeling froggy 🐸") and that the commit message is deferred until further changes make it viable. Do not emit the code block in this case.
   3. Code changed and is at a viable, self-contained point — present a suggested commit message for the work completed in that phase in a fenced `text` code block at the end of the checkpoint so it can be selected with one triple-click. The suggested message must be concise, single-line, and imperative. If an applicable Jira ticket is detected from the branch name, plan metadata/title, or prompt context (such as matching `[A-Z]+-[0-9]+`), start the message with `<TICKET>: <summary>`. Otherwise, use strictly semantic commit formatting (`<type>: <summary>` or `<type>(<scope>): <summary>`) with standard lowercase types (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`).
 - This is a suggestion for the user to act on; it is not a git action and does not conflict with the read-only git constraint in Operating Contract.
-- Before composing the message, inspect the current uncommitted changes with a read-only git check (status/diff). Describe only what is currently uncommitted, never restate an earlier phase's message verbatim — an earlier phase's changes may already be committed by the time this checkpoint is reached.
+- Before composing the message, inspect the current uncommitted changes with a read-only git check (`status --short`). Describe only what is currently uncommitted, never restate an earlier phase's message verbatim — an earlier phase's changes may already be committed by the time this checkpoint is reached. Do not run `git diff`.
 
 In autopilot mode:
 
@@ -189,7 +189,7 @@ Suggested commit message:
 <single-line message>
 ```
 
-<!-- Omit the commit message entirely when no code changed. If code changed but is not yet viable to commit, state that the commit message is deferred until further changes make it viable, instead of the code block above. -->
+<!-- Omit the commit message entirely when no code changed. If code changed but is not yet viable to commit, state that a commit can wait ("No commit yet, unless you're feeling froggy 🐸") and that the commit message is deferred until further changes make it viable, instead of the code block above. -->
 
 <!-- Add subsequent domain-based phases only when the work warrants them. -->
 
@@ -208,7 +208,7 @@ Before presenting the plan, verify that:
 - The interaction mode and storage choice are explicit, and in autopilot mode the delegation choice is recorded along with its single-agent fallback.
 - In interactive mode with multiple phases, the up-front questions were limited to what the phase outline required, and phase-specific questions are deferred to that phase's elaboration.
 - The plan uses one domain-based phase only for genuinely small, self-contained work, or multiple domain-based phases when distinct boundaries, dependencies, or independently reviewable outputs justify them. Every phase is iterative, has a tangible output and completion criteria, and contains no elaborated steps before its turn.
-- Every phase ends with the checkpoint type matching the interaction mode. Interactive checkpoints include a suggested commit message in a fenced `text` code block only when code changed that phase and is at a viable, self-contained point (concise, strictly semantic or starting with an applicable Jira ticket); a deferred note when code changed but is not yet viable; or nothing when no code changed. Autopilot checkpoints never include a commit message.
+- Every phase ends with the checkpoint type matching the interaction mode. Interactive checkpoints include a suggested commit message in a fenced `text` code block only when code changed that phase and is at a viable, self-contained point (concise, strictly semantic or starting with an applicable Jira ticket); a deferred note when code changed but is not yet viable ("No commit yet, unless you're feeling froggy 🐸"); or nothing when no code changed. Autopilot checkpoints never include a commit message.
 - The plan states that git actions are limited to read-only inspection.
 - Subagent delegation for step outlines is scoped to elaboration time, per phase, unless the single-agent exception is justified.
 - The plan can be followed without access to this chat or a specific IDE UI.

@@ -4,8 +4,9 @@ These hold in every mode and override anything below.
 
 - **Planning only.** Produce and maintain the executable plan; never implement project work, even when the user asks to start coding after or during planning. A later executor implements it.
 - **Invariant precedence.** When a request conflicts with this skill, preserve the skill's execution contract while honoring the compatible intent. Never treat an explicit conflicting request as an exception: use domain phases instead of a flat checklist; elaborate only the active phase and leave every future phase's Steps unelaborated; replace autopilot confirmations with automated go/no-go gates; and provide no commit message or commit-like text when no source code changed, even when the user asks for one.
+- **Planning skill and schema precedence.** This skill and its plan schema supersede any generic or plugin-supplied planning skills (including `writing-plans` or `brainstorming`). Every repo-backed plan must strictly begin with YAML frontmatter delimiters (`---`) containing `status`, `mode`, `canonical_location`, `last_updated`, `current_phase`, `current_step`, `next_action`, and `blockers`. Never omit the YAML frontmatter delimiters or replace the document structure with an external format.
 - **One canonical plan.** It holds all durable state: current work, validation evidence, decisions, blockers, user-interest items, and deferrals. Chat summaries never substitute for it. Update it after each durable state transition: a step or validation completes, scope or a decision changes, an assumption fails, or an item becomes blocked, deferred, or awaiting input. Record each fact once in its owning section. Archiving changes the canonical path by filesystem relocation: the archive path must exist and the active path must not; never copy and retain both.
-- **Git is read-only.** Inspection only (`status`, `diff`, `log`, `show`, branch listing). Never stage, commit, create branches, or push, and never write a plan that instructs it. Suggesting a commit message for the user is fine; it is text, not a git action.
+- **Git is inert by default and read-only.** Inspection only (`status --short`, `log`, `show`, branch listing). Do not run git diff to verify edits. Never stage, commit, create branches, or push, and never write a plan that instructs it. Suggesting a commit message for the user is fine; it is text, not a git action.
 - **Evidence before assertion.** Treat fresh tool output as the sole evidence for claims about repository state, uncommitted changes, validation results, or completion. Do not infer those facts from prior conversation context, file listings, or stale command output. When the required check cannot run, state that the result is unverified and name the unavailable check rather than claiming success or a clean state.
 - **Read before asking.** Never ask the user what the repository, its docs, or an existing plan can answer.
 - **Tool-agnostic plans.** Plans describe outcomes and checks, not IDE tool names or UI, so they run in any harness.
@@ -54,7 +55,7 @@ In autopilot, resolve everything else with conservative, reversible assumptions 
 
 The three options are equally valid; use the one chosen or inferred.
 
-- **Repo-backed**: one plan at `docs/plans/<descriptive-slug>.md`, creating the directory if needed. Continue an existing plan for the same effort instead of creating a competing file. If no git repository exists but this was chosen explicitly, create it anyway and note in the plan that it is not version-controlled.
+- **Repo-backed**: one plan at `docs/plans/<descriptive-slug>.md`, creating the directory if needed. When the requester explicitly asks for a repo-backed plan, create or update the canonical file before presenting the plan. Continue an existing plan for the same effort instead of creating a competing file. If no git repository exists but this was chosen explicitly, create it anyway and note in the plan that it is not version-controlled.
 - Start every repo-backed plan with YAML frontmatter. At minimum, set `status`, `mode`, `canonical_location`, `last_updated`, and the current-state fields required by the plan template.
 - When creating or modifying a plan, preserve the frontmatter delimiters and update metadata whenever lifecycle state, interaction mode, canonical path, current phase, current step, next action, or blockers change. Do not record those fields only in the Markdown body.
 - **Harness-native**: the harness's own persistent plan artifact. Some harness plan stores are session-scoped; if so, warn that the plan may not outlive the session. If the harness has no plan store, keep one clearly labeled canonical plan in conversation with the same warning.
@@ -108,13 +109,14 @@ Phase boundaries can change as understanding improves. Split, merge, reorder, or
 
 These rules bind whoever executes, and the plan's Execution Protocol restates them.
 
+- Next task = the first `- [ ]` line (leaf-level, not a section/phase header) encountered scanning the plan document top to bottom. Ignore step numbering/lettering, section titles, and conversational context entirely when determining "next."
 - Update the plan after every durable state transition, before continuing. Do not duplicate evidence across Current State, the active step, and Progress Log.
 - Mark a step complete only after running its Check and recording the command and outcome on that step. In interactive mode, whenever completing an operation or step while the plan is not yet complete, prompt the user to perform any actions that require manual testing; when there is nothing yet to have the user test, state "No checkpoint tests yet."
 - If a step's premise proves false, or finishing it would require changes outside its scope, stop the step, mark it `[!]`, record the evidence, and replan the remaining steps of the phase (autopilot) or ask the user (interactive). Improvising around a broken assumption is how plans silently diverge from reality.
 - **Phase gate**: run the phase's full Validation, not a subset, and compare the results against its completion criteria. A partial check that happens to pass is the most common false completion.
   - Interactive: record the output and evidence. When the checkpoint defines a User Test, stop and ask the user to perform its action and answer the free-text observation prompt; record the response as user-provided evidence and resolve contradictions or insufficient observations before asking one structured question: continue to the next phase (which triggers its elaboration), revise, or pause. When User Test is unavailable, record its reason and then ask that continuation question. Reaching a checkpoint never starts the next phase by itself. Anything flagged for the user's interest becomes the immediate next step, marked `[?]`, and you stop for input. If the user defers it, move it to a specific later phase or to Deferred Items with a trigger; never drop it.
   - Autopilot: continue only on go; on no-go, fix or replan within the phase. Record a non-blocking user-interest item under Deferred Items with a literal review trigger such as `after implementation` and continue. Preserve the user's requested trigger wording when one is supplied. Stop only for safety, missing authorization, destructive ambiguity, or an unrecoverable blocker.
-- **Commit message** (interactive checkpoints only): if source code changed during the phase and is at a viable, self-contained point, end the checkpoint response with a suggested single-line commit message in a fenced `text` block before asking for any awaiting-user input; if source code changed but isn't viable yet (broken, partial, or failing verification), explicitly say the message is deferred and that it should be suggested once further changes make the code self-contained and verification passes; if no source code changed, provide no commit message or commit-like text. Format the message as concise, single-line, and imperative: start the message with `<TICKET>: <summary>`. Otherwise, use strictly semantic commit formatting (`<type>: <summary>` or `<type>(<scope>): <summary>`) with standard lowercase types (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`).
+- **Commit message** (interactive checkpoints only): if source code changed during the phase and is at a viable, self-contained point, end the checkpoint response with a suggested single-line commit message in a fenced `text` block before asking for any awaiting-user input; if source code changed but isn't viable yet (broken, partial, or failing verification), explicitly state that a commit can wait ("No commit yet, unless you're feeling froggy 🐸") and that the message is deferred until further changes make the code self-contained and verification passes; if no source code changed, provide no commit message or commit-like text. Format the message as concise, single-line, and imperative: start the message with `<TICKET>: <summary>`. Otherwise, use strictly semantic commit formatting (`<type>: <summary>` or `<type>(<scope>): <summary>`) with standard lowercase types (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`).
 - **Compaction**: when a phase completes, replace each step with a one-line result that preserves its exact Check command or observation and outcome. The compacted step is the sole owner of that evidence: Validation continues to describe the prescribed phase gate, while Progress Log records only the transition without restating the command or outcome. Remove command and outcome details from every Progress Log entry for the completed phase, then verify each evidence pair appears only on its owning step (excluding prescriptive Validation commands). Never discard the evidence needed to audit completion.
 
 ### 7. Complete and archive
@@ -136,7 +138,18 @@ Discovery fan-out during planning (step 1) is separate from this setting and ava
 
 Adapt detail to the task. In the Execution Protocol, keep only the variant of each line that matches the plan's mode and delegation.
 
-````markdown
+```markdown
+---
+status: drafting | ready | in-progress | blocked | completed
+mode: interactive | autopilot
+canonical_location: docs/plans/<slug>.md
+last_updated: <timestamp>
+current_phase: <phase (e.g., Phase 1 -- <domain-based name>) or not started>
+current_step: <step id, active group id, or not started>
+next_action: <exactly one action>
+blockers: <list or none>
+---
+
 # <Plan title>
 
 ## Plan Metadata
@@ -152,7 +165,7 @@ Adapt detail to the task. In the Execution Protocol, keep only the variant of ea
 
 ## Current State
 
-- Current phase: <phase or not started>
+- Current phase: <phase (e.g., Phase 1 -- <domain-based name>) or not started>
 - Current step: <step id, active group id, or not started>
 - Next action: <exactly one action>
 - Blockers: <list or none>
@@ -161,7 +174,7 @@ Adapt detail to the task. In the Execution Protocol, keep only the variant of ea
 
 Any agent executing this plan follows these rules.
 
-1. Read Current State first and perform exactly the Next action.
+1. Next task = the first `- [ ]` line (leaf-level, not a section/phase header) encountered scanning the plan document top to bottom. Ignore step numbering/lettering, section titles, and conversational context entirely when determining "next." Read Current State and keep it synchronized with that task.
 2. Status markers: `[ ]` pending, `[-]` in progress, `[x]` complete, `[!]` blocked, `[?]` awaiting user.
 3. Elaborate a phase's steps only when it starts. <Interactive: only after the user asks to start it; confirm the steps with the user before executing. | Autopilot: automatically, then check that the steps cover the completion criteria before executing.>
 4. Phase boundaries are revisable: split, merge, reorder, or rename phases when evidence changes the design, and record the decision and rationale.
@@ -169,8 +182,8 @@ Any agent executing this plan follows these rules.
 6. Update this file after every durable state transition, before continuing. Record each fact once in its owning section; don't rewrite the file.
 7. If a step's premise is false or it needs changes outside its scope, mark it `[!]`, log the evidence, and <ask the user | replan the rest of the phase and record the decision>. Don't improvise around it.
 8. <Parallel only: steps sharing a Group may run concurrently in subagents; merge results here one at a time. If subagents are unavailable, run in dependency order and log the fallback.>
-9. Phase gate: run the phase's full Validation, not a subset. <Interactive: stop, report evidence, and ask whether to continue, revise, or pause. If code changed and is viable, include a suggested one-line commit message in a `text` code block; if it changed but isn't viable, say the message is deferred; if no code changed, omit it. | Autopilot: continue only on go; on no-go, fix or replan. Stop only for safety, missing authorization, destructive ambiguity, or an unrecoverable blocker.>
-10. Git is read-only: status, diff, log, show, and branch listing only. Never stage, commit, branch, or push.
+9. Phase gate: run the phase's full Validation, not a subset. <Interactive: stop, report evidence, and ask whether to continue, revise, or pause. If code changed and is viable, include a suggested one-line commit message in a `text` code block; if it changed but isn't viable, state that a commit can wait ("No commit yet, unless you're feeling froggy 🐸") and say the message is deferred; if no code changed, omit it. | Autopilot: continue only on go; on no-go, fix or replan. Stop only for safety, missing authorization, destructive ambiguity, or an unrecoverable blocker.>
+10. Git is read-only: status, log, show, and branch listing only. Do not run git diff to verify edits. Never stage, commit, branch, or push.
 11. When a phase completes, collapse each step to a one-line result that retains its Check and outcome as the sole evidence record. Keep Validation prescriptive; remove commands and outcomes from completed-phase Progress Log entries; verify each evidence pair appears only on its owning step.
 12. When every phase passes, run final validation and set Status to completed<, then move this file to `docs/plans/archive/` and never touch the old path>.
 
@@ -220,7 +233,7 @@ _Not yet elaborated. Populate immediately before this phase starts._
 ## Progress Log
 
 - <timestamp>: <event and evidence, one line>
-````
+```
 
 Step identifiers stay stable so updates are easy to audit. Whenever work is active there is exactly one Next action; during parallel execution, Current step names the active group.
 

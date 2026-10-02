@@ -17,6 +17,30 @@ const AGENT_ONLY_FRONTMATTER_KEYS = new Set([
 	"model",
 ]);
 
+const REQUIRED_AGENT_BASELINE_TOOLS = [
+	"read",
+	"search",
+	"web",
+	"vscode/askQuestions",
+] as const;
+
+function missingAgentBaselineTools(tools: unknown): readonly string[] {
+	if (!Array.isArray(tools) || tools.some((tool) => typeof tool !== "string")) {
+		return REQUIRED_AGENT_BASELINE_TOOLS;
+	}
+
+	const aliases: Readonly<Record<string, string>> = {
+		Read: "read",
+		Glob: "search",
+		Grep: "search",
+		WebFetch: "web",
+		WebSearch: "web",
+		AskUserQuestion: "vscode/askQuestions",
+	};
+	const declared = new Set(tools.map((tool) => aliases[tool] ?? tool));
+	return REQUIRED_AGENT_BASELINE_TOOLS.filter((tool) => !declared.has(tool));
+}
+
 const ALLOWED_SKILL_FRONTMATTER_KEYS = new Set([
 	"name",
 	"description",
@@ -139,18 +163,29 @@ async function validatePlanStatuses(
 	plansRoot: string,
 	errors: string[],
 ): Promise<void> {
+	const activePlans = new Map<string, string>();
+	const archivedPlans = new Map<string, string>();
+
 	for (const planPath of await discoverPlanPaths(plansRoot)) {
 		const relativePath = toRelativePath(repoRoot, planPath);
+		const relativeToPlans = path.relative(plansRoot, planPath);
+		const isArchived =
+			relativeToPlans === "archive" ||
+			relativeToPlans.startsWith(`archive${path.sep}`);
+		const basename = path.basename(planPath);
+
+		if (isArchived) {
+			archivedPlans.set(basename, relativePath);
+		} else {
+			activePlans.set(basename, relativePath);
+		}
+
 		try {
 			const parsed = parseFrontmatter(
 				await readFile(planPath, "utf8"),
 				relativePath,
 			);
 			const status = parsed.attributes.status;
-			const relativeToPlans = path.relative(plansRoot, planPath);
-			const isArchived =
-				relativeToPlans === "archive" ||
-				relativeToPlans.startsWith(`archive${path.sep}`);
 
 			if (typeof status !== "string" || status.length === 0) {
 				errors.push(
@@ -177,6 +212,15 @@ async function validatePlanStatuses(
 				error instanceof Error
 					? `${relativePath}: ${error.message}`
 					: `${relativePath}: ${String(error)}`,
+			);
+		}
+	}
+
+	for (const [basename, activeRelative] of activePlans) {
+		const archivedRelative = archivedPlans.get(basename);
+		if (archivedRelative) {
+			errors.push(
+				`${activeRelative}: duplicate plan exists in archive at ${archivedRelative}`,
 			);
 		}
 	}
@@ -382,6 +426,12 @@ export async function checkCustomizations(repoRoot: string): Promise<void> {
 		try {
 			const content = await readFile(agentFile, "utf8");
 			const parsed = parseFrontmatter(content, relativePath);
+
+			for (const tool of missingAgentBaselineTools(parsed.attributes.tools)) {
+				errors.push(
+					`${relativePath}: agent tools missing required baseline tool ${tool}`,
+				);
+			}
 
 			const agentDescription = parsed.attributes.description;
 			if (typeof agentDescription === "string") {

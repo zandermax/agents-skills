@@ -16,14 +16,28 @@ while referencing public skills as read-only topic anchors.
 - **Strict Separation of Storage**:
   - Public skill definitions reside in `agents-skills/.agents/skills/`.
     This repository is strictly read-only during memory operations. Never
-    create, edit, or delete any file in `agents-skills`.
+    create, edit, or delete any file in `agents-skills` **as part of routing
+    a captured preference** (see the explicit-instruction exception under
+    Curated Instruction Immutability below, which applies here too).
   - Private memory notes reside in the directory specified by `$MEMORY_DIR`
     (defaulting to `~/.memory`). All captured notes, conventions, and personal
     preferences must be written to this location only, except for symlinks
     created in tool skill directories as required by the Lazy Loading Invariant.
+  - Every agent may read memory skill files at
+    `~/.memory/<skill-name>/SKILL.md` on demand using available file-reading
+    tools; this read access does not permit writes, does not prompt the user
+    for permission to read memory paths, does not use a harness-level memory
+    tool, and does not use a root-level `/memories/...` path.
 - **Curated Instruction Immutability**:
-  - Never write to `AGENTS.md` or `agents.local.md`. Universal paradigms are
-    curated manually by the human operator, never auto-appended to.
+  - Never write to `AGENTS.md` or `agents.local.md` **as part of this
+    skill's routing logic** (i.e. never choose to append there because a
+    captured preference happens to match their topic). Universal paradigms
+    are curated manually by the human operator, never auto-appended to.
+  - This restriction does not apply when the human operator gives an
+    explicit, direct instruction to edit one of these files for that exact
+    purpose. Such an instruction overrides this skill's default and is
+    followed directly, outside the Routing and Matching steps below — report
+    the file path and diff exactly as for any other capture.
 - **Evidence and Transparency**:
   - Always report the exact file path created or updated.
   - Always output the unified diff showing the exact changes made.
@@ -39,6 +53,10 @@ while referencing public skills as read-only topic anchors.
 ## Routing and Matching
 
 When presented with a preference or note to capture:
+
+Capture only an explicitly requested memory or a clearly stated durable personal
+preference. Loading existing notes is independent of capture. A request to fix
+an agent, skill, or repository does not by itself authorize creating a memory.
 
 1. **Resolve Memory Directory**:
    - Determine target memory root: check `$MEMORY_DIR` environment variable,
@@ -141,10 +159,10 @@ step silently only when no customization-evaluation skill is available.
    diagnostics). If neither is present, skip this section silently: emit no
    message and take no action.
 2. **Evaluate and fix the file**: if `fix-customization-evaluation-diagnostics`
-    is available, invoke it against the written memory `SKILL.md` file and
-    complete any fixes it applies or recommends. If only `analyze-prompt` is
-    available, invoke it against the file to report findings, then apply any
-    resulting fixes manually before continuing.
+   is available, invoke it against the written memory `SKILL.md` file and
+   complete any fixes it applies or recommends. If only `analyze-prompt` is
+   available, invoke it against the file to report findings, then apply any
+   resulting fixes manually before continuing.
 3. **Re-verify after fixes**: if the evaluation skill modified the memory
    note, re-run the memory topic's test suite to confirm it still passes, and
    include the additional changes in the diff shown to the user.
@@ -164,9 +182,11 @@ description: "Personal preferences, conventions, and learnings regarding <topic>
 ---
 ```
 
-Include targeted trigger keywords in the `description` (e.g. language,
-framework, tooling, or workflow names) so agent harnesses discover and load the
-note only when the current task touches those topics.
+Include targeted, action-oriented trigger keywords in the `description` (e.g.
+language, framework, tooling, or workflow tasks such as "Use when writing,
+modifying, or reviewing...", "Use when committing, branching, or pushing...")
+so agent harnesses proactively discover and load the note whenever the current
+task touches those topics.
 
 Inside the memory note, structure entries under clean markdown sections:
 
@@ -174,9 +194,11 @@ Inside the memory note, structure entries under clean markdown sections:
 # <Topic Title> Notes
 
 ## Preferences
+
 - <specific preference or pattern>
 
 ## Conventions
+
 - <specific convention>
 ```
 
@@ -187,6 +209,7 @@ file verifying both trigger sensitivity and behavioral invariants:
 `<resolved-memory-dir>/<topic>-notes/test/<topic>-notes.test.ts`.
 
 When creating a new memory topic:
+
 1. Create `<resolved-memory-dir>/<topic>-notes/test/` directory.
 2. Create `<resolved-memory-dir>/<topic>-notes/test/<topic>-notes.test.ts`
    containing:
@@ -197,6 +220,7 @@ When creating a new memory topic:
    - Conventions assertions (asserting specified libraries, formats, or tools).
 
 When appending preferences to an existing memory topic:
+
 1. Update `<resolved-memory-dir>/<topic>-notes/test/<topic>-notes.test.ts`
    with corresponding behavioral assertions for the newly added preferences.
 2. Execute the test with `node --test --experimental-strip-types <path>` (or the
@@ -207,15 +231,31 @@ When appending preferences to an existing memory topic:
 
 Memory notes must never be loaded into global, always-on context. They exist as
 independent skills discoverable by their frontmatter `description`. Agents
-consult memory skills dynamically when a matching task arises, keeping base
-context lean.
+proactively consult and load matching memory skills on demand without prompting
+or asking the user for permission. When a task touches a relevant domain (such
+as git, testing, css, dependencies, or minimal changes), agents load the
+matching note immediately using available file-reading tools once per session.
 
-Whenever a new memory note directory is created, ensure it is symlinked into
-the tool skill directories (`~/.copilot/skills/<topic>-notes` and
-`~/.claude/skills/<topic>-notes`) so it becomes available immediately. Create
-the parent skills directory if it does not exist. If a symlink already points
-to the memory note, leave it. If a different file or directory already occupies
-the target path, do not overwrite it; report the conflict to the user instead.
+Whenever a memory topic is created, register it in the shared user-level
+`~/.claude/skills/` directory, supported by Claude Code and Copilot. Run the
+bundled [registration helper](scripts/register-memory.ts) with native Node:
+
+```sh
+node --experimental-strip-types <installed-remember-that-directory>/scripts/register-memory.ts <topic>-notes
+```
+
+The helper honors `$MEMORY_DIR`, validates topic metadata and test structure,
+and creates individual discovery links only. It rejects destination parents
+that resolve into the public repository, leaves correct links unchanged, and
+reports conflicting files or links without overwriting them. Never construct
+discovery links yourself or replace a parent directory symlink during capture.
+If registration encounters an old repository-backed directory link, stop and
+explain that writing through that parent could put private memory into the
+public repository. Report the conflict and explicitly ask the user to run the
+repository installer migration before retrying registration. Report private
+note and test results separately from pending discovery registration, attributing
+prior results to the user when not independently verified. Do not report the
+full capture as complete until registration is verified.
 
 ## Verification and Reporting
 
@@ -229,7 +269,9 @@ the target path, do not overwrite it; report the conflict to the user instead.
 3. Run the Post-Capture Customization Evaluation step against the memory note,
    if an evaluation skill is available.
 4. Verify that no changes were introduced into `agents-skills` or any global
-   instruction file (symlinks in tool skill directories are expected).
+   instruction file. Resolve discovery parents before accepting placement;
+   a home-directory spelling does not prove the target is outside the public
+   repository.
 5. Verify that no `ctx`-derived content was written into the memory note or its
    tests.
 6. Report the full path of the modified or created memory note and test file.

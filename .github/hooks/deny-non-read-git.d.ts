@@ -3,6 +3,38 @@ export interface ToolEvaluationResult {
 	readonly reason?: string;
 }
 
+export const READ_ONLY_PATH_TOOLS: ReadonlySet<string>;
+export function expandPath(value: string): string;
+export function canonicalPath(value: string): string;
+export function isWithin(
+	root: string,
+	candidate: string,
+	requireDescendant?: boolean,
+): boolean;
+export function isApprovedExternalReadPath(value: string): boolean;
+export interface WorkspaceBoundaryContext {
+	readonly cwd?: string;
+	readonly transcriptPath?: string;
+	readonly workspaceRoots?: readonly string[];
+}
+
+export function resolveWorkspaceRoots(
+	context?: WorkspaceBoundaryContext,
+): readonly { readonly lexical: string; readonly canonical: string }[];
+export function isExternalPath(
+	value: string,
+	context?: WorkspaceBoundaryContext,
+): boolean;
+export function checkToolInputPaths(
+	toolInput: unknown,
+	toolName?: string,
+	context?: WorkspaceBoundaryContext,
+): string | null;
+export function checkCommandPaths(
+	command: string,
+	context?: WorkspaceBoundaryContext,
+): string | null;
+
 export function splitShellStatements(cmdLine: string): string[];
 export function tokenizeStatement(statement: string): string[];
 export function checkGitCommandTokens(tokens: readonly string[]): string | null;
@@ -10,4 +42,7 @@ export function checkCommandForNonReadGit(fullCommand: string): string | null;
 export function evaluateToolUse(
 	toolName: string | undefined,
 	toolInput: unknown,
+	context?: WorkspaceBoundaryContext,
 ): ToolEvaluationResult;
+
+export function runCli(): void;

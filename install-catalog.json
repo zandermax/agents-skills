@@ -4,6 +4,7 @@
 			"name": "skills",
 			"artifactKind": "skill",
 			"source": ".agents/skills",
+			"linkMode": "entries",
 			"entry": {
 				"kind": "directory",
 				"marker": "SKILL.md"
@@ -12,7 +13,8 @@
 		{
 			"name": "copilot",
 			"artifactKind": "agent",
-			"source": ".github/agents",
+			"source": ".claude/agents",
+			"linkMode": "entries",
 			"entry": {
 				"kind": "file",
 				"suffix": ".agent.md"
@@ -23,6 +25,7 @@
 			"name": "hooks",
 			"artifactKind": "hook",
 			"source": ".github/hooks",
+			"linkMode": "directory",
 			"entry": {
 				"kind": "file",
 				"suffix": ".json"
@@ -35,11 +38,11 @@
 			"destinations": [
 				{
 					"collection": "skills",
-					"path": "~/.copilot/skills"
+					"path": "~/.claude/skills"
 				},
 				{
 					"collection": "copilot",
-					"path": "~/.copilot/agents"
+					"path": "~/.claude/agents"
 				},
 				{
 					"collection": "hooks",
@@ -53,6 +56,10 @@
 				{
 					"collection": "skills",
 					"path": "~/.claude/skills"
+				},
+				{
+					"collection": "copilot",
+					"path": "~/.claude/agents"
 				}
 			]
 		},
@@ -61,7 +68,7 @@
 			"destinations": [
 				{
 					"collection": "skills",
-					"path": "~/.agents/skills"
+					"path": "~/.claude/skills"
 				},
 				{
 					"collection": "hooks",

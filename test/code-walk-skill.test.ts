@@ -11,11 +11,11 @@ const teachSkillPath = new URL(
 	import.meta.url,
 );
 const agentPath = new URL(
-	"../.github/agents/code-walk.agent.md",
+	"../.claude/agents/code-walk.agent.md",
 	import.meta.url,
 );
 const teachAgentPath = new URL(
-	"../.github/agents/teach-by-doing.agent.md",
+	"../.claude/agents/teach-by-doing.agent.md",
 	import.meta.url,
 );
 
@@ -31,6 +31,13 @@ test("code walk suggests concrete code for each step by default", async () => {
 		skill,
 		/unless\s+(?:all of it|the whole (?:function|file)) changes/i,
 	);
+});
+
+test("code walk explains the purpose and effects of each code change", async () => {
+	const skill = await readFile(skillPath, "utf8");
+
+	assert.match(skill, /why it is needed/i);
+	assert.match(skill, /effects it will have/i);
 });
 
 test("code walk keeps suggestions separate from applying edits", async () => {

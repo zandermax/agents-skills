@@ -89,6 +89,7 @@ test("renderSkill composes deterministic output in manifest heading order", () =
 		"name: executable-planning",
 		"description: Creates deterministic planning checkpoints.",
 		"---",
+		"",
 		"# Executable Planning",
 		"",
 		"## Scope",
@@ -102,6 +103,7 @@ test("renderSkill composes deterministic output in manifest heading order", () =
 		"",
 		"## Usage",
 		"Use at the start of planning and preserve deferred items.",
+		"",
 	].join("\n");
 
 	assert.equal(rendered.path, ".agents/skills/executable-planning/SKILL.md");

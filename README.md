@@ -29,6 +29,17 @@ Install every compatible artifact into all cataloged client destinations:
 npm run install:artifacts
 ```
 
+Copilot and Claude share `~/.claude/skills/` and `~/.claude/agents/`.
+These are real directories containing individual links, not links to entire
+repository directories. Agent definitions have one authored home in
+`.claude/agents/`, use Claude tool names supported by Copilot, and retain
+Copilot handoffs. The `copilot:` collection prefix remains for selector
+compatibility. Hooks retain their harness-specific destinations.
+
+The generic `~/.agents/skills/` convention is not a documented Claude Code
+discovery location, so this installer uses the shared Claude-style paths
+instead of maintaining redundant skill installations.
+
 Use selectors to narrow an installation:
 
 ```sh
@@ -57,13 +68,43 @@ For test isolation, set `AGENTS_SKILLS_HOME` to override the home directory.
 `EXECUTABLE_PLANNING_HOME` remains accepted as a deprecated fallback for one
 migration cycle.
 
+## Uninstall And Memory
+
+```sh
+npm run uninstall:artifacts
+npm run uninstall:artifacts -- --skill executable-planning
+npm run register:memory -- planning-notes
+```
+
+Uninstall accepts the same selectors and custom destinations as installation.
+It removes matching project-owned links only, never their source directories,
+private notes, regular files, or unrelated links. Shared registrations are
+shared by both clients; uninstalling one client removes those shared links.
+
+A general install also registers existing private `<topic>-notes` skills from
+`$MEMORY_DIR` (default `~/.memory`). Notes retain their `SKILL.md` and `test/`
+layout outside this repository. Only discovery metadata is advertised; bodies
+remain loaded on demand. Restricted agents still need skill/file-reading tools.
+Client reload or a new session may be needed after registration.
+
+The bundled `remember-that` registration helper can be run from any project
+with native Node using its installed script path. It refuses registration
+through a parent that resolves into this public repository. Loading notes is
+independent of capturing them; a repository repair is not a memory request.
+
 ## Catalog
 
 [install-catalog.json](install-catalog.json) declares artifact collections,
 their source directories and entry rules, plus built-in client destinations.
 The catalog is the source of truth for discovery and installation.
-The built-in destinations currently include Copilot, Claude, and the generic
-`.agents/skills` convention.
+Copilot, Claude, and generic-client selections share the skill registry.
+Selecting several clients does not duplicate shared destinations.
+
+To install or migrate shared skills and agents without touching hooks:
+
+```sh
+npm run install:artifacts -- --skills-dir "claude=$HOME/.claude/skills" --agents-dir "copilot=$HOME/.claude/agents"
+```
 
 ## Adding Skills
 
@@ -90,7 +131,15 @@ The built-in destinations currently include Copilot, Claude, and the generic
 
 Installation creates symlinks only after validating every source and
 destination. A collision with a regular file or directory, an unrelated
-symlink, or a stale symlink fails without replacing anything.
+symlink, or an unsafe destination parent fails without replacing anything.
+Owned whole-directory links from earlier installs are migrated only after
+collision validation; owned per-entry links at obsolete discovery locations
+are removed. Unrelated entries are preserved. A broken destination link can
+be repaired when installation has a valid source; a stale symlink pointing
+to another existing source remains a conflict.
+
+Single-artifact installs do not migrate whole discovery directories: run a
+complete install first rather than dropping unselected registrations.
 
 If the repository is moved, remove each stale symlink manually and rerun
 installation. Do not replace regular files, directories, or unrelated links.

@@ -1,7 +1,7 @@
 ---
 name: Plan Scout
 description: Answers narrow codebase questions for the Executable Planner
-tools: ["search", "read"]
+tools: [Glob, Grep, Read, WebFetch, WebSearch, AskUserQuestion, Skill]
 agents: []
 user-invocable: false
 disable-model-invocation: false

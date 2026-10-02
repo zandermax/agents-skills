@@ -75,7 +75,7 @@ Use these repository-level identities after migration:
 - npm package: `agents-skills`
 - README title: `Agents and Skills Toolchain`
 - GitHub description: `Build, validate, and install custom agents and skills
-  across AI coding harnesses.`
+across AI coding harnesses.`
 
 Update the package lockfile together with `package.json`. Keep `private: true`
 and do not add an npm `install` lifecycle script.
@@ -152,15 +152,11 @@ Conceptual schema:
     },
     {
       "name": "claude",
-      "destinations": [
-        { "collection": "skills", "path": "~/.claude/skills" }
-      ]
+      "destinations": [{ "collection": "skills", "path": "~/.claude/skills" }]
     },
     {
       "name": "agents",
-      "destinations": [
-        { "collection": "skills", "path": "~/.agents/skills" }
-      ]
+      "destinations": [{ "collection": "skills", "path": "~/.agents/skills" }]
     }
   ]
 }
@@ -393,18 +389,18 @@ Perform identity changes only after generalized code is committed and
 2. Confirm `zandermax/agents-skills` remains available and authenticated user
    `zandermax` retains admin permission on `zandermax/plans`.
 3. Inventory the catalog's known client destinations. For each expected
-  artifact path, use `lstat` to require a symlink, resolve its `readlink`
-  value relative to the link's parent without dereferencing the final target,
-  and accept it only when that normalized path is inside
-  `<workspace-root>/plans`.
+   artifact path, use `lstat` to require a symlink, resolve its `readlink`
+   value relative to the link's parent without dereferencing the final target,
+   and accept it only when that normalized path is inside
+   `<workspace-root>/plans`.
 4. Record destinations that require recreation and remove only links verified
-  by that lexical containment check. Never remove regular files, directories,
-  unrelated links, or links found by an unrestricted home-directory scan.
+   by that lexical containment check. Never remove regular files, directories,
+   unrelated links, or links found by an unrestricted home-directory scan.
 5. Rename the GitHub repository to `agents-skills` and update its description.
 6. Set `origin` explicitly to
    `https://github.com/zandermax/agents-skills.git` and verify fetch metadata.
 7. Move `<workspace-root>/plans` to
-  `<workspace-root>/agents-skills` from the parent directory.
+   `<workspace-root>/agents-skills` from the parent directory.
 8. Recreate recorded symlinks from the new checkout and verify their canonical
    targets.
 9. Run a smoke check from the new path and reopen the VS Code workspace there.

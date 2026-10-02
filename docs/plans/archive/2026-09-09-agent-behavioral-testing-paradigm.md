@@ -18,7 +18,7 @@ blockers: none
 - Delegation: single agent — phases are sequential and mutually dependent (design the runner, then exercise it live against one real skill, then document the convention for all skills/agents); the effort lives in one repository with no independent parallel domains, so subagent parallelism would not help. No single-agent-exception subagent fallback is needed.
 - Canonical location: docs/plans/2026-09-09-agent-behavioral-testing-paradigm.md
 - Last updated: 2026-09-09
-- Goal: Establish a reusable paradigm — usable for every skill and agent, not just memory — for testing actual agent *output*, beyond static frontmatter/structure checks: verifying that a live agent run (a) accesses/loads the relevant skill or memory, and (b) produces output that adheres to (or explicitly pushes back on) the skill's stated rules. Prove the paradigm end-to-end starting with the `node-testing-notes` memory topic, then document it as the standard for all future skills/agents.
+- Goal: Establish a reusable paradigm — usable for every skill and agent, not just memory — for testing actual agent _output_, beyond static frontmatter/structure checks: verifying that a live agent run (a) accesses/loads the relevant skill or memory, and (b) produces output that adheres to (or explicitly pushes back on) the skill's stated rules. Prove the paradigm end-to-end starting with the `node-testing-notes` memory topic, then document it as the standard for all future skills/agents.
 - Success criteria:
   - A reusable eval runner exists in `agents-skills` that can spawn a headless agent CLI (Copilot CLI or Claude Code CLI) for a given prompt, capture structured output, and assert (1) the target skill/memory file was read/loaded and (2) the response text satisfies required/forbidden content matchers.
   - The runner has its own fast, deterministic, offline unit tests (using fixture transcripts, not live API calls) that pass under `npm test`.
@@ -75,7 +75,7 @@ A reusable eval runner module/script in `agents-skills` (e.g. `src/lib/agent-eva
 
 ### Steps
 
-*Not yet elaborated. Populate immediately before this phase starts.*
+_Not yet elaborated. Populate immediately before this phase starts._
 
 ### Validation
 
@@ -111,7 +111,7 @@ Autopilot go/no-go: proceed to Phase 2 only once `npm run check` passes with the
 
 ### Steps
 
-*Not yet elaborated. Populate immediately before this phase starts.*
+_Not yet elaborated. Populate immediately before this phase starts._
 
 ### Validation
 
@@ -144,7 +144,7 @@ Autopilot go/no-go: proceed to Phase 3 only once the live scenario reports PASS 
 
 ### Steps
 
-*Not yet elaborated. Populate immediately before this phase starts.*
+_Not yet elaborated. Populate immediately before this phase starts._
 
 ### Validation
 
@@ -163,7 +163,7 @@ Autopilot go/no-go: this is the final phase. Mark the plan `completed` only once
 - 2026-09-10: First live run against the real Copilot CLI (`copilot -p ... --output-format json --allow-all-tools`) captured a raw transcript (`/tmp/copilot-eval-raw.json`) that revealed the runner's assumed JSON schema was wrong: real events are JSONL with `type`/`data`/`id`/`timestamp`, skill loads appear as `tool.execution_start` events with `toolName: "skill"`, file reads as `toolName: "view"` with `arguments.path`, and the final response as `assistant.message` events with `data.content`. Rewrote `extractFilesAccessed`/`extractResponseText` in `agent-evals.ts` to match, added a schema-accurate fixture test (`parseCliTranscript extracts skill access and final message text from a real Copilot CLI transcript shape`). `npm test` reconfirmed green (15/15 relevant tests).
 - 2026-09-10: Second live run (`/tmp/copilot-eval-raw-2.json`) surfaced a false FAIL: the agent's prose explanation quoted a forbidden term while explaining what it deliberately avoided doing, tripping naive full-text substring matching. Added `extractCodeBlocks`/`textForBehavioralMatching` to scope Gate 2 matching to fenced code blocks when present, with a regression test (`evaluateGate2 matches against fenced code blocks, ignoring forbidden patterns quoted only in explanatory prose`). Verified via `npm test`.
 - 2026-09-10: Same run also surfaced a second false FAIL: a legitimate code comment in the generated test documented the anti-pattern for a human reader (e.g. `// avoid mock.calls inspection`), still matching the forbidden regex. Added `stripCodeComments`, applied only to the forbidden-pattern check (required patterns still checked against uncommented text), with regression tests (`evaluateGate2 ignores forbidden patterns documented only in a code comment`, `evaluateGate2 still fails when a forbidden pattern appears in actual code, not just a comment`). Verified via `npm test`.
-- 2026-09-10: Third live run (`/tmp/copilot-eval-raw-3.json`) behaved inconsistently — the agent found "pre-existing" test files and declined to regenerate them. Root cause: `run-agent-evals.ts` invoked the CLI with `cwd: targetDir` set to the *real* `~/.memory/node-testing-notes/test/` directory, and `--allow-all-tools` let earlier runs write real files there (`auth-login-username.test.js`, `auth-login.test.js`, `output/`), polluting the user's actual memory folder — a direct violation of the Phase 1 risk mitigation ("invoke the CLI with a working directory scoped to a temporary folder... not the real repos"). Cleaned up the polluted files manually (verified via `ls -la` that only `evals.json` and `node-testing-notes.test.ts` remain). Fixed `run-agent-evals.ts` to create a fresh `mkdtemp`-based sandbox directory per scenario invocation (`os.tmpdir()/agent-evals-sandbox-*`), run the CLI there via `spawnSync({ cwd: sandboxDir })`, and remove it in a `finally` block.
+- 2026-09-10: Third live run (`/tmp/copilot-eval-raw-3.json`) behaved inconsistently — the agent found "pre-existing" test files and declined to regenerate them. Root cause: `run-agent-evals.ts` invoked the CLI with `cwd: targetDir` set to the _real_ `~/.memory/node-testing-notes/test/` directory, and `--allow-all-tools` let earlier runs write real files there (`auth-login-username.test.js`, `auth-login.test.js`, `output/`), polluting the user's actual memory folder — a direct violation of the Phase 1 risk mitigation ("invoke the CLI with a working directory scoped to a temporary folder... not the real repos"). Cleaned up the polluted files manually (verified via `ls -la` that only `evals.json` and `node-testing-notes.test.ts` remain). Fixed `run-agent-evals.ts` to create a fresh `mkdtemp`-based sandbox directory per scenario invocation (`os.tmpdir()/agent-evals-sandbox-*`), run the CLI there via `spawnSync({ cwd: sandboxDir })`, and remove it in a `finally` block.
 - 2026-09-10: Verified the sandboxing fix: `get_errors` clean, `npm run check` passed fully (175/175 tests, format/lint/typecheck/customizations/drift all green). Re-ran `npm run eval:memory` live against the sandboxed runner: **PASS** — Gate 1 ("accessed a file matching 'node-testing-notes'") and Gate 2 ("response satisfied all required/forbidden matchers") both passed. Confirmed post-run that the real `~/.memory/node-testing-notes/test/` directory contains only `evals.json` and `node-testing-notes.test.ts` (no pollution) and no leftover `/tmp/agent-evals-sandbox-*` directories remain. Phase 2 checkpoint: PASSED. Proceeding to Phase 3.
 - 2026-09-10: Implemented Phase 3 tangible output: `docs/specs/behavioral-testing-paradigm.md`, documenting the two-tier test model, the `evals.json` schema, the two gates, how to run/interpret the opt-in `eval:memory`-style command, the sandboxing guarantee, and the explicit boundary that live evals are never part of `npm run check`. Uses `node-testing-notes` as the worked example, per the phase's tangible-output requirement. Fixed one markdown lint issue (missing fenced-code-block language on the example output block). `npm run check` passed fully (175/175 tests, markdown lint clean, typecheck/customizations/drift clean). Phase 3 checkpoint: PASSED. Plan marked `completed`.
 - 2026-09-10: User ran `npm run check` and confirmed tests pass. Phase 1 checkpoint: PASSED. Proceeding to Phase 2.

@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 03-read-only-retrieval
+name: Load a matching note without capturing or consulting history
+description: Retrieval is read-only and independent of the capture workflow
+inputs:
+  environment:
+    MEMORY_DIR: private-memory
+    AGENTS_SKILLS_HOME: test-home
+  prompt: |
+    What is my saved preference about test assertions? Read my testing note
+    and answer briefly; I am not asking to save anything.
+
+    MEMORY_DIR=private-memory and AGENTS_SKILLS_HOME=test-home are isolated,
+    task-relative locations. Do not access real home directories, global
+    configuration, or session history.
+  files:
+    - path: private-memory/testing-notes/SKILL.md
+      content: |
+        ---
+        name: testing-notes
+        description: "Personal testing preferences. Use when writing or reviewing test assertions."
+        ---
+
+        # Testing Notes
+
+        ## Preferences
+
+        - Assert observable results rather than internal mock-call counts.
+graders:
+  - name: read-only-note
+    type: file
+    config:
+      content_patterns:
+        - path: private-memory/testing-notes/SKILL.md
+          must_match:
+            - '(?s)^---\nname: testing-notes\ndescription: "Personal testing preferences\. Use when writing or reviewing test assertions\."\n---\n\n# Testing Notes\n\n## Preferences\n\n- Assert observable results rather than internal mock-call counts\.\n$'
+      must_not_exist:
+        - private-memory/testing-notes/test/testing-notes.test.ts
+        - test-home/.claude/skills/testing-notes/SKILL.md
+  - name: retrieval-not-capture
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Pass only if the agent actually reads the fixture note and accurately
+        summarizes the observable-results preference without adding new rules.
+        It must not request permission to read, capture or edit notes, scaffold
+        tests, register links, probe/run ctx, invoke customization evaluation,
+        use a harness memory tool, or access /memories or real home paths.
+        Inspect original tool activity as well as the response; statements that
+        nothing changed are not sufficient. Do not modify files during grading.
+        Call set_waza_grade_pass only if all criteria hold; otherwise call
+        set_waza_grade_fail with concrete unmet criteria.

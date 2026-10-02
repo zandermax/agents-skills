@@ -171,6 +171,30 @@ test("parseInstallCatalog enforces the Agent Skills collection rule", () => {
 	expectCatalogError(catalog, /collections\[0\]\.entry.*SKILL\.md/);
 });
 
+test("parseInstallCatalog validates linkMode options", () => {
+	const validCatalog = createValidCatalog();
+	const validCollections = validCatalog.collections as Array<
+		Record<string, unknown>
+	>;
+	validCollections[1] = { ...validCollections[1], linkMode: "directory" };
+	const parsed = parseInstallCatalog(
+		validCatalog,
+		"install-catalog.json",
+		fixtureRepoRoot,
+	);
+	assert.equal(parsed.collections[1]?.linkMode, "directory");
+
+	const invalidCatalog = createValidCatalog();
+	const invalidCollections = invalidCatalog.collections as Array<
+		Record<string, unknown>
+	>;
+	invalidCollections[1] = { ...invalidCollections[1], linkMode: "symlink-all" };
+	expectCatalogError(
+		invalidCatalog,
+		/collections\[1\]\.linkMode.*entries.*directory/i,
+	);
+});
+
 test("parseInstallCatalog requires confined existing collection sources", () => {
 	const catalog = createValidCatalog();
 	const collections = catalog.collections as Array<Record<string, unknown>>;
@@ -220,7 +244,7 @@ test("parseInstallCatalog rejects duplicate destinations across clients", () => 
 	);
 });
 
-test("parseInstallCatalog rejects agent collections mapped to another client format", () => {
+test("parseInstallCatalog permits compatible agent collections shared by clients", () => {
 	const catalog = createValidCatalog();
 	const clients = catalog.clients as Array<Record<string, unknown>>;
 	const firstClient = clients[0];
@@ -236,9 +260,10 @@ test("parseInstallCatalog rejects agent collections mapped to another client for
 		],
 	};
 
-	expectCatalogError(
-		catalog,
-		/clients\[0\]\.destinations\[2\]\.collection.*format.*copilot/i,
+	assert.equal(
+		parseInstallCatalog(catalog, "install-catalog.json", fixtureRepoRoot)
+			.clients[0]?.destinations.length,
+		3,
 	);
 });
 

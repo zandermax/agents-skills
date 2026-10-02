@@ -1,14 +1,42 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, it } from "node:test";
+import { pathToFileURL } from "node:url";
 
 import {
 	checkCommandForNonReadGit,
+	checkToolInputPaths,
 	evaluateToolUse,
 	splitShellStatements,
 	tokenizeStatement,
-} from "../.github/hooks/deny-non-read-git.js";
+} from "../.github/hooks/deny-non-read-git.mts";
+import { evaluateToolUse as evaluatePreToolSafety } from "../.github/hooks/pre-tool-safety.mts";
 
 describe("deny-non-read-git hook", () => {
+	describe("pre-tool-safety compatibility", () => {
+		it("keeps the legacy and canonical entrypoints on the same decisions", () => {
+			const input = {
+				command: "git commit -m 'feat'",
+			};
+			assert.deepEqual(
+				evaluatePreToolSafety("run_in_terminal", input),
+				evaluateToolUse("run_in_terminal", input),
+			);
+		});
+
+		it("keeps one registered PreToolUse entrypoint per config", async () => {
+			for (const path of [
+				"../.github/hooks/deny-non-read-git.json",
+				"../.agents/hooks/deny-non-read-git.json",
+			]) {
+				const config = await import(path, { with: { type: "json" } });
+				assert.equal(config.default.hooks.PreToolUse.length, 1);
+			}
+		});
+	});
+
 	describe("splitShellStatements", () => {
 		it("splits on semicolons, &&, ||, and pipes outside quotes", () => {
 			const stmts = splitShellStatements(
@@ -43,6 +71,10 @@ describe("deny-non-read-git hook", () => {
 			assert.equal(checkCommandForNonReadGit("git rev-parse HEAD"), null);
 			assert.equal(checkCommandForNonReadGit("git --no-pager diff"), null);
 			assert.equal(checkCommandForNonReadGit("git -C /tmp status"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog -n 30"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog show"), null);
+			assert.equal(checkCommandForNonReadGit("git reflog exists HEAD"), null);
 		});
 
 		it("allows read-only branch, tag, remote, and stash subcommands", () => {
@@ -93,6 +125,17 @@ describe("deny-non-read-git hook", () => {
 			);
 		});
 
+		it("denies mutating reflog operations", () => {
+			assert.match(
+				checkCommandForNonReadGit("git reflog expire --all") ?? "",
+				/git reflog expire/,
+			);
+			assert.match(
+				checkCommandForNonReadGit("git reflog delete HEAD@{1}") ?? "",
+				/git reflog delete/,
+			);
+		});
+
 		it("denies commit, push, checkout, and rebase commands", () => {
 			assert.match(
 				checkCommandForNonReadGit('git commit -m "feat"') ?? "",
@@ -135,11 +178,192 @@ describe("deny-non-read-git hook", () => {
 	});
 
 	describe("evaluateToolUse", () => {
+		it("allows unknown payload shapes without guessing", () => {
+			assert.equal(evaluateToolUse("unknown_tool", null).decision, "allow");
+			assert.equal(evaluateToolUse("unknown_tool", []).decision, "allow");
+		});
+
+		it("preserves GitHub mutation precedence over path checks", () => {
+			const result = evaluateToolUse("mcp_github_mcp_se_push_files", {
+				filePath: "/tmp/outside-workspace.txt",
+			});
+			assert.equal(result.decision, "ask");
+			assert.match(result.reason ?? "", /Mutating Git\/GitHub tool/);
+		});
+
 		it("allows non-command tools", () => {
 			const result = evaluateToolUse("read_file", {
 				filePath: "src/index.ts",
 			});
 			assert.equal(result.decision, "allow");
+		});
+
+		it("asks before a path-bearing tool accesses outside the workspace", () => {
+			const result = evaluateToolUse("read_file", {
+				filePath: "/var/log/outside-workspace.txt",
+			});
+			assert.equal(result.decision, "ask");
+			assert.match(result.reason ?? "", /outside the active workspace/);
+		});
+
+		it("allows workspace-relative paths and classifies external paths", () => {
+			assert.equal(checkToolInputPaths({ filePath: "src/index.ts" }), null);
+			assert.equal(
+				checkToolInputPaths({ filePath: `${process.cwd()}/src/index.ts` }),
+				null,
+			);
+			assert.match(
+				checkToolInputPaths({ filePath: "/tmp/outside.txt" }) ?? "",
+				/outside the active workspace/,
+			);
+		});
+
+		it("allows approved read-only diagnostic resources", () => {
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "/tmp/diagnostic-output.txt",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "~/.memory/git-workflow-notes/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "~/.agents/skills/ctx/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "~/.copilot/skills/auto-vulnerability-fixer/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/.copilot/installed-plugins/atlassian/atlassian/skills/capture-tasks-from-meeting-notes/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "~/.vscode/extensions/test-extension/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/Library/Application Support/Code/User/workspaceStorage/session/chat-session-resources/content.txt",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/Library/Application Support/Code/User/prompts/remember-that.agent.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath:
+						"~/Library/Application Support/Code/copilot-terminal-output/copilot-terminal-output-test.txt",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: String.raw`grep "SKILL.md" /Users/zander/Library/Application\ Support/Code/copilot-terminal-output/copilot-terminal-output-1ab8913c-40dc-419c-b3e2-0352d39bc089.txt | head -n 30`,
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read", {
+					filePath: "~/.agents/skills/ctx/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("readFile", {
+					filePath: "~/.agents/skills/ctx/SKILL.md",
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: "grep -o pattern /tmp/diagnostic-output.txt | wc -l",
+				}).decision,
+				"allow",
+			);
+		});
+
+		it("rejects malformed or write-capable external access", () => {
+			for (const filePath of [
+				"/memories/repo/skill-invocation-paradigm.md",
+				"/memories/repo/SKILL.md",
+				"/var/log/system.log",
+			]) {
+				const result = evaluateToolUse("read_file", { filePath });
+				assert.equal(result.decision, "ask", filePath);
+			}
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: "cat /tmp/input.txt > /tmp/output.txt",
+				}).decision,
+				"ask",
+			);
+			assert.equal(
+				evaluateToolUse("run_in_terminal", {
+					command: "sed -i s/old/new/ /tmp/input.txt",
+				}).decision,
+				"ask",
+			);
+		});
+
+		it("follows symlinks when classifying read paths", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "path-policy-"),
+			);
+			const workspaceTarget = path.join(process.cwd(), "AGENTS.md");
+			const workspaceLink = path.join(temporaryDirectory, "workspace-link.md");
+			const externalLink = path.join(temporaryDirectory, "external-link.md");
+
+			try {
+				await symlink(workspaceTarget, workspaceLink);
+				await symlink("/etc/hosts", externalLink);
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: workspaceLink }).decision,
+					"allow",
+				);
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: externalLink }).decision,
+					"ask",
+				);
+			} finally {
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
+		});
+
+		it("asks before a command accesses an external absolute path", () => {
+			const result = evaluateToolUse("run_in_terminal", {
+				command: "cat /var/log/outside-workspace.txt",
+			});
+			assert.equal(result.decision, "ask");
+			assert.match(result.reason ?? "", /outside the active workspace/);
+		});
+
+		it("allows an absolute executable while checking its arguments", () => {
+			assert.equal(
+				evaluateToolUse("run_in_terminal", { command: "/usr/bin/git status" })
+					.decision,
+				"allow",
+			);
 		});
 
 		it("allows safe read-only git command tool use", () => {
@@ -162,6 +386,226 @@ describe("deny-non-read-git hook", () => {
 				files: [],
 			});
 			assert.equal(result.decision, "ask");
+		});
+
+		it("evaluates list_dir on workspace and external paths", () => {
+			assert.equal(
+				evaluateToolUse("list_dir", { path: process.cwd() }).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("list_dir", {
+					path: path.join(process.cwd(), "docs"),
+				}).decision,
+				"allow",
+			);
+			const extResult = evaluateToolUse("list_dir", {
+				path: "/var/log",
+			});
+			assert.equal(extResult.decision, "ask");
+			assert.match(extResult.reason ?? "", /outside the active workspace/);
+		});
+
+		it("allows read_file and list_dir on approved roots, denies unapproved", () => {
+			const home = process.env.HOME ?? "";
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: path.join(home, ".copilot", "agents", "foo.agent.md"),
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: path.join(home, ".agents", "skills", "test", "helper.txt"),
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("list_dir", {
+					path: path.join(home, ".claude", "skills"),
+				}).decision,
+				"allow",
+			);
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: path.join(home, ".memory", "test-notes", "SKILL.md"),
+				}).decision,
+				"allow",
+			);
+			// Arbitrary system files require confirmation
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "/var/log/system.log",
+				}).decision,
+				"ask",
+			);
+			// Root-level /memories require confirmation
+			assert.equal(
+				evaluateToolUse("read_file", {
+					filePath: "/memories/repo/test.md",
+				}).decision,
+				"ask",
+			);
+		});
+
+		it("handles symlink workspace inspection for aliases and in-workspace symlinks", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "symlink-workspace-test-"),
+			);
+
+			try {
+				const workspaceTarget = path.join(process.cwd(), "AGENTS.md");
+				const aliasWorkspaceDir = path.join(
+					temporaryDirectory,
+					"workspace-alias",
+				);
+				// Symlink pointing to the current workspace root (simulates ~/.copilot/repos <-> ~/repos/work)
+				await symlink(process.cwd(), aliasWorkspaceDir);
+
+				const inAliasFile = path.join(aliasWorkspaceDir, "AGENTS.md");
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: inAliasFile }).decision,
+					"allow",
+				);
+
+				// In-workspace symlink pointing to an external file (placed in node_modules to avoid race conditions with workspace copying tests)
+				const inWorkspaceLink = path.join(
+					process.cwd(),
+					"node_modules",
+					"test-workspace-link-tmp.md",
+				);
+				await symlink("/etc/hosts", inWorkspaceLink);
+
+				try {
+					assert.equal(
+						evaluateToolUse("read_file", { filePath: inWorkspaceLink })
+							.decision,
+						"ask",
+					);
+					assert.equal(
+						evaluatePreToolSafety("read_file", {
+							filePath: inWorkspaceLink,
+						}).decision,
+						"ask",
+					);
+				} finally {
+					await rm(inWorkspaceLink, { force: true });
+				}
+			} finally {
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
+		});
+
+		it("permits reading symlinked skills inside approved roots from an external workspace", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "symlinked-skill-test-"),
+			);
+			const originalCwd = process.cwd();
+
+			try {
+				process.chdir(temporaryDirectory);
+
+				const symlinkedSkillPath = path.join(
+					os.homedir(),
+					".agents",
+					"skills",
+					"plan-checker",
+					"SKILL.md",
+				);
+
+				const result = evaluateToolUse("read_file", {
+					filePath: symlinkedSkillPath,
+				});
+				assert.equal(result.decision, "allow");
+
+				const readResult = evaluateToolUse("read", {
+					filePath: symlinkedSkillPath,
+				});
+				assert.equal(readResult.decision, "allow");
+			} finally {
+				process.chdir(originalCwd);
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
+		});
+
+		it("asks for a broken in-workspace symlink and allows another open workspace folder", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "workspace-boundary-"),
+			);
+			const siblingDirectory = path.join(temporaryDirectory, "sibling");
+			const brokenLink = path.join(
+				process.cwd(),
+				"node_modules",
+				"broken-workspace-link-tmp.md",
+			);
+			const storageRoot = path.join(
+				temporaryDirectory,
+				"workspaceStorage",
+				"workspace-id",
+			);
+			const workspaceFile = path.join(temporaryDirectory, "workspace.json");
+			const transcriptPath = path.join(
+				storageRoot,
+				"GitHub.copilot-chat",
+				"transcripts",
+				"session.jsonl",
+			);
+
+			try {
+				await mkdir(siblingDirectory, { recursive: true });
+				await symlink(
+					path.join(temporaryDirectory, "missing-target.txt"),
+					brokenLink,
+				);
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: brokenLink }).decision,
+					"ask",
+				);
+
+				const siblingFile = path.join(siblingDirectory, "notes.txt");
+				const context = { cwd: siblingDirectory };
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: siblingFile }, context)
+						.decision,
+					"allow",
+				);
+				assert.equal(
+					evaluatePreToolSafety("read_file", { filePath: siblingFile }, context)
+						.decision,
+					"allow",
+				);
+				assert.equal(
+					evaluateToolUse(
+						"run_in_terminal",
+						{ command: `cat ${siblingFile}` },
+						context,
+					).decision,
+					"allow",
+				);
+
+				await mkdir(path.dirname(transcriptPath), { recursive: true });
+				await writeFile(
+					workspaceFile,
+					JSON.stringify({
+						folders: [{ path: "." }, { path: "sibling" }],
+					}),
+				);
+				await writeFile(
+					path.join(storageRoot, "workspace.json"),
+					JSON.stringify({ workspace: pathToFileURL(workspaceFile).href }),
+				);
+				assert.equal(
+					evaluateToolUse(
+						"read_file",
+						{ filePath: siblingFile },
+						{ transcriptPath },
+					).decision,
+					"allow",
+				);
+			} finally {
+				await rm(brokenLink, { force: true });
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
 		});
 	});
 });

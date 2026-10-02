@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { lstatSync, readFileSync, realpathSync } from "node:fs";
+import { dirname, relative, resolve, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const STRICTLY_READ_ONLY_SUBCOMMANDS = new Set([
 	"annotate",
@@ -51,6 +52,152 @@ const MUTATING_GITHUB_TOOLS = new Set([
 	"mcp_github_mcp_se_delete_file",
 	"mcp_github_mcp_se_push_files",
 ]);
+
+const PATH_FIELDS = new Set([
+	"path",
+	"filePath",
+	"file_path",
+	"directory",
+	"dirPath",
+	"dir_path",
+	"cwd",
+	"workspaceFolder",
+]);
+
+export const READ_ONLY_PATH_TOOLS = new Set([
+	"read_file",
+	"read",
+	"readFile",
+	"list_dir",
+	"listDir",
+	"view_image",
+	"read_notebook_cell_output",
+	"copilot_getNotebookSummary",
+]);
+
+const READ_ONLY_EXTERNAL_COMMANDS = new Set([
+	"awk",
+	"cat",
+	"cut",
+	"file",
+	"grep",
+	"head",
+	"ls",
+	"sed",
+	"sort",
+	"stat",
+	"tail",
+	"tr",
+	"uniq",
+	"wc",
+]);
+
+export function expandPath(value) {
+	return value === "~"
+		? resolve(process.env.HOME ?? "")
+		: value.startsWith("~/")
+			? resolve(process.env.HOME ?? "", value.slice(2))
+			: value.startsWith("$HOME/") || value.startsWith("${HOME}/")
+				? resolve(process.env.HOME ?? "", value.replace(/^\$\{?HOME\}?\//, ""))
+				: resolve(value);
+}
+
+export function canonicalPath(value) {
+	const expandedValue = expandPath(value);
+	try {
+		return realpathSync.native(expandedValue);
+	} catch {
+		const parent = resolve(expandedValue, "..");
+		if (parent === expandedValue) {
+			return expandedValue;
+		}
+		return resolve(canonicalPath(parent), relative(parent, expandedValue));
+	}
+}
+
+export function isWithin(root, candidate, requireDescendant = false) {
+	const relativePath = relative(root, candidate);
+	return (
+		(!requireDescendant && relativePath === "") ||
+		(relativePath !== "" &&
+			relativePath !== ".." &&
+			!relativePath.startsWith(`..${sep}`) &&
+			!relativePath.startsWith(sep))
+	);
+}
+
+export function isApprovedExternalReadPath(value) {
+	const expanded = expandPath(value);
+	const candidate = canonicalPath(expanded);
+	const temporaryRoot = canonicalPath(resolve(sep, "tmp"));
+	if (isWithin(temporaryRoot, candidate)) {
+		return true;
+	}
+
+	if (
+		candidate.startsWith(`${sep}memories${sep}`) ||
+		candidate === `${sep}memories` ||
+		expanded.startsWith(`${sep}memories${sep}`) ||
+		expanded === `${sep}memories`
+	) {
+		return false;
+	}
+
+	const home = resolve(process.env.HOME ?? "");
+	const approvedRoots = [
+		resolve(home, ".memory"),
+		resolve(home, ".agents"),
+		resolve(home, ".copilot"),
+		resolve(home, ".claude"),
+		resolve(home, ".vscode", "extensions"),
+		resolve(home, ".vscode-insiders", "extensions"),
+		"/Applications/Visual Studio Code.app",
+		"/Applications/Visual Studio Code - Insiders.app",
+	];
+
+	if (
+		approvedRoots.some((root) => {
+			const canonicalRoot = canonicalPath(root);
+			return (
+				isWithin(canonicalRoot, candidate) ||
+				isWithin(canonicalRoot, expanded) ||
+				isWithin(root, candidate) ||
+				isWithin(root, expanded)
+			);
+		})
+	) {
+		return true;
+	}
+
+	const configRoots = [
+		resolve(home, "Library", "Application Support"),
+		resolve(home, ".config"),
+	];
+	for (const baseRoot of configRoots) {
+		for (const codeVariant of ["Code", "Code - Insiders"]) {
+			const appRoots = [
+				resolve(baseRoot, codeVariant, "copilot-terminal-output"),
+				resolve(baseRoot, codeVariant, "logs"),
+				resolve(baseRoot, codeVariant, "User", "workspaceStorage"),
+				resolve(baseRoot, codeVariant, "User", "prompts"),
+				resolve(baseRoot, codeVariant, "User", "globalStorage"),
+			];
+			for (const storageRoot of appRoots) {
+				const canonicalStorageRoot = canonicalPath(storageRoot);
+				if (
+					isWithin(canonicalStorageRoot, candidate) ||
+					isWithin(canonicalStorageRoot, expanded) ||
+					isWithin(storageRoot, candidate) ||
+					isWithin(storageRoot, expanded)
+				) {
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
 
 const GIT_GLOBAL_OPTIONS_WITH_ARG = new Set([
 	"-C",
@@ -389,6 +536,15 @@ function evaluateSymbolicRefCommand(tokens) {
 	return null;
 }
 
+function evaluateReflogCommand(tokens) {
+	const nonFlag = tokens.find((t) => !t.startsWith("-"));
+	if (nonFlag === "expire" || nonFlag === "delete" || nonFlag === "drop") {
+		return `git reflog ${nonFlag}`;
+	}
+
+	return null;
+}
+
 export function checkGitCommandTokens(tokens) {
 	let idx = 0;
 
@@ -473,6 +629,10 @@ export function checkGitCommandTokens(tokens) {
 		return evaluateSymbolicRefCommand(subTokens);
 	}
 
+	if (subcommand === "reflog") {
+		return evaluateReflogCommand(subTokens);
+	}
+
 	return `git ${subcommand}`;
 }
 
@@ -536,16 +696,258 @@ export function checkCommandForNonReadGit(fullCommand) {
 	return null;
 }
 
-export function evaluateToolUse(toolName, toolInput) {
+function commandName(statement) {
+	const token = tokenizeStatement(statement)[0] ?? "";
+	return token.split(/[\\/]/).pop() ?? "";
+}
+
+function isReadOnlyExternalCommand(statement) {
+	const tokens = tokenizeStatement(statement);
+	const name = commandName(statement);
+	if (!READ_ONLY_EXTERNAL_COMMANDS.has(name)) {
+		return false;
+	}
+
+	if (/(^|\s)>>?(?:\s|$)/.test(statement)) {
+		return false;
+	}
+
+	return !(
+		name === "sed" &&
+		tokens.some((token) => token === "-i" || token === "--in-place")
+	);
+}
+
+function resolvedPath(expanded) {
+	try {
+		lstatSync(expanded);
+	} catch (error) {
+		if (error?.code !== "ENOENT") {
+			return { status: "broken" };
+		}
+		return resolveMissingPath(expanded);
+	}
+
+	try {
+		return { status: "resolved", path: realpathSync.native(expanded) };
+	} catch {
+		return { status: "broken" };
+	}
+}
+
+function resolveMissingPath(expanded) {
+	const parent = resolve(expanded, "..");
+	if (parent === expanded) {
+		return { status: "lexical", path: expanded };
+	}
+
+	const parentResolved = resolvedPath(parent);
+	if (parentResolved.status === "broken") {
+		return parentResolved;
+	}
+
+	return {
+		status: "resolved",
+		path: resolve(parentResolved.path, relative(parent, expanded)),
+	};
+}
+
+function fileUriToPath(value) {
+	if (typeof value !== "string" || !value.startsWith("file:")) {
+		return null;
+	}
+	try {
+		return fileURLToPath(value);
+	} catch {
+		return null;
+	}
+}
+
+function rootsFromWorkspaceFile(workspaceFile) {
+	let document;
+	try {
+		document = JSON.parse(readFileSync(workspaceFile, "utf8"));
+	} catch {
+		return [];
+	}
+	if (!Array.isArray(document.folders)) {
+		return [];
+	}
+
+	const base = dirname(workspaceFile);
+	const roots = [];
+	for (const folder of document.folders) {
+		if (!folder || typeof folder !== "object") {
+			continue;
+		}
+		if (typeof folder.path === "string" && folder.path.length > 0) {
+			roots.push(resolve(base, folder.path));
+		} else if (typeof folder.uri === "string") {
+			const folderPath = fileUriToPath(folder.uri);
+			if (folderPath) {
+				roots.push(folderPath);
+			}
+		}
+	}
+	return roots;
+}
+
+function rootsFromTranscript(transcriptPath) {
+	if (typeof transcriptPath !== "string" || transcriptPath.length === 0) {
+		return [];
+	}
+
+	const parts = transcriptPath.split(/[/\\]/);
+	const index = parts.lastIndexOf("workspaceStorage");
+	if (index < 0 || !parts[index + 1]) {
+		return [];
+	}
+	const separator =
+		transcriptPath.includes("\\") && !transcriptPath.includes("/") ? "\\" : "/";
+	const storageRoot = parts.slice(0, index + 2).join(separator);
+
+	let pointer;
+	try {
+		pointer = JSON.parse(
+			readFileSync(resolve(storageRoot, "workspace.json"), "utf8"),
+		);
+	} catch {
+		return [];
+	}
+
+	if (typeof pointer.folder === "string") {
+		return [fileUriToPath(pointer.folder) ?? pointer.folder];
+	}
+	if (typeof pointer.workspace !== "string") {
+		return [];
+	}
+	const workspaceFile = fileUriToPath(pointer.workspace);
+	return workspaceFile ? rootsFromWorkspaceFile(workspaceFile) : [];
+}
+
+export function resolveWorkspaceRoots(context = {}) {
+	const candidates = [process.cwd()];
+	if (typeof context.cwd === "string") {
+		candidates.push(context.cwd);
+	}
+	if (Array.isArray(context.workspaceRoots)) {
+		candidates.push(...context.workspaceRoots);
+	}
+	candidates.push(...rootsFromTranscript(context.transcriptPath));
+
+	const roots = [];
+	const seen = new Set();
+	for (const candidate of candidates) {
+		if (typeof candidate !== "string" || candidate.length === 0) {
+			continue;
+		}
+		const lexical = resolve(expandPath(candidate));
+		let canonical = lexical;
+		try {
+			canonical = realpathSync.native(lexical);
+		} catch {
+			// A missing root still has to be comparable for tests and new folders.
+		}
+		if (seen.has(canonical)) {
+			continue;
+		}
+		seen.add(canonical);
+		roots.push({ lexical, canonical });
+	}
+	return roots;
+}
+
+export function isExternalPath(value, context = {}) {
+	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+
+	const roots = context.roots ?? resolveWorkspaceRoots(context);
+	const resolved = resolvedPath(expandPath(value));
+	if (resolved.status === "broken") {
+		return true;
+	}
+
+	return !roots.some(
+		(root) =>
+			isWithin(root.canonical, resolved.path) ||
+			isWithin(root.lexical, resolved.path),
+	);
+}
+
+export function externalPathReason(pathValue) {
+	return `External path access requires user confirmation: '${pathValue}' is outside the active workspace.`;
+}
+
+export function checkToolInputPaths(toolInput, toolName = "", context = {}) {
+	if (!toolInput || typeof toolInput !== "object" || Array.isArray(toolInput)) {
+		return null;
+	}
+
+	for (const [key, value] of Object.entries(toolInput)) {
+		if (
+			PATH_FIELDS.has(key) &&
+			typeof value === "string" &&
+			isExternalPath(value, context) &&
+			!(READ_ONLY_PATH_TOOLS.has(toolName) && isApprovedExternalReadPath(value))
+		) {
+			return externalPathReason(value);
+		}
+	}
+
+	return null;
+}
+
+export function checkCommandPaths(command, context = {}) {
+	for (const statement of splitShellStatements(command)) {
+		const tokens = tokenizeStatement(statement);
+		if (tokens.length <= 1) {
+			continue;
+		}
+
+		for (const token of tokens.slice(1)) {
+			if (
+				token.startsWith("-") ||
+				token.includes("=") ||
+				token.startsWith("@")
+			) {
+				continue;
+			}
+			if (
+				isExternalPath(token, context) &&
+				!(
+					isReadOnlyExternalCommand(statement) &&
+					isApprovedExternalReadPath(token)
+				)
+			) {
+				return externalPathReason(token);
+			}
+		}
+	}
+
+	return null;
+}
+
+export function evaluateToolUse(toolName, toolInput, hookContext = {}) {
 	if (!toolName || !toolInput) {
 		return { decision: "allow" };
 	}
+
+	const context = {
+		...hookContext,
+		roots: resolveWorkspaceRoots(hookContext),
+	};
 
 	if (MUTATING_GITHUB_TOOLS.has(toolName)) {
 		return {
 			decision: "ask",
 			reason: `Mutating Git/GitHub tool '${toolName}' requires user confirmation.`,
 		};
+	}
+
+	const pathViolation = checkToolInputPaths(toolInput, toolName, context);
+	if (pathViolation) {
+		return { decision: "ask", reason: pathViolation };
 	}
 
 	const commandsToCheck = [];
@@ -564,6 +966,11 @@ export function evaluateToolUse(toolName, toolInput) {
 	}
 
 	for (const cmd of commandsToCheck) {
+		const externalPathViolation = checkCommandPaths(cmd, context);
+		if (externalPathViolation) {
+			return { decision: "ask", reason: externalPathViolation };
+		}
+
 		const violation = checkCommandForNonReadGit(cmd);
 		if (violation) {
 			return {
@@ -591,7 +998,7 @@ function outputResult(result) {
 	process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
 }
 
-function runCli() {
+export function runCli() {
 	let rawInput = "";
 	try {
 		rawInput = readFileSync(0, "utf-8");
@@ -614,7 +1021,13 @@ function runCli() {
 	}
 
 	const { tool_name, tool_input } = data;
-	const result = evaluateToolUse(tool_name, tool_input);
+	const result = evaluateToolUse(tool_name, tool_input, {
+		cwd: typeof data.cwd === "string" ? data.cwd : undefined,
+		transcriptPath:
+			typeof data.transcript_path === "string"
+				? data.transcript_path
+				: undefined,
+	});
 	outputResult(result);
 	process.exit(0);
 }

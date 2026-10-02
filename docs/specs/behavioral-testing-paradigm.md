@@ -44,7 +44,7 @@ array of scenario objects:
   substring (case-insensitive) or a `/regex/flags` pattern. Checked against
   fenced code blocks in the response when present, otherwise the full
   response text. Forbidden patterns are checked with code comments stripped,
-  so a comment that merely *documents* an anti-pattern doesn't false-fail;
+  so a comment that merely _documents_ an anti-pattern doesn't false-fail;
   required patterns are checked against the uncommented text.
 
 ## The two gates

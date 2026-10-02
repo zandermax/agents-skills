@@ -4,6 +4,7 @@ import path from "node:path";
 
 export type ArtifactKind = "skill" | "agent" | "hook";
 export type ValidationStrategy = "copilot-agent";
+export type CollectionLinkMode = "entries" | "directory";
 
 export type CollectionEntryRule =
 	| { readonly kind: "directory"; readonly marker: string }
@@ -15,6 +16,7 @@ export interface ArtifactCollection {
 	readonly source: string;
 	readonly entry: CollectionEntryRule;
 	readonly validation?: ValidationStrategy;
+	readonly linkMode?: CollectionLinkMode;
 }
 
 export interface ClientDestination {
@@ -39,6 +41,7 @@ const COLLECTION_KEYS = new Set([
 	"source",
 	"entry",
 	"validation",
+	"linkMode",
 ]);
 const DIRECTORY_ENTRY_KEYS = new Set(["kind", "marker"]);
 const FILE_ENTRY_KEYS = new Set(["kind", "suffix"]);
@@ -219,6 +222,15 @@ function parseCollection(
 		}
 	}
 
+	let linkMode: CollectionLinkMode | undefined;
+	if (value.linkMode !== undefined) {
+		if (value.linkMode === "entries" || value.linkMode === "directory") {
+			linkMode = value.linkMode;
+		} else {
+			errors.push(`${label}.linkMode: must be one of: entries, directory`);
+		}
+	}
+
 	if (
 		name === undefined ||
 		artifactKind === undefined ||
@@ -228,19 +240,22 @@ function parseCollection(
 		return undefined;
 	}
 
-	const collection: ArtifactCollection =
-		validation === undefined
-			? { name, artifactKind, source, entry }
-			: { name, artifactKind, source, entry, validation };
+	const collection: ArtifactCollection = {
+		name,
+		artifactKind,
+		source,
+		entry,
+		...(validation !== undefined ? { validation } : {}),
+		...(linkMode !== undefined ? { linkMode } : {}),
+	};
 	return Object.freeze(collection);
 }
 
 function parseDestination(
 	value: unknown,
 	label: string,
-	clientName: string | undefined,
 	collectionsByName: ReadonlyMap<string, ArtifactCollection>,
-	seenPaths: Set<string>,
+	seenPaths: Map<string, string>,
 	errors: string[],
 ): ClientDestination | undefined {
 	if (!isPlainObject(value)) {
@@ -257,16 +272,6 @@ function parseDestination(
 		errors.push(`${label}.collection: unknown collection: ${value.collection}`);
 	} else {
 		collection = value.collection;
-		const collectionEntry = collectionsByName.get(collection);
-		if (
-			collectionEntry?.artifactKind === "agent" &&
-			clientName !== undefined &&
-			collectionEntry.name !== clientName
-		) {
-			errors.push(
-				`${label}.collection: agent format ${collectionEntry.name} does not match client ${clientName}`,
-			);
-		}
 	}
 
 	let destinationPath: string | undefined;
@@ -277,10 +282,13 @@ function parseDestination(
 		if (!destinationPath.startsWith("~/") || destinationPath.length === 2) {
 			errors.push(`${label}.path: must begin with ~/`);
 		}
-		if (seenPaths.has(destinationPath)) {
+		if (
+			seenPaths.has(destinationPath) &&
+			seenPaths.get(destinationPath) !== collection
+		) {
 			errors.push(`${label}.path: duplicate destination: ${destinationPath}`);
-		} else {
-			seenPaths.add(destinationPath);
+		} else if (collection !== undefined) {
+			seenPaths.set(destinationPath, collection);
 		}
 	}
 
@@ -296,7 +304,7 @@ function parseClient(
 	index: number,
 	collectionsByName: ReadonlyMap<string, ArtifactCollection>,
 	seenNames: Set<string>,
-	seenPaths: Set<string>,
+	seenPaths: Map<string, string>,
 	errors: string[],
 ): CatalogClient | undefined {
 	const label = `catalog.clients[${index}]`;
@@ -322,7 +330,6 @@ function parseClient(
 		const destination = parseDestination(
 			value.destinations[destinationIndex],
 			`${label}.destinations[${destinationIndex}]`,
-			name,
 			collectionsByName,
 			seenPaths,
 			errors,
@@ -373,7 +380,7 @@ export function parseInstallCatalog(
 
 	const clients: CatalogClient[] = [];
 	const clientNames = new Set<string>();
-	const destinationPaths = new Set<string>();
+	const destinationPaths = new Map<string, string>();
 	const collectionsByName = new Map(
 		collections.map((collection) => [collection.name, collection] as const),
 	);
