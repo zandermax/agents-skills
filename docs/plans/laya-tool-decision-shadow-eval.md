@@ -1,7 +1,9 @@
 ---
 status: ready
 mode: interactive
+canonical_location: docs/plans/laya-tool-decision-shadow-eval.md
 storage: docs/plans/laya-tool-decision-shadow-eval.md
+last_updated: 2026-10-02
 current_phase: "Phase 1: Decision Model Contract & Shadow Logger"
 current_step: not started
 next_action: Elaborate Phase 1 steps and present for user confirmation
@@ -16,7 +18,7 @@ blockers: none
 - Mode: interactive
 - Delegation: single agent (sequential verification across schema, hook capture, and comparison reporting)
 - Storage: docs/plans/laya-tool-decision-shadow-eval.md
-- Last updated: 2026-09-28
+- Last updated: 2026-10-02
 - Goal: Implement a shadow-mode evaluation harness using Laya/Ollaya (winnow:e4b) for pre-tool safety decisions (approve, deny, prompt) and compare prediction concordance, latency, and token efficiency against LLM baseline decisions.
 - Success criteria:
   - Pre-tool safety evaluation emits non-blocking shadow calls to local Ollaya without affecting real execution or permission gates.
@@ -195,3 +197,4 @@ Interactive User Test: Run comparison CLI against sample shadow log and inspect 
 ## Progress Log
 
 - 2026-09-28: Canonical plan created at docs/plans/laya-tool-decision-shadow-eval.md with outline-level phases.
+- 2026-10-02: Frontmatter aligned to required `canonical_location` and `last_updated` keys. No phase or requirement change.
