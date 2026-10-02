@@ -52,6 +52,10 @@ part of `npm run check` or `npm test`.
 
 Your tool history is reviewed by engineers. The goal is a trail that's quick to follow: avoid redundant calls (re-running unchanged commands, re-reading or diffing files after a successful edit, retrying denied commands), and give a one-line reason before anything non-obvious. Verification that could catch a real failure is always appropriate.
 
+- Check existing file attachments and imports in the active file before invoking search or file-reading tools; never re-read a file already attached in the prompt context.
+- For localized expressions, syntax choices, or micro-styles, adhere to prevailing local file conventions directly instead of running global repository searches.
+- Do not run pre-edit test baselines for simple, localized refactorings unless existing test status is in doubt; run test verification only after the edit is applied.
+
 ## Git Operations
 
 Git operations are inert by default. Do not run Git commands unless the active
