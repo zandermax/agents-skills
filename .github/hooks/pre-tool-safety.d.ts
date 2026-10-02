@@ -6,6 +6,11 @@ export interface ToolEvaluationResult {
 export function evaluateToolUse(
 	toolName: string | undefined,
 	toolInput: unknown,
+	context?: {
+		readonly cwd?: string;
+		readonly transcriptPath?: string;
+		readonly workspaceRoots?: readonly string[];
+	},
 ): ToolEvaluationResult;
 
 export function runCli(): void;

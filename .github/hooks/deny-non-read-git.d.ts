@@ -12,12 +12,28 @@ export function isWithin(
 	requireDescendant?: boolean,
 ): boolean;
 export function isApprovedExternalReadPath(value: string): boolean;
-export function isExternalPath(value: string): boolean;
+export interface WorkspaceBoundaryContext {
+	readonly cwd?: string;
+	readonly transcriptPath?: string;
+	readonly workspaceRoots?: readonly string[];
+}
+
+export function resolveWorkspaceRoots(
+	context?: WorkspaceBoundaryContext,
+): readonly { readonly lexical: string; readonly canonical: string }[];
+export function isExternalPath(
+	value: string,
+	context?: WorkspaceBoundaryContext,
+): boolean;
 export function checkToolInputPaths(
 	toolInput: unknown,
 	toolName?: string,
+	context?: WorkspaceBoundaryContext,
 ): string | null;
-export function checkCommandPaths(command: string): string | null;
+export function checkCommandPaths(
+	command: string,
+	context?: WorkspaceBoundaryContext,
+): string | null;
 
 export function splitShellStatements(cmdLine: string): string[];
 export function tokenizeStatement(statement: string): string[];
@@ -26,6 +42,7 @@ export function checkCommandForNonReadGit(fullCommand: string): string | null;
 export function evaluateToolUse(
 	toolName: string | undefined,
 	toolInput: unknown,
+	context?: WorkspaceBoundaryContext,
 ): ToolEvaluationResult;
 
 export function runCli(): void;

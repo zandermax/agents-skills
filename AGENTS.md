@@ -13,7 +13,7 @@ a skill is long.
 
 ## Workspace Boundary
 
-Treat the active workspace folders as the default filesystem boundary. Do not
+Treat the active workspace folders as the default filesystem boundary. Every open workspace folder counts, not only the current working directory. A symlink is inside a workspace only when its resolved target is inside one of those folders. A symlink that cannot be resolved is outside the boundary. Do not
 read, search, execute against, or delegate discovery for `$HOME`, session
 history, parent directories, global configuration, or other external paths
 unless the user explicitly requests the exact path or the active plan names it

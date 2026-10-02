@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, symlink } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { pathToFileURL } from "node:url";
 
 import {
 	checkCommandForNonReadGit,
@@ -473,18 +474,19 @@ describe("deny-non-read-git hook", () => {
 					"node_modules",
 					"test-workspace-link-tmp.md",
 				);
-				const externalTarget = path.join(
-					temporaryDirectory,
-					"external-target.txt",
-				);
-				await symlink(externalTarget, inWorkspaceLink);
+				await symlink("/etc/hosts", inWorkspaceLink);
 
 				try {
-					// Lexical check permits the in-workspace symlink path
 					assert.equal(
 						evaluateToolUse("read_file", { filePath: inWorkspaceLink })
 							.decision,
-						"allow",
+						"ask",
+					);
+					assert.equal(
+						evaluatePreToolSafety("read_file", {
+							filePath: inWorkspaceLink,
+						}).decision,
+						"ask",
 					);
 				} finally {
 					await rm(inWorkspaceLink, { force: true });
@@ -522,6 +524,86 @@ describe("deny-non-read-git hook", () => {
 				assert.equal(readResult.decision, "allow");
 			} finally {
 				process.chdir(originalCwd);
+				await rm(temporaryDirectory, { recursive: true, force: true });
+			}
+		});
+
+		it("asks for a broken in-workspace symlink and allows another open workspace folder", async () => {
+			const temporaryDirectory = await mkdtemp(
+				path.join(os.tmpdir(), "workspace-boundary-"),
+			);
+			const siblingDirectory = path.join(temporaryDirectory, "sibling");
+			const brokenLink = path.join(
+				process.cwd(),
+				"node_modules",
+				"broken-workspace-link-tmp.md",
+			);
+			const storageRoot = path.join(
+				temporaryDirectory,
+				"workspaceStorage",
+				"workspace-id",
+			);
+			const workspaceFile = path.join(temporaryDirectory, "workspace.json");
+			const transcriptPath = path.join(
+				storageRoot,
+				"GitHub.copilot-chat",
+				"transcripts",
+				"session.jsonl",
+			);
+
+			try {
+				await mkdir(siblingDirectory, { recursive: true });
+				await symlink(
+					path.join(temporaryDirectory, "missing-target.txt"),
+					brokenLink,
+				);
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: brokenLink }).decision,
+					"ask",
+				);
+
+				const siblingFile = path.join(siblingDirectory, "notes.txt");
+				const context = { cwd: siblingDirectory };
+				assert.equal(
+					evaluateToolUse("read_file", { filePath: siblingFile }, context)
+						.decision,
+					"allow",
+				);
+				assert.equal(
+					evaluatePreToolSafety("read_file", { filePath: siblingFile }, context)
+						.decision,
+					"allow",
+				);
+				assert.equal(
+					evaluateToolUse(
+						"run_in_terminal",
+						{ command: `cat ${siblingFile}` },
+						context,
+					).decision,
+					"allow",
+				);
+
+				await mkdir(path.dirname(transcriptPath), { recursive: true });
+				await writeFile(
+					workspaceFile,
+					JSON.stringify({
+						folders: [{ path: "." }, { path: "sibling" }],
+					}),
+				);
+				await writeFile(
+					path.join(storageRoot, "workspace.json"),
+					JSON.stringify({ workspace: pathToFileURL(workspaceFile).href }),
+				);
+				assert.equal(
+					evaluateToolUse(
+						"read_file",
+						{ filePath: siblingFile },
+						{ transcriptPath },
+					).decision,
+					"allow",
+				);
+			} finally {
+				await rm(brokenLink, { force: true });
 				await rm(temporaryDirectory, { recursive: true, force: true });
 			}
 		});

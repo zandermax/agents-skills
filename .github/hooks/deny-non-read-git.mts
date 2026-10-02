@@ -8,6 +8,7 @@ import {
 	isExternalPath,
 	isWithin,
 	READ_ONLY_PATH_TOOLS,
+	resolveWorkspaceRoots,
 	splitShellStatements,
 	tokenizeStatement,
 } from "./deny-non-read-git.js";
@@ -26,6 +27,7 @@ export {
 	isExternalPath,
 	isWithin,
 	READ_ONLY_PATH_TOOLS,
+	resolveWorkspaceRoots,
 	runCli,
 	splitShellStatements,
 	tokenizeStatement,

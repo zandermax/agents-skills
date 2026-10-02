@@ -3,6 +3,7 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
+import { resolveWorkspaceRoots } from "./deny-non-read-git.js";
 import {
 	checkGitHubMutationPolicy,
 	checkGitPolicy,
@@ -12,17 +13,22 @@ import {
 	checkWorkspacePolicy,
 } from "./pre-tool-safety-workspace.js";
 
-export function evaluateToolUse(toolName, toolInput) {
+export function evaluateToolUse(toolName, toolInput, hookContext = {}) {
 	if (!toolName || !toolInput) {
 		return { decision: "allow" };
 	}
+
+	const context = {
+		...hookContext,
+		roots: resolveWorkspaceRoots(hookContext),
+	};
 
 	const githubReason = checkGitHubMutationPolicy(toolName);
 	if (githubReason) {
 		return { decision: "ask", reason: githubReason };
 	}
 
-	const pathViolation = checkToolInputPaths(toolInput, toolName);
+	const pathViolation = checkToolInputPaths(toolInput, toolName, context);
 	if (pathViolation) {
 		return { decision: "ask", reason: pathViolation };
 	}
@@ -39,7 +45,7 @@ export function evaluateToolUse(toolName, toolInput) {
 	}
 
 	for (const command of commandsToCheck) {
-		const workspaceViolation = checkWorkspacePolicy(command);
+		const workspaceViolation = checkWorkspacePolicy(command, context);
 		if (workspaceViolation) {
 			return { decision: "ask", reason: workspaceViolation };
 		}
@@ -80,7 +86,15 @@ export function runCli() {
 		return;
 	}
 
-	outputResult(evaluateToolUse(data.tool_name, data.tool_input));
+	outputResult(
+		evaluateToolUse(data.tool_name, data.tool_input, {
+			cwd: typeof data.cwd === "string" ? data.cwd : undefined,
+			transcriptPath:
+				typeof data.transcript_path === "string"
+					? data.transcript_path
+					: undefined,
+		}),
+	);
 }
 
 const isMainModule =
