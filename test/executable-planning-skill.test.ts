@@ -374,7 +374,7 @@ test("plan-it-out references the current executable-planning workflow", () => {
 
 test("executable planner agent requests free-text user-test observations", () => {
 	const agent = readFileSync(
-		path.join(REPO_ROOT, ".github", "agents", "executable-planner.agent.md"),
+		path.join(REPO_ROOT, ".claude", "agents", "executable-planner.agent.md"),
 		"utf8",
 	);
 

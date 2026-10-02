@@ -1,13 +1,25 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import {
+	lstat,
+	mkdir,
+	mkdtemp,
+	readFile,
+	rm,
+	symlink,
+	writeFile,
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 const skillPath = new URL(
 	"../.agents/skills/remember-that/SKILL.md",
 	import.meta.url,
 );
 const agentPath = new URL(
-	"../.github/agents/remember-that.agent.md",
+	"../.claude/agents/remember-that.agent.md",
 	import.meta.url,
 );
 
@@ -39,6 +51,76 @@ test("remember-that skill consults ctx only when capturing", async () => {
 	assert.match(skill, /\bctx\b/);
 	assert.match(skill, /capture only/i);
 	assert.match(skill, /never run it\s+while retrieving/i);
+});
+
+test("memory registration is idempotent, runnable through its installed link, and rejects a repository-backed parent", async () => {
+	const home = await mkdtemp(path.join(os.tmpdir(), "memory-registration-"));
+	const topic = "boundary-fixture-notes";
+	const memory = path.join(home, ".memory", topic);
+	const skills = path.join(home, ".claude", "skills");
+	const helper = fileURLToPath(
+		new URL(
+			"../.agents/skills/remember-that/scripts/register-memory.ts",
+			import.meta.url,
+		),
+	);
+	const run = (script = helper, arguments_: string[] = [topic]) =>
+		spawnSync(
+			process.execPath,
+			["--experimental-strip-types", script, ...arguments_],
+			{
+				env: {
+					...process.env,
+					AGENTS_SKILLS_HOME: home,
+					MEMORY_DIR: path.join(home, ".memory"),
+				},
+				encoding: "utf8",
+			},
+		);
+	try {
+		await mkdir(path.join(memory, "test"), { recursive: true });
+		await writeFile(
+			path.join(memory, "SKILL.md"),
+			`---\nname: ${topic}\ndescription: Personal boundary testing preferences.\n---\n`,
+		);
+		await writeFile(path.join(memory, "test", `${topic}.test.ts`), "");
+		await mkdir(path.dirname(skills), { recursive: true });
+		await symlink(
+			fileURLToPath(new URL("../.agents/skills/", import.meta.url)),
+			skills,
+			"dir",
+		);
+		const rejected = run();
+		assert.notEqual(rejected.status, 0);
+		assert.match(
+			rejected.stderr,
+			/Destination parent resolves inside an artifact source/,
+		);
+		await rm(skills);
+		const installed = run();
+		assert.equal(installed.status, 0, installed.stderr);
+		assert.equal(
+			(await lstat(path.join(skills, topic))).isSymbolicLink(),
+			true,
+		);
+		await symlink(
+			fileURLToPath(
+				new URL("../.agents/skills/remember-that/", import.meta.url),
+			),
+			path.join(skills, "remember-that"),
+			"dir",
+		);
+		const repeated = run(
+			path.join(skills, "remember-that", "scripts", "register-memory.ts"),
+		);
+		assert.equal(repeated.status, 0, repeated.stderr);
+		assert.match(repeated.stdout, /created=0 existing=1/);
+		const removed = run(helper, [topic, "--uninstall"]);
+		assert.equal(removed.status, 0, removed.stderr);
+		assert.equal((await lstat(memory)).isDirectory(), true);
+	} finally {
+		await rm(home, { recursive: true, force: true });
+	}
 });
 
 test("remember-that skill skips ctx silently when unavailable", async () => {

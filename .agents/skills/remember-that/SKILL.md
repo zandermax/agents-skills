@@ -54,6 +54,10 @@ while referencing public skills as read-only topic anchors.
 
 When presented with a preference or note to capture:
 
+Capture only an explicitly requested memory or a clearly stated durable personal
+preference. Loading existing notes is independent of capture. A request to fix
+an agent, skill, or repository does not by itself authorize creating a memory.
+
 1. **Resolve Memory Directory**:
    - Determine target memory root: check `$MEMORY_DIR` environment variable,
      falling back to `~/.memory`.
@@ -232,12 +236,21 @@ or asking the user for permission. When a task touches a relevant domain (such
 as git, testing, css, dependencies, or minimal changes), agents load the
 matching note immediately using available file-reading tools once per session.
 
-Whenever a new memory note directory is created, ensure it is symlinked into
-the tool skill directories (`~/.copilot/skills/<topic>-notes` and
-`~/.claude/skills/<topic>-notes`) so it becomes available immediately. Create
-the parent skills directory if it does not exist. If a symlink already points
-to the memory note, leave it. If a different file or directory already occupies
-the target path, do not overwrite it; report the conflict to the user instead.
+Whenever a memory topic is created, register it in the shared user-level
+`~/.claude/skills/` directory, supported by Claude Code and Copilot. Run the
+bundled [registration helper](scripts/register-memory.ts) with native Node:
+
+```sh
+node --experimental-strip-types <installed-remember-that-directory>/scripts/register-memory.ts <topic>-notes
+```
+
+The helper honors `$MEMORY_DIR`, validates topic metadata and test structure,
+and creates individual discovery links only. It rejects destination parents
+that resolve into the public repository, leaves correct links unchanged, and
+reports conflicting files or links without overwriting them. Never construct
+discovery links yourself or replace a parent directory symlink during capture.
+If registration encounters an old repository-backed directory link, report the
+conflict and request the repository installer migration instead.
 
 ## Verification and Reporting
 
@@ -251,7 +264,9 @@ the target path, do not overwrite it; report the conflict to the user instead.
 3. Run the Post-Capture Customization Evaluation step against the memory note,
    if an evaluation skill is available.
 4. Verify that no changes were introduced into `agents-skills` or any global
-   instruction file (symlinks in tool skill directories are expected).
+   instruction file. Resolve discovery parents before accepting placement;
+   a home-directory spelling does not prove the target is outside the public
+   repository.
 5. Verify that no `ctx`-derived content was written into the memory note or its
    tests.
 6. Report the full path of the modified or created memory note and test file.

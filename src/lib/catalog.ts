@@ -254,9 +254,8 @@ function parseCollection(
 function parseDestination(
 	value: unknown,
 	label: string,
-	clientName: string | undefined,
 	collectionsByName: ReadonlyMap<string, ArtifactCollection>,
-	seenPaths: Set<string>,
+	seenPaths: Map<string, string>,
 	errors: string[],
 ): ClientDestination | undefined {
 	if (!isPlainObject(value)) {
@@ -273,16 +272,6 @@ function parseDestination(
 		errors.push(`${label}.collection: unknown collection: ${value.collection}`);
 	} else {
 		collection = value.collection;
-		const collectionEntry = collectionsByName.get(collection);
-		if (
-			collectionEntry?.artifactKind === "agent" &&
-			clientName !== undefined &&
-			collectionEntry.name !== clientName
-		) {
-			errors.push(
-				`${label}.collection: agent format ${collectionEntry.name} does not match client ${clientName}`,
-			);
-		}
 	}
 
 	let destinationPath: string | undefined;
@@ -293,10 +282,13 @@ function parseDestination(
 		if (!destinationPath.startsWith("~/") || destinationPath.length === 2) {
 			errors.push(`${label}.path: must begin with ~/`);
 		}
-		if (seenPaths.has(destinationPath)) {
+		if (
+			seenPaths.has(destinationPath) &&
+			seenPaths.get(destinationPath) !== collection
+		) {
 			errors.push(`${label}.path: duplicate destination: ${destinationPath}`);
-		} else {
-			seenPaths.add(destinationPath);
+		} else if (collection !== undefined) {
+			seenPaths.set(destinationPath, collection);
 		}
 	}
 
@@ -312,7 +304,7 @@ function parseClient(
 	index: number,
 	collectionsByName: ReadonlyMap<string, ArtifactCollection>,
 	seenNames: Set<string>,
-	seenPaths: Set<string>,
+	seenPaths: Map<string, string>,
 	errors: string[],
 ): CatalogClient | undefined {
 	const label = `catalog.clients[${index}]`;
@@ -338,7 +330,6 @@ function parseClient(
 		const destination = parseDestination(
 			value.destinations[destinationIndex],
 			`${label}.destinations[${destinationIndex}]`,
-			name,
 			collectionsByName,
 			seenPaths,
 			errors,
@@ -389,7 +380,7 @@ export function parseInstallCatalog(
 
 	const clients: CatalogClient[] = [];
 	const clientNames = new Set<string>();
-	const destinationPaths = new Set<string>();
+	const destinationPaths = new Map<string, string>();
 	const collectionsByName = new Map(
 		collections.map((collection) => [collection.name, collection] as const),
 	);

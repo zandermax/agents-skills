@@ -23,10 +23,97 @@ export interface InstallResult {
 	readonly removed: readonly string[];
 }
 
+export async function uninstallArtifacts(
+	links: readonly ResolvedLink[],
+	protectedDirectories: readonly string[] = [],
+): Promise<readonly string[]> {
+	const removed: string[] = [];
+	for (const link of deduplicateLinks(links)) {
+		const stats = await lstat(link.destinationPath).catch((error: unknown) => {
+			if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+			throw error;
+		});
+		if (!stats?.isSymbolicLink()) continue;
+		const target = path.resolve(
+			path.dirname(link.destinationPath),
+			await readlink(link.destinationPath),
+		);
+		if (normalizePath(target) !== normalizePath(link.sourcePath)) continue;
+		const sourceParent = await resolveParent(
+			link.kind === "directory"
+				? link.sourcePath
+				: path.dirname(link.sourcePath),
+		);
+		await validateDestinationParent(link, [
+			sourceParent,
+			...(await Promise.all(protectedDirectories.map(resolveParent))),
+		]);
+		await rm(link.destinationPath);
+		removed.push(link.destinationPath);
+	}
+	return Object.freeze(removed);
+}
+
 type DestinationAction = "create" | "existing" | "repair";
 
 function normalizePath(targetPath: string): string {
 	return path.normalize(path.resolve(targetPath));
+}
+
+async function resolveParent(directory: string): Promise<string> {
+	try {
+		return await realpath(directory);
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+			throw error;
+		}
+		return path.join(
+			await resolveParent(path.dirname(directory)),
+			path.basename(directory),
+		);
+	}
+}
+
+async function validateDestinationParent(
+	link: ResolvedLink,
+	sourceDirectories: readonly string[],
+	migrations: readonly ResolvedLink[] = [],
+): Promise<void> {
+	const directory = path.dirname(link.destinationPath);
+	const migration = migrations.find((candidate) =>
+		isWithin(candidate.destinationPath, directory),
+	);
+	const parent =
+		migration === undefined
+			? await resolveParent(directory)
+			: path.join(
+					await resolveParent(path.dirname(migration.destinationPath)),
+					path.basename(migration.destinationPath),
+					path.relative(migration.destinationPath, directory),
+				);
+	for (const sourceDirectory of sourceDirectories) {
+		const relative = path.relative(sourceDirectory, parent);
+		if (
+			relative === "" ||
+			(relative !== ".." &&
+				!relative.startsWith(`..${path.sep}`) &&
+				!path.isAbsolute(relative))
+		) {
+			throw new Error(
+				`Destination parent resolves inside an artifact source: ${link.destinationPath}`,
+			);
+		}
+	}
+}
+
+function isWithin(root: string, candidate: string): boolean {
+	const relative = path.relative(root, candidate);
+	return (
+		relative === "" ||
+		(relative !== ".." &&
+			!relative.startsWith(`..${path.sep}`) &&
+			!path.isAbsolute(relative))
+	);
 }
 
 function deduplicateLinks(
@@ -128,30 +215,6 @@ function symlinkType(kind: ResolvedLink["kind"]): "file" | "dir" {
 	return kind === "directory" ? "dir" : "file";
 }
 
-async function removeLegacyLinks(
-	destinationPaths: readonly string[],
-): Promise<readonly string[]> {
-	const removed: string[] = [];
-	for (const destinationPath of new Set(destinationPaths.map(normalizePath))) {
-		const stats = await lstat(destinationPath).catch((error: unknown) => {
-			if (
-				typeof error === "object" &&
-				error !== null &&
-				"code" in error &&
-				error.code === "ENOENT"
-			) {
-				return undefined;
-			}
-			throw error;
-		});
-		if (stats?.isSymbolicLink()) {
-			await rm(destinationPath);
-			removed.push(destinationPath);
-		}
-	}
-	return Object.freeze(removed);
-}
-
 export function buildArtifactLinks(
 	request: ArtifactRequest,
 ): readonly ResolvedLink[] {
@@ -200,16 +263,51 @@ export function buildArtifactLinks(
 
 export async function installArtifacts(
 	links: readonly ResolvedLink[],
-	legacyDestinationPaths: readonly string[] = [],
+	protectedDirectories: readonly string[] = [],
+	directoryMigrations: readonly ResolvedLink[] = [],
 ): Promise<InstallResult> {
 	const deduplicatedLinks = deduplicateLinks(links);
 	const errors: string[] = [];
 	const actions: Array<{ link: ResolvedLink; action: DestinationAction }> = [];
+	const migrations: ResolvedLink[] = [];
+	for (const migration of directoryMigrations) {
+		const stats = await lstat(migration.destinationPath).catch(
+			(error: unknown) => {
+				if ((error as NodeJS.ErrnoException).code === "ENOENT")
+					return undefined;
+				throw error;
+			},
+		);
+		if (
+			stats?.isSymbolicLink() &&
+			normalizePath(
+				path.resolve(
+					path.dirname(migration.destinationPath),
+					await readlink(migration.destinationPath),
+				),
+			) === normalizePath(migration.sourcePath)
+		)
+			migrations.push(migration);
+	}
+	const sourceDirectories = await Promise.all(
+		[
+			...deduplicatedLinks.map((link) => path.dirname(link.sourcePath)),
+			...protectedDirectories,
+		].map(resolveParent),
+	);
 
 	for (const link of deduplicatedLinks) {
 		try {
 			await validateSource(link);
-			actions.push({ link, action: await classifyDestination(link) });
+			await validateDestinationParent(link, sourceDirectories, migrations);
+			actions.push({
+				link,
+				action: migrations.some((migration) =>
+					isWithin(migration.destinationPath, link.destinationPath),
+				)
+					? "create"
+					: await classifyDestination(link),
+			});
 		} catch (error) {
 			errors.push(error instanceof Error ? error.message : String(error));
 		}
@@ -218,7 +316,7 @@ export async function installArtifacts(
 		throw new Error(`Install validation failed:\n- ${errors.join("\n- ")}`);
 	}
 
-	const removed = await removeLegacyLinks(legacyDestinationPaths);
+	const removed = await uninstallArtifacts(migrations);
 	const created: string[] = [];
 	const existing: string[] = [];
 	const repaired: string[] = [];

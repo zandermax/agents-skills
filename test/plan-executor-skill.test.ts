@@ -2,12 +2,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { parseFrontmatter } from "../src/lib/frontmatter.js";
+
 const skillPath = new URL(
 	"../.agents/skills/plan-executor/SKILL.md",
 	import.meta.url,
 );
 const agentPath = new URL(
-	"../.github/agents/plan-executor.agent.md",
+	"../.claude/agents/plan-executor.agent.md",
 	import.meta.url,
 );
 
@@ -58,22 +60,33 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 		agent,
 		/\*\*REQUIRED SKILL:\*\*\s+Use\s+plan-executor\s+for all implementation plan execution behavior\./,
 	);
-	assert.match(
-		agent,
-		/tools:\s*\[\s*vscode\/askQuestions\s*,\s*search\s*,\s*read\s*,\s*edit\s*,\s*execute\s*,\s*agent\s*,\s*todo\s*,\s*web\s*\]/i,
+	assert.deepEqual(
+		parseFrontmatter(agent, "plan-executor.agent.md").attributes.tools,
+		[
+			"AskUserQuestion",
+			"Glob",
+			"Grep",
+			"Read",
+			"Edit",
+			"Write",
+			"Bash",
+			"Agent",
+			"TodoWrite",
+			"WebFetch",
+			"WebSearch",
+			"Skill",
+			"ToolSearch",
+		],
 	);
 	assert.match(agent, /no canonical plan exists|malformed|incomplete/i);
 	assert.match(agent, /plan-checker admission and freshness gates/i);
 	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
 	assert.match(agent, /fingerprint mismatch/i);
 	assert.match(agent, /user confirmation.*satisfies readiness/i);
+	assert.match(agent, /Load that skill before acting/i);
 	assert.match(
 		agent,
-		/Use the Skill tool when available; otherwise read.*plan-executor\/SKILL\.md/i,
-	);
-	assert.match(
-		agent,
-		/Never report that the skill cannot be loaded or halt execution simply because a tool named `Skill` does not exist/i,
+		/If the skill is entirely unavailable, report that failure and stop rather than reconstructing/i,
 	);
 });
 

@@ -89,6 +89,19 @@ test("shared agent instructions expose canonical memory skills to all agents", a
 	);
 });
 
+test("shared agent instructions enforce custom planning precedence over superpowers", async () => {
+	const instructions = await readFile(agentInstructionsPath, "utf8");
+	const normalizedInstructions = instructions.replace(/\s+/g, " ");
+	assert.match(
+		normalizedInstructions,
+		/custom planning artifacts and agents.*take absolute precedence/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/Never invoke or follow `superpowers:writing-plans` or `superpowers:executing-plans`/i,
+	);
+});
+
 test("shared agent instructions treat staging as semantically neutral", async () => {
 	const instructions = await readFile(agentInstructionsPath, "utf8");
 	const normalizedInstructions = instructions.replace(/\s+/g, " ");

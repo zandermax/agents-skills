@@ -11,11 +11,11 @@ const teachSkillPath = new URL(
 	import.meta.url,
 );
 const agentPath = new URL(
-	"../.github/agents/code-walk.agent.md",
+	"../.claude/agents/code-walk.agent.md",
 	import.meta.url,
 );
 const teachAgentPath = new URL(
-	"../.github/agents/teach-by-doing.agent.md",
+	"../.claude/agents/teach-by-doing.agent.md",
 	import.meta.url,
 );
 

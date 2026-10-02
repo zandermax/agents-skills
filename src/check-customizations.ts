@@ -29,7 +29,15 @@ function missingAgentBaselineTools(tools: unknown): readonly string[] {
 		return REQUIRED_AGENT_BASELINE_TOOLS;
 	}
 
-	const declared = new Set(tools);
+	const aliases: Readonly<Record<string, string>> = {
+		Read: "read",
+		Glob: "search",
+		Grep: "search",
+		WebFetch: "web",
+		WebSearch: "web",
+		AskUserQuestion: "vscode/askQuestions",
+	};
+	const declared = new Set(tools.map((tool) => aliases[tool] ?? tool));
 	return REQUIRED_AGENT_BASELINE_TOOLS.filter((tool) => !declared.has(tool));
 }
 

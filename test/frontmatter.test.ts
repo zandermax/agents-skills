@@ -125,7 +125,7 @@ test("parseFrontmatter preserves body bytes after closing delimiter", () => {
 
 test("all skill and agent frontmatter entries are valid", async () => {
 	const skillRoot = new URL("../.agents/skills/", import.meta.url);
-	const agentRoot = new URL("../.github/agents/", import.meta.url);
+	const agentRoot = new URL("../.claude/agents/", import.meta.url);
 	const allowedSkillKeys = new Set([
 		"name",
 		"description",
@@ -182,7 +182,7 @@ test("all skill and agent frontmatter entries are valid", async () => {
 
 		const filePath = new URL(`./${entry.name}`, agentRoot);
 		const content = await readFile(filePath, "utf8");
-		const parsed = parseFrontmatter(content, `.github/agents/${entry.name}`);
+		const parsed = parseFrontmatter(content, `.claude/agents/${entry.name}`);
 
 		for (const key of Object.keys(parsed.attributes)) {
 			assert.ok(

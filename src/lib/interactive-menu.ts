@@ -9,11 +9,11 @@ export interface ClientMenuItem {
 export const DEFAULT_CLIENT_MENU_ITEMS: readonly ClientMenuItem[] =
 	Object.freeze([
 		{ id: "copilot", label: "Copilot", description: "skills, agents, hooks" },
-		{ id: "claude", label: "Claude", description: "skills" },
+		{ id: "claude", label: "Claude", description: "shared skills and agents" },
 		{
 			id: "agents",
 			label: "General agents",
-			description: ".agents: skills, hooks",
+			description: "shared skills, generic hooks",
 		},
 	]);
 
@@ -50,9 +50,7 @@ export function renderMenu(
 
 	lines.push("");
 	if (selectedIds.size > 1) {
-		lines.push(
-			"\x1b[33m\u26A0\uFE0F  Warning: Selecting multiple clients may duplicate entries in VS Code.\x1b[0m",
-		);
+		lines.push("\x1b[90mShared skills and agents are installed once.\x1b[0m");
 	} else {
 		lines.push("");
 	}

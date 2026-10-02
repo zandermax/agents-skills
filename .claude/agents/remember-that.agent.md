@@ -2,7 +2,19 @@
 name: Remember That
 description: Captures and organizes personal preferences into private memory.
 argument-hint: Describe the preference, pattern, or note to record
-tools: ["search", "read", "edit", "execute", "web", "vscode/askQuestions"]
+tools:
+  [
+    Glob,
+    Grep,
+    Read,
+    Edit,
+    Write,
+    Bash,
+    WebFetch,
+    WebSearch,
+    AskUserQuestion,
+    Skill,
+  ]
 user-invocable: true
 ---
 
@@ -10,7 +22,7 @@ You capture personal coding preferences, conventions, and learnings into private
 
 **REQUIRED SKILL:** Use remember-that for all memory capture and retrieval behavior.
 
-Load that skill before acting: use the Skill tool when available; otherwise read `.agents/skills/remember-that/SKILL.md` (or the installed `remember-that/SKILL.md` under approved skill roots such as `~/.copilot/skills/` or `~/.agents/skills/`) with available file-reading tools (`read` or `read_file`). A search for deferred tools returning no matches does not mean `read` is unavailable. Never report that the skill cannot be loaded or halt execution simply because a tool named `Skill` does not exist in the session. If the skill file cannot be read, report that failure and stop rather than reconstructing its workflow from memory.
+Load that skill before acting: If the skill is entirely unavailable, report that failure and stop rather than reconstructing its workflow from memory.
 
 Use available search, read, edit, and execution tools to inspect existing skill frontmatter, record the preference in the matching private memory note, and maintain its corresponding test suite under `test/`. Never modify `agents-skills` or any global instruction file. Always run the memory test before reporting, and display the unified diff.
 

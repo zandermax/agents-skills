@@ -30,14 +30,15 @@ test("renderMenu renders focus pointer and checkbox marks", () => {
 	assert.doesNotMatch(rendered, /duplicate/i);
 });
 
-test("renderMenu displays duplicate warning when more than one client is selected", () => {
+test("renderMenu explains shared installation when more than one client is selected", () => {
 	const rendered = renderMenu(
 		DEFAULT_CLIENT_MENU_ITEMS,
 		1,
 		new Set(["copilot", "claude"]),
 	);
 
-	assert.match(rendered, /Warning.*duplicate.*VS Code/i);
+	assert.match(rendered, /Shared skills and agents are installed once/i);
+	assert.doesNotMatch(rendered, /duplicate/i);
 });
 
 test("promptClientSelection resolves default copilot selection on return", async () => {
@@ -102,8 +103,7 @@ test("promptClientSelection supports toggling and navigating", async () => {
 	mockInput.emit("keypress", undefined, { name: "down" });
 	mockInput.emit("keypress", " ", { name: "space" });
 
-	// Warning should now have been rendered in outputData
-	assert.match(outputData, /Warning.*duplicate/i);
+	assert.match(outputData, /Shared skills and agents are installed once/i);
 
 	// Press return key
 	mockInput.emit("keypress", "\r", { name: "return" });

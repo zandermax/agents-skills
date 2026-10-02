@@ -244,7 +244,7 @@ test("parseInstallCatalog rejects duplicate destinations across clients", () => 
 	);
 });
 
-test("parseInstallCatalog rejects agent collections mapped to another client format", () => {
+test("parseInstallCatalog permits compatible agent collections shared by clients", () => {
 	const catalog = createValidCatalog();
 	const clients = catalog.clients as Array<Record<string, unknown>>;
 	const firstClient = clients[0];
@@ -260,9 +260,10 @@ test("parseInstallCatalog rejects agent collections mapped to another client for
 		],
 	};
 
-	expectCatalogError(
-		catalog,
-		/clients\[0\]\.destinations\[2\]\.collection.*format.*copilot/i,
+	assert.equal(
+		parseInstallCatalog(catalog, "install-catalog.json", fixtureRepoRoot)
+			.clients[0]?.destinations.length,
+		3,
 	);
 });
 
