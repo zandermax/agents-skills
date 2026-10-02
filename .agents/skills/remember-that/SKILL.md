@@ -249,8 +249,13 @@ and creates individual discovery links only. It rejects destination parents
 that resolve into the public repository, leaves correct links unchanged, and
 reports conflicting files or links without overwriting them. Never construct
 discovery links yourself or replace a parent directory symlink during capture.
-If registration encounters an old repository-backed directory link, report the
-conflict and request the repository installer migration instead.
+If registration encounters an old repository-backed directory link, stop and
+explain that writing through that parent could put private memory into the
+public repository. Report the conflict and explicitly ask the user to run the
+repository installer migration before retrying registration. Report private
+note and test results separately from pending discovery registration, attributing
+prior results to the user when not independently verified. Do not report the
+full capture as complete until registration is verified.
 
 ## Verification and Reporting
 

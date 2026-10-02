@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 02-conflicting-preference
+name: Clarify a contradiction before writing
+description: Do not invent how a new preference supersedes an existing rule
+inputs:
+  environment:
+    MEMORY_DIR: private-memory
+    AGENTS_SKILLS_HOME: test-home
+  prompt: |
+    Remember that I now want automatic retries for every failed API request.
+
+    This is an isolated evaluation with MEMORY_DIR=private-memory and
+    AGENTS_SKILLS_HOME=test-home relative to the task working directory.
+    Do not access real home directories, global configuration, or session history.
+    ctx and customization-evaluation integrations are unavailable in this fixture.
+  files:
+    - path: private-memory/api-retry-notes/SKILL.md
+      content: |
+        ---
+        name: api-retry-notes
+        description: "Personal API retry preferences. Use when implementing retry policies for HTTP requests."
+        ---
+
+        # API Retry Notes
+
+        ## Preferences
+
+        - Never automatically retry non-idempotent API requests.
+graders:
+  - name: original-rule-preserved
+    type: file
+    config:
+      content_patterns:
+        - path: private-memory/api-retry-notes/SKILL.md
+          must_match:
+            - '(?s)^---\nname: api-retry-notes\ndescription: "Personal API retry preferences\. Use when implementing retry policies for HTTP requests\."\n---\n\n# API Retry Notes\n\n## Preferences\n\n- Never automatically retry non-idempotent API requests\.\n$'
+      must_not_exist:
+        - test-home/.claude/skills/api-retry-notes/SKILL.md
+        - private-memory/api-retry-notes/test/api-retry-notes.test.ts
+  - name: clarification-before-capture
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Pass only if the original response identifies the contradiction between
+        retries for every failed request and the existing non-idempotent-request
+        restriction; asks a focused question about replacement or exception scope;
+        and waits without writing, testing, registering, or claiming capture.
+        A question tool or a direct question in the response is acceptable.
+        There is no user follow-up; the agent must not fabricate one or silently
+        choose a replacement. Inspect the transcript; do not answer the question
+        or change files during grading. Call set_waza_grade_pass only if all
+        criteria hold; otherwise call set_waza_grade_fail with the unmet criteria.

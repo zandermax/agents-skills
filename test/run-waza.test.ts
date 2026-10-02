@@ -22,8 +22,9 @@ import {
 test("Waza infrastructure classifiers identify adapter and sandbox failures", () => {
 	assert.equal(
 		isWazaAdapterError("tool argument format wasn't recognized"),
-		true,
+		false,
 	);
+	assert.equal(isWazaAdapterError("malformed apply_patch adapter input"), true);
 	assert.equal(isWazaAdapterError("scenario failed"), false);
 	assert.equal(isWazaSandboxError("Operation not permitted"), true);
 	assert.equal(isWazaSandboxError("scenario failed"), false);
@@ -62,11 +63,12 @@ test("createWazaWorkspace copies the repository without Git metadata or dependen
 	);
 });
 
-test("createMacosWazaSandboxProfile permits writes only in the workspace", () => {
+test("createMacosWazaSandboxProfile restricts writes to allowed paths", () => {
 	const profile = createMacosWazaSandboxProfile('/tmp/waza "workspace"');
 
 	assert.match(profile, /^\(allow default\)$/m);
 	assert.match(profile, /^\(deny file-write\*\)$/m);
+	assert.match(profile, /^\(allow file-write\* \(literal "\/dev\/null"\)\)$/m);
 	assert.match(
 		profile,
 		/\(allow file-write\* \(subpath "\/tmp\/waza \\"workspace\\""\)\)/,
@@ -76,7 +78,7 @@ test("createMacosWazaSandboxProfile permits writes only in the workspace", () =>
 	assert.match(profile, /\/\.copilot/);
 });
 
-test("runWaza executes the evaluator in an isolated workspace", async (t) => {
+test("runWaza tolerates transcript warnings and null-device redirection", async (t) => {
 	const toolDirectory = await mkdtemp(path.join(os.tmpdir(), "waza-tool-"));
 	const fakeWazaPath = path.join(toolDirectory, "waza");
 	const originalPath = process.env.PATH;
@@ -88,7 +90,7 @@ test("runWaza executes the evaluator in an isolated workspace", async (t) => {
 
 	await writeFile(
 		fakeWazaPath,
-		"#!/usr/bin/env sh\nprintf mutation > mutation-marker.txt\n",
+		'#!/usr/bin/env sh\nprintf discarded > /dev/null || exit 1\nprintf "tool argument format wasn\x27t recognized\\n" >&2\nprintf mutation > mutation-marker.txt\n',
 	);
 	await chmod(fakeWazaPath, 0o755);
 	process.env.PATH = `${toolDirectory}${path.delimiter}${originalPath ?? ""}`;

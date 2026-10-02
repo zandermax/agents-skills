@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 01-clear-capture
+name: Append a clear preference to the matching private topic
+description: Existing-topic routing, test updates, and capture evidence
+inputs:
+  environment:
+    MEMORY_DIR: private-memory
+    AGENTS_SKILLS_HOME: test-home
+  prompt: |
+    Remember this durable preference: never retry an expired refresh token;
+    require sign-in again instead. Use my existing API authentication notes.
+
+    This is an isolated evaluation. MEMORY_DIR=private-memory and
+    AGENTS_SKILLS_HOME=test-home are relative to this task's working directory.
+    Keep those values on every command that runs memory tools. Do not read or
+    write real home directories, global configuration, or session history.
+    ctx and customization-evaluation integrations are unavailable in this fixture.
+  files:
+    - path: private-memory/api-auth-notes/SKILL.md
+      content: |
+        ---
+        name: api-auth-notes
+        description: "Personal API authentication preferences. Use when writing or reviewing token refresh and sign-in flows."
+        ---
+
+        # API Authentication Notes
+
+        ## Preferences
+
+        - Check token expiry before refreshing credentials.
+    - path: private-memory/api-auth-notes/test/api-auth-notes.test.ts
+      content: |
+        import assert from "node:assert/strict";
+        import { readFile } from "node:fs/promises";
+        import test from "node:test";
+
+        test("authentication notes describe token refresh", async () => {
+          const note = await readFile(new URL("../SKILL.md", import.meta.url), "utf8");
+          assert.match(note, /description:.*token refresh/);
+          assert.match(note, /Check token expiry before refreshing credentials/);
+        });
+    - path: AGENTS.md
+      content: |
+        # Curated Instructions
+
+        Fixture only. Keep this file unchanged.
+graders:
+  - name: private-note-and-tests
+    type: file
+    config:
+      must_exist:
+        - private-memory/api-auth-notes/test/api-auth-notes.test.ts
+      must_not_exist:
+        - .agents/skills/api-auth-notes/SKILL.md
+        - private-memory/refresh-token-notes/SKILL.md
+      content_patterns:
+        - path: private-memory/api-auth-notes/SKILL.md
+          must_match:
+            - "name: api-auth-notes"
+            - "Check token expiry before refreshing credentials"
+            - "(?i)expired refresh token"
+            - "(?i)sign.in"
+        - path: private-memory/api-auth-notes/test/api-auth-notes.test.ts
+          must_match:
+            - "(?i)expired|never retry"
+        - path: AGENTS.md
+          must_match:
+            - '(?s)^# Curated Instructions\n\nFixture only\. Keep this file unchanged\.\n$'
+  - name: capture-behavior
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Judge the original task execution, not actions taken during grading.
+        Pass only if the agent appended the requested preference to the existing
+        private api-auth-notes topic without losing its existing rule; updated
+        and actually ran that topic's tests successfully. Appending to an existing
+        topic does not require creating a new registration.
+        It must report the exact changed paths and a unified diff, not merely
+        propose a capture or claim tests passed without execution evidence.
+        It must not ask unnecessary clarification, edit public skills or curated
+        instructions, access real user memory/history, or invent extra preferences.
+        Optional integrations were unavailable: silence about them is correct.
+        Inspect files and the execution transcript; do not repair the outcome.
+        If all criteria hold, call set_waza_grade_pass. Otherwise call
+        set_waza_grade_fail with concrete unmet criteria.

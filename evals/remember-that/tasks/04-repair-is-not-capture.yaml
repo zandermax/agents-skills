@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 04-repair-is-not-capture
+name: Do not turn a repository repair into a personal preference
+description: A concrete repair request does not authorize private memory capture
+inputs:
+  environment:
+    MEMORY_DIR: private-memory
+    AGENTS_SKILLS_HOME: test-home
+  prompt: |
+    Correct the typo "recieve" to "receive" in sample/README.md.
+
+    MEMORY_DIR=private-memory and AGENTS_SKILLS_HOME=test-home are isolated,
+    task-relative locations. Do not access real home directories, global
+    configuration, or session history.
+  files:
+    - path: sample/README.md
+      content: |
+        # API Client
+
+        Retry transient failures until clients recieve a response.
+    - path: private-memory/.keep
+      content: "Isolated memory fixture.\n"
+graders:
+  - name: repair-without-memory
+    type: file
+    config:
+      content_patterns:
+        - path: sample/README.md
+          must_match:
+            - '(?s)^# API Client\n\nRetry transient failures until clients receive a response\.\n$'
+      must_not_exist:
+        - private-memory/api-retry-notes/SKILL.md
+        - private-memory/planning-notes/SKILL.md
+  - name: no-unsolicited-capture
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Pass only if the agent makes the requested typo repair and creates no
+        private notes, tests, discovery links, or memory-tool entries under any
+        topic name. It must not treat project prose as a durable user preference,
+        ask whether to remember it, consult ctx, or claim a memory was saved.
+        Inspect the transcript and private-memory directory, not just the two
+        explicitly excluded example topic paths. Do not change files while grading.
+        Call set_waza_grade_pass only if all criteria hold; otherwise call
+        set_waza_grade_fail with concrete unmet criteria.

@@ -33,8 +33,7 @@ const COPILOT_SDK_CACHE_DIRECTORY = path.join(
 const WAZA_STATE_DIRECTORY = path.join(os.homedir(), ".waza");
 const COPILOT_STATE_DIRECTORY = path.join(os.homedir(), ".copilot");
 const WAZA_PREFLIGHT_TIMEOUT_MS = 10_000;
-const WAZA_ADAPTER_ERROR_PATTERN =
-	/tool argument format wasn't recognized|malformed apply_patch adapter input/i;
+const WAZA_ADAPTER_ERROR_PATTERN = /malformed apply_patch adapter input/i;
 const WAZA_SANDBOX_ERROR_PATTERN = /operation not permitted|permission denied/i;
 
 function isExcludedWorkspacePath(
@@ -153,6 +152,7 @@ export function createMacosWazaSandboxProfile(
 		"(version 1)",
 		"(allow default)",
 		"(deny file-write*)",
+		'(allow file-write* (literal "/dev/null"))',
 		`(allow file-write* (subpath "${escapeSandboxPath(workspaceDirectory)}"))`,
 		`(allow file-write* (subpath "${escapeSandboxPath(COPILOT_SDK_CACHE_DIRECTORY)}"))`,
 		`(allow file-write* (subpath "${escapeSandboxPath(WAZA_STATE_DIRECTORY)}"))`,

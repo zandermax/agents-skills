@@ -48,6 +48,28 @@ waza run executable-planning -v
 
 Local caches and execution outputs (e.g. `.waza-cache/`) are ignored by version control.
 
+## Remember That
+
+```sh
+npm run eval:waza -- run remember-that -v
+```
+
+The five cases cover clear capture into an existing private topic, clarification
+of a conflicting preference, read-only retrieval, a repair request that must not
+create memory, and safe recovery after a reported repository-backed registration
+conflict. The last case checks the agent's refusal to bypass the helper; actual
+symlink resolution and helper execution are covered by deterministic tests.
+Tasks configure `MEMORY_DIR=private-memory` and `AGENTS_SKILLS_HOME=test-home`
+inside their temporary workspace. They must not access real home directories,
+global configuration, or session history.
+
+File graders check observable artifacts and unchanged fixture content. Model
+graders check execution evidence, clarification, reporting, and unsafe-link
+handling, without repairing outcomes during grading. The target skill body is
+injected, `remember-that` is required, and unrelated repository skills are disabled:
+adherence, not automatic discovery. Optional `ctx` and customization-evaluation
+integrations are not exercised by the capture fixtures.
+
 ## Workspace Isolation
 
 `npm run eval:waza` copies this repository to a temporary workspace before
