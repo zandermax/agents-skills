@@ -2,14 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const checkerPath = new URL(
-	"../.agents/skills/plan-checker/SKILL.md",
-	import.meta.url,
-);
-const honePath = new URL(
-	"../.agents/skills/hone-the-plan/SKILL.md",
-	import.meta.url,
-);
+const checkerPath = new URL("../skills/plan-checker/SKILL.md", import.meta.url);
+const honePath = new URL("../skills/hone-the-plan/SKILL.md", import.meta.url);
 
 async function readSkills(): Promise<{
 	checker: string;

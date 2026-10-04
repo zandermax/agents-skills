@@ -3,14 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseFrontmatter } from "../../../../src/lib/frontmatter.ts";
+import { parseFrontmatter } from "../../../src/lib/frontmatter.ts";
 import {
 	installArtifacts,
 	type ResolvedLink,
 	uninstallArtifacts,
-} from "../../../../src/lib/install-artifacts.ts";
+} from "../../../src/lib/install-artifacts.ts";
 
-const repositoryRoot = fileURLToPath(new URL("../../../../", import.meta.url));
+const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 function isWithin(root: string, candidate: string): boolean {
 	const relative = path.relative(root, candidate);

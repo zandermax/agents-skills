@@ -14,14 +14,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const skillPath = new URL(
-	"../.agents/skills/remember-that/SKILL.md",
-	import.meta.url,
-);
-const agentPath = new URL(
-	"../.claude/agents/remember-that.agent.md",
-	import.meta.url,
-);
+const skillPath = new URL("../skills/remember-that/SKILL.md", import.meta.url);
+const agentPath = new URL("../agents/remember-that.agent.md", import.meta.url);
 
 test("remember-that skill exposes canonical memory skills as read-only to all agents", async () => {
 	const skill = await readFile(skillPath, "utf8");
@@ -60,7 +54,7 @@ test("memory registration is idempotent, runnable through its installed link, an
 	const skills = path.join(home, ".claude", "skills");
 	const helper = fileURLToPath(
 		new URL(
-			"../.agents/skills/remember-that/scripts/register-memory.ts",
+			"../skills/remember-that/scripts/register-memory.ts",
 			import.meta.url,
 		),
 	);
@@ -86,7 +80,7 @@ test("memory registration is idempotent, runnable through its installed link, an
 		await writeFile(path.join(memory, "test", `${topic}.test.ts`), "");
 		await mkdir(path.dirname(skills), { recursive: true });
 		await symlink(
-			fileURLToPath(new URL("../.agents/skills/", import.meta.url)),
+			fileURLToPath(new URL("../skills/", import.meta.url)),
 			skills,
 			"dir",
 		);
@@ -104,9 +98,7 @@ test("memory registration is idempotent, runnable through its installed link, an
 			true,
 		);
 		await symlink(
-			fileURLToPath(
-				new URL("../.agents/skills/remember-that/", import.meta.url),
-			),
+			fileURLToPath(new URL("../skills/remember-that/", import.meta.url)),
 			path.join(skills, "remember-that"),
 			"dir",
 		);

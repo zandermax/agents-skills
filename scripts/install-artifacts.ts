@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildMemoryLinks } from "../.agents/skills/remember-that/scripts/register-memory.js";
+import { buildMemoryLinks } from "../skills/remember-that/scripts/register-memory.js";
 import { parseArtifactArguments } from "../src/lib/artifact-arguments.js";
 import {
 	formatArtifactListing,
@@ -118,8 +118,8 @@ export async function runCli(
 			.flatMap((target) => {
 				const sources =
 					target.collection === "skills"
-						? [".agents/skills"]
-						: [".github/agents", ".claude/agents"];
+						? [".agents/skills", "skills"]
+						: [".github/agents", ".claude/agents", "agents"];
 				return sources.map((source) => ({
 					kind: "directory" as const,
 					sourcePath: path.join(repoRoot, source),
@@ -135,6 +135,11 @@ export async function runCli(
 					},
 					{
 						kind: "directory" as const,
+						sourcePath: path.join(repoRoot, "skills"),
+						destinationPath: path.join(homeDirectory, ".copilot/skills"),
+					},
+					{
+						kind: "directory" as const,
 						sourcePath: path.join(repoRoot, ".github/agents"),
 						destinationPath: path.join(homeDirectory, ".copilot/agents"),
 					},
@@ -145,12 +150,73 @@ export async function runCli(
 					},
 					{
 						kind: "directory" as const,
+						sourcePath: path.join(repoRoot, "agents"),
+						destinationPath: path.join(homeDirectory, ".copilot/agents"),
+					},
+					{
+						kind: "directory" as const,
 						sourcePath: path.join(repoRoot, ".agents/skills"),
+						destinationPath: path.join(homeDirectory, ".agents/skills"),
+					},
+					{
+						kind: "directory" as const,
+						sourcePath: path.join(repoRoot, "skills"),
 						destinationPath: path.join(homeDirectory, ".agents/skills"),
 					},
 				]
 			: []),
 	];
+	const legacyArtifactLinks: ResolvedLink[] = [];
+	for (const target of request.targets) {
+		const targetArtifacts = request.artifacts.filter(
+			(artifact) => artifact.collection === target.collection,
+		);
+		if (target.linkMode === "directory") {
+			if (target.collection === "hooks") {
+				for (const source of [
+					".github/hooks",
+					".agents/hooks",
+					"agent-hooks",
+				]) {
+					legacyArtifactLinks.push({
+						kind: "directory",
+						sourcePath: path.join(repoRoot, source),
+						destinationPath: target.directory,
+					});
+				}
+			}
+		} else {
+			for (const artifact of targetArtifacts) {
+				const legacySources =
+					artifact.kind === "skill"
+						? [path.join(repoRoot, ".agents/skills", artifact.name)]
+						: artifact.kind === "agent"
+							? [
+									path.join(
+										repoRoot,
+										".claude/agents",
+										artifact.destinationName,
+									),
+									path.join(
+										repoRoot,
+										".github/agents",
+										artifact.destinationName,
+									),
+								]
+							: [];
+				for (const sourcePath of legacySources) {
+					legacyArtifactLinks.push({
+						kind: artifact.entryKind,
+						sourcePath,
+						destinationPath: path.join(
+							target.directory,
+							artifact.destinationName,
+						),
+					});
+				}
+			}
+		}
+	}
 	const result =
 		operation === "install"
 			? await installArtifacts(links, [repoRoot], legacyRoots)
@@ -159,34 +225,53 @@ export async function runCli(
 	if (operation === "uninstall") {
 		for (const legacy of legacyRoots)
 			removed.push(...(await uninstallArtifacts([legacy], [repoRoot])));
+		for (const legacy of legacyArtifactLinks)
+			removed.push(...(await uninstallArtifacts([legacy], [repoRoot])));
 	}
 	if (cleanLegacyDiscovery) {
 		const legacyEntries = [
 			...request.artifacts.flatMap((artifact) =>
 				artifact.kind === "skill"
-					? [".copilot/skills", ".agents/skills"].map((directory) => ({
-							kind: artifact.entryKind,
-							sourcePath: artifact.sourcePath,
-							destinationPath: path.join(
-								homeDirectory,
-								directory,
-								artifact.destinationName,
-							),
-						}))
-					: artifact.kind === "agent"
-						? [".github/agents", ".claude/agents"].map((directory) => ({
+					? [".copilot/skills", ".agents/skills"].flatMap((directory) => [
+							{
 								kind: artifact.entryKind,
-								sourcePath: path.join(
-									repoRoot,
+								sourcePath: artifact.sourcePath,
+								destinationPath: path.join(
+									homeDirectory,
 									directory,
 									artifact.destinationName,
 								),
+							},
+							{
+								kind: artifact.entryKind,
+								sourcePath: path.join(
+									repoRoot,
+									".agents/skills",
+									artifact.name,
+								),
 								destinationPath: path.join(
 									homeDirectory,
-									".copilot/agents",
+									directory,
 									artifact.destinationName,
 								),
-							}))
+							},
+						])
+					: artifact.kind === "agent"
+						? [".github/agents", ".claude/agents", "agents"].map(
+								(directory) => ({
+									kind: artifact.entryKind,
+									sourcePath: path.join(
+										repoRoot,
+										directory,
+										artifact.destinationName,
+									),
+									destinationPath: path.join(
+										homeDirectory,
+										".copilot/agents",
+										artifact.destinationName,
+									),
+								}),
+							)
 						: [],
 			),
 			...memoryLinks.flatMap((link) =>

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/config.schema.json
 
 paths:
-  skills: .agents/skills
+  skills: skills
   evals: evals/
   results: results/
 files:

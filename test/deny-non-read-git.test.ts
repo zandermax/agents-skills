@@ -11,8 +11,8 @@ import {
 	evaluateToolUse,
 	splitShellStatements,
 	tokenizeStatement,
-} from "../.github/hooks/deny-non-read-git.mts";
-import { evaluateToolUse as evaluatePreToolSafety } from "../.github/hooks/pre-tool-safety.mts";
+} from "../agent-hooks/deny-non-read-git.mts";
+import { evaluateToolUse as evaluatePreToolSafety } from "../agent-hooks/pre-tool-safety.mts";
 
 describe("deny-non-read-git hook", () => {
 	describe("pre-tool-safety compatibility", () => {
@@ -27,10 +27,7 @@ describe("deny-non-read-git hook", () => {
 		});
 
 		it("keeps one registered PreToolUse entrypoint per config", async () => {
-			for (const path of [
-				"../.github/hooks/deny-non-read-git.json",
-				"../.agents/hooks/deny-non-read-git.json",
-			]) {
+			for (const path of ["../agent-hooks/deny-non-read-git.json"]) {
 				const config = await import(path, { with: { type: "json" } });
 				assert.equal(config.default.hooks.PreToolUse.length, 1);
 			}

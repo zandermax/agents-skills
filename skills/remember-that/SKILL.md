@@ -14,7 +14,7 @@ while referencing public skills as read-only topic anchors.
 ## Operating Contract
 
 - **Strict Separation of Storage**:
-  - Public skill definitions reside in `agents-skills/.agents/skills/`.
+  - Public skill definitions reside in `agents-skills/skills/`.
     This repository is strictly read-only during memory operations. Never
     create, edit, or delete any file in `agents-skills` **as part of routing
     a captured preference** (see the explicit-instruction exception under
@@ -65,7 +65,7 @@ an agent, skill, or repository does not by itself authorize creating a memory.
 
 2. **Scan Existing Topics**:
    - Inspect frontmatter `name` and `description` of all public skills in
-     `agents-skills/.agents/skills/*/SKILL.md`.
+     `agents-skills/skills/*/SKILL.md`.
    - Inspect frontmatter `name` and `description` of all private memory notes in
      `<resolved-memory-dir>/*/SKILL.md`.
 

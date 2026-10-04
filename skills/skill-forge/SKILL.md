@@ -94,7 +94,7 @@ own validation, so bake these rules into the draft rather than discovering
 them afterward:
 
 - **Where it lives**: a new skill defaults to
-  `.agents/skills/<name>/SKILL.md`, where `<name>` matches the skill's
+  `skills/<name>/SKILL.md`, where `<name>` matches the skill's
   frontmatter `name` exactly — the folder name and the frontmatter name must
   be identical.
 - **Hand-authored vs. manifest-driven**: use a single hand-authored

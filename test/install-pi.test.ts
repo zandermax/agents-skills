@@ -79,12 +79,12 @@ test("getPiLinkTargets returns expected skills and agents targets", () => {
 	assert.equal(targets.length, 2);
 	assert.deepEqual(targets[0], {
 		name: "skills",
-		sourcePath: path.resolve(repoRoot, ".agents/skills"),
+		sourcePath: path.resolve(repoRoot, "skills"),
 		destinationPath: "/custom/home/.pi/agent/skills",
 	});
 	assert.deepEqual(targets[1], {
 		name: "agents",
-		sourcePath: path.resolve(repoRoot, ".claude/agents"),
+		sourcePath: path.resolve(repoRoot, "agents"),
 		destinationPath: "/custom/home/.pi/agent/agents",
 	});
 });
@@ -102,7 +102,7 @@ test("installPi creates piHome directory and links skills and agents", async () 
 		const skillsTarget = await readlink(path.join(fixture.piHome, "skills"));
 		assert.equal(
 			path.resolve(fixture.piHome, skillsTarget),
-			path.resolve(repoRoot, ".agents/skills"),
+			path.resolve(repoRoot, "skills"),
 		);
 
 		const agentsStat = await lstat(path.join(fixture.piHome, "agents"));
@@ -110,7 +110,7 @@ test("installPi creates piHome directory and links skills and agents", async () 
 		const agentsTarget = await readlink(path.join(fixture.piHome, "agents"));
 		assert.equal(
 			path.resolve(fixture.piHome, agentsTarget),
-			path.resolve(repoRoot, ".claude/agents"),
+			path.resolve(repoRoot, "agents"),
 		);
 
 		// Idempotency: subsequent run reports existing
@@ -164,10 +164,7 @@ test("installPi repairs broken symlink", async () => {
 		assert.equal(result.created.length, 1); // agents created
 
 		const realSource = await realpath(path.join(fixture.piHome, "skills"));
-		assert.equal(
-			realSource,
-			await realpath(path.resolve(repoRoot, ".agents/skills")),
-		);
+		assert.equal(realSource, await realpath(path.resolve(repoRoot, "skills")));
 	} finally {
 		await fixture.cleanup();
 	}

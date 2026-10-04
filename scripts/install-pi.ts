@@ -33,12 +33,12 @@ export function getPiLinkTargets(
 	return [
 		{
 			name: "skills",
-			sourcePath: path.resolve(repoRoot, ".agents/skills"),
+			sourcePath: path.resolve(repoRoot, "skills"),
 			destinationPath: path.resolve(piHome, "skills"),
 		},
 		{
 			name: "agents",
-			sourcePath: path.resolve(repoRoot, ".claude/agents"),
+			sourcePath: path.resolve(repoRoot, "agents"),
 			destinationPath: path.resolve(piHome, "agents"),
 		},
 	];
@@ -51,18 +51,43 @@ export function getLegacyPiLinkTargets(
 	return [
 		{
 			name: "agent",
+			sourcePath: path.resolve(repoRoot, "agents"),
+			destinationPath: path.resolve(piHome, "agent"),
+		},
+		{
+			name: "legacy-agent-claude",
 			sourcePath: path.resolve(repoRoot, ".claude/agents"),
 			destinationPath: path.resolve(piHome, "agent"),
 		},
 		{
 			name: "skills-parent",
+			sourcePath: path.resolve(repoRoot, "skills"),
+			destinationPath: path.resolve(path.dirname(piHome), "skills"),
+		},
+		{
+			name: "legacy-skills-parent",
 			sourcePath: path.resolve(repoRoot, ".agents/skills"),
 			destinationPath: path.resolve(path.dirname(piHome), "skills"),
 		},
 		{
 			name: "agents-parent",
+			sourcePath: path.resolve(repoRoot, "agents"),
+			destinationPath: path.resolve(path.dirname(piHome), "agents"),
+		},
+		{
+			name: "legacy-agents-parent",
 			sourcePath: path.resolve(repoRoot, ".claude/agents"),
 			destinationPath: path.resolve(path.dirname(piHome), "agents"),
+		},
+		{
+			name: "legacy-skills",
+			sourcePath: path.resolve(repoRoot, ".agents/skills"),
+			destinationPath: path.resolve(piHome, "skills"),
+		},
+		{
+			name: "legacy-agents",
+			sourcePath: path.resolve(repoRoot, ".claude/agents"),
+			destinationPath: path.resolve(piHome, "agents"),
 		},
 	];
 }
@@ -103,11 +128,16 @@ export async function installPi(
 			await realpath(absoluteTarget).catch(() => absoluteTarget),
 		);
 		const repoAgents = path.normalize(
+			await realpath(path.resolve(repoRoot, "agents")).catch(() =>
+				path.resolve(repoRoot, "agents"),
+			),
+		);
+		const legacyRepoAgents = path.normalize(
 			await realpath(path.resolve(repoRoot, ".claude/agents")).catch(() =>
 				path.resolve(repoRoot, ".claude/agents"),
 			),
 		);
-		if (resolvedTarget === repoAgents) {
+		if (resolvedTarget === repoAgents || resolvedTarget === legacyRepoAgents) {
 			await rm(piHome, { force: true });
 		}
 	}

@@ -11,12 +11,12 @@
 		"docs/**/*.md",
 		"sources/**/*.md",
 		".github/**/*.md",
-		".claude/**/*.md",
+		"agents/**/*.md",
 		"evals/**/*.md"
 	],
 	"overrides": [
 		{
-			"filter": [".claude/agents/**/*.md", "sources/**/*.md"],
+			"filter": ["agents/**/*.md", "sources/**/*.md"],
 			"config": {
 				"MD041": false
 			},

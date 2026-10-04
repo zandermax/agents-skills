@@ -11,7 +11,7 @@ function createManifest(): SkillManifest {
 		name: "executable-planning",
 		title: "Executable Planning",
 		description: "Creates deterministic planning checkpoints.",
-		output: ".agents/skills/executable-planning/SKILL.md",
+		output: "skills/executable-planning/SKILL.md",
 		selections: [
 			{
 				source: "core.md",
@@ -106,7 +106,7 @@ test("renderSkill composes deterministic output in manifest heading order", () =
 		"",
 	].join("\n");
 
-	assert.equal(rendered.path, ".agents/skills/executable-planning/SKILL.md");
+	assert.equal(rendered.path, "skills/executable-planning/SKILL.md");
 	assert.equal(rendered.content, expected);
 
 	const h1Count = rendered.content
@@ -143,7 +143,7 @@ test("renderSkill uses each manifest title for the generated H1", () => {
 			...createManifest(),
 			name: "alpha",
 			title: "Alpha Skill",
-			output: ".agents/skills/alpha/SKILL.md",
+			output: "skills/alpha/SKILL.md",
 		},
 		createSections(),
 	);
@@ -152,7 +152,7 @@ test("renderSkill uses each manifest title for the generated H1", () => {
 			...createManifest(),
 			name: "beta",
 			title: "Beta Skill",
-			output: ".agents/skills/beta/SKILL.md",
+			output: "skills/beta/SKILL.md",
 		},
 		createSections(),
 	);

@@ -16,7 +16,6 @@
 		"src/**/*.ts",
 		"scripts/**/*.ts",
 		"test/**/*.ts",
-		".github/hooks/**/*.mts",
-		".agents/hooks/**/*.mts"
+		"agent-hooks/**/*.mts"
 	]
 }

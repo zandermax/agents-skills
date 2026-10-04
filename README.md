@@ -32,7 +32,7 @@ npm run install:artifacts
 Copilot and Claude share `~/.claude/skills/` and `~/.claude/agents/`.
 These are real directories containing individual links, not links to entire
 repository directories. Agent definitions have one authored home in
-`.claude/agents/`, use Claude tool names supported by Copilot, and retain
+`agents/`, use Claude tool names supported by Copilot, and retain
 Copilot handoffs. The `copilot:` collection prefix remains for selector
 compatibility. Hooks retain their harness-specific destinations.
 

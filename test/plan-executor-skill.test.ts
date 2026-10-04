@@ -4,14 +4,8 @@ import test from "node:test";
 
 import { parseFrontmatter } from "../src/lib/frontmatter.js";
 
-const skillPath = new URL(
-	"../.agents/skills/plan-executor/SKILL.md",
-	import.meta.url,
-);
-const agentPath = new URL(
-	"../.claude/agents/plan-executor.agent.md",
-	import.meta.url,
-);
+const skillPath = new URL("../skills/plan-executor/SKILL.md", import.meta.url);
+const agentPath = new URL("../agents/plan-executor.agent.md", import.meta.url);
 
 test("plan-executor skill frontmatter and core structure", async () => {
 	const skill = await readFile(skillPath, "utf8");

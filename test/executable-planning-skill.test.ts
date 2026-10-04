@@ -30,14 +30,12 @@ const EVAL_TASKS_DIR = path.join(
 );
 const PLAN_IT_OUT_PATH = path.join(
 	REPO_ROOT,
-	".agents",
 	"skills",
 	"plan-it-out",
 	"SKILL.md",
 );
 const OUTPUT_PATH = path.join(
 	REPO_ROOT,
-	".agents",
 	"skills",
 	"executable-planning",
 	"SKILL.md",
@@ -374,7 +372,7 @@ test("plan-it-out references the current executable-planning workflow", () => {
 
 test("executable planner agent requests free-text user-test observations", () => {
 	const agent = readFileSync(
-		path.join(REPO_ROOT, ".claude", "agents", "executable-planner.agent.md"),
+		path.join(REPO_ROOT, "agents", "executable-planner.agent.md"),
 		"utf8",
 	);
 

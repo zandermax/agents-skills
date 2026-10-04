@@ -2,20 +2,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const skillPath = new URL(
-	"../.agents/skills/code-walk/SKILL.md",
-	import.meta.url,
-);
+const skillPath = new URL("../skills/code-walk/SKILL.md", import.meta.url);
 const teachSkillPath = new URL(
-	"../.agents/skills/teach-by-doing/SKILL.md",
+	"../skills/teach-by-doing/SKILL.md",
 	import.meta.url,
 );
-const agentPath = new URL(
-	"../.claude/agents/code-walk.agent.md",
-	import.meta.url,
-);
+const agentPath = new URL("../agents/code-walk.agent.md", import.meta.url);
 const teachAgentPath = new URL(
-	"../.claude/agents/teach-by-doing.agent.md",
+	"../agents/teach-by-doing.agent.md",
 	import.meta.url,
 );
 

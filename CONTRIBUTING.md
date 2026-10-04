@@ -14,7 +14,7 @@ npm run check
 
 ## Skills
 
-Add a hand-authored skill by creating `.agents/skills/<name>/SKILL.md`.
+Add a hand-authored skill by creating `skills/<name>/SKILL.md`.
 Use a manifest-driven skill under `sources/<name>/` when it composes source
 fragments or needs generated output. Run `npm run build` after changing a
 manifest-driven skill, then run `npm run check` before opening a pull request.

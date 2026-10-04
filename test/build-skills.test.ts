@@ -15,7 +15,7 @@ async function createTempRepo(): Promise<string> {
 }
 
 function skillOutputPath(repoRoot: string, skillName: string): string {
-	return path.join(repoRoot, ".agents", "skills", skillName, "SKILL.md");
+	return path.join(repoRoot, "skills", skillName, "SKILL.md");
 }
 
 function createManifest(skillName: string, options: SkillOptions = {}): string {
@@ -25,7 +25,7 @@ function createManifest(skillName: string, options: SkillOptions = {}): string {
 				name: skillName,
 				title: `${skillName} skill`,
 				description: `Creates deterministic planning for ${skillName}.`,
-				output: `.agents/skills/${skillName}/SKILL.md`,
+				output: `skills/${skillName}/SKILL.md`,
 				selections: [
 					{
 						source: "missing.md",
@@ -49,7 +49,7 @@ function createManifest(skillName: string, options: SkillOptions = {}): string {
 			name: skillName,
 			title: `${skillName} skill`,
 			description: `Creates deterministic planning for ${skillName}.`,
-			output: `.agents/skills/${skillName}/SKILL.md`,
+			output: `skills/${skillName}/SKILL.md`,
 			selections: [
 				{
 					source: "core.md",
@@ -170,7 +170,7 @@ test("buildSkills discovers only sources/*/skill.json paths lexically", async ()
 		});
 
 		assert.equal(artifacts.length, 1);
-		assert.equal(artifacts[0]?.path, ".agents/skills/alpha/SKILL.md");
+		assert.equal(artifacts[0]?.path, "skills/alpha/SKILL.md");
 	} finally {
 		await rm(repoRoot, { recursive: true, force: true });
 	}
@@ -223,10 +223,7 @@ test("buildSkills orders discovered manifests by code-point lexical order", asyn
 
 		assert.deepEqual(
 			artifacts.map((artifact) => artifact.path),
-			[
-				".agents/skills/beta-sort/SKILL.md",
-				".agents/skills/alpha-sort/SKILL.md",
-			],
+			["skills/beta-sort/SKILL.md", "skills/alpha-sort/SKILL.md"],
 		);
 	} finally {
 		await rm(repoRoot, { recursive: true, force: true });
@@ -241,7 +238,7 @@ test("buildSkills writes two valid skills and is idempotent", async () => {
 		assert.equal(first.length, 2);
 		assert.deepEqual(
 			first.map((artifact) => artifact.path),
-			[".agents/skills/alpha/SKILL.md", ".agents/skills/beta/SKILL.md"],
+			["skills/alpha/SKILL.md", "skills/beta/SKILL.md"],
 		);
 		assert.deepEqual(
 			first.map((artifact) => artifact.changed),
@@ -270,9 +267,9 @@ test("buildSkills check mode reports missing and changed output paths", async ()
 			async () => buildSkills({ repoRoot, mode: "check" }),
 			(error: unknown) => {
 				const message = String(error);
-				assert.match(message, /\.agents\/skills\/alpha\/SKILL\.md/);
+				assert.match(message, /skills\/alpha\/SKILL\.md/);
 				assert.match(message, /missing/i);
-				assert.match(message, /\.agents\/skills\/beta\/SKILL\.md/);
+				assert.match(message, /skills\/beta\/SKILL\.md/);
 				assert.match(message, /changed/i);
 				return true;
 			},

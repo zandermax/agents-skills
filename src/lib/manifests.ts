@@ -230,7 +230,7 @@ export function parseSkillManifest(
 	}
 
 	const output = assertString(value.output, manifestPath, "output");
-	const expectedOutput = `.agents/skills/${name}/SKILL.md`;
+	const expectedOutput = `skills/${name}/SKILL.md`;
 	if (output !== expectedOutput) {
 		throw createManifestError(
 			manifestPath,

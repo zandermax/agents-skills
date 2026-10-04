@@ -22,7 +22,6 @@ const tsxCliPath = path.join(
 const checkerCliPath = path.join(projectRoot, "src", "check-customizations.ts");
 const executablePlannerPath = path.join(
 	projectRoot,
-	".claude",
 	"agents",
 	"executable-planner.agent.md",
 );
@@ -32,15 +31,9 @@ const executablePlanningCorePath = path.join(
 	"executable-planning",
 	"executable-planning.md",
 );
-const planScoutPath = path.join(
-	projectRoot,
-	".claude",
-	"agents",
-	"plan-scout.agent.md",
-);
+const planScoutPath = path.join(projectRoot, "agents", "plan-scout.agent.md");
 const planExecutorPath = path.join(
 	projectRoot,
-	".claude",
 	"agents",
 	"plan-executor.agent.md",
 );
@@ -119,7 +112,7 @@ async function createFixtureRepo(
 		.map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
 		.join("\n");
 
-	const skillDir = path.join(repoRoot, ".agents", "skills", skillFolderName);
+	const skillDir = path.join(repoRoot, "skills", skillFolderName);
 	await mkdir(skillDir, { recursive: true });
 	await writeFile(
 		path.join(skillDir, "SKILL.md"),
@@ -139,7 +132,7 @@ async function createFixtureRepo(
 		"utf8",
 	);
 
-	const agentDir = path.join(repoRoot, ".claude", "agents");
+	const agentDir = path.join(repoRoot, "agents");
 	await mkdir(agentDir, { recursive: true });
 	await writeFile(
 		path.join(agentDir, "executable-planner.agent.md"),
@@ -184,7 +177,7 @@ async function createFixtureRepo(
 				name: "executable-planning",
 				title: "Executable Planning",
 				description: "Creates deterministic planning checkpoints.",
-				output: ".agents/skills/executable-planning/SKILL.md",
+				output: "skills/executable-planning/SKILL.md",
 				selections: [
 					{
 						source: options.manifestSourceOverride ?? "core.md",
@@ -236,13 +229,13 @@ async function createFixtureRepo(
 					{
 						name: "skills",
 						artifactKind: "skill",
-						source: ".agents/skills",
+						source: "skills",
 						entry: { kind: "directory", marker: "SKILL.md" },
 					},
 					{
 						name: "copilot",
 						artifactKind: "agent",
-						source: ".claude/agents",
+						source: "agents",
 						entry: { kind: "file", suffix: ".agent.md" },
 						validation: "copilot-agent",
 					},
@@ -374,7 +367,7 @@ test("checkCustomizations rejects skill folder and frontmatter name mismatches",
 			async () => checkCustomizations(repoRoot),
 			(error: unknown) => {
 				const message = String(error);
-				assert.match(message, /\.agents\/skills\/different-name\/SKILL\.md:/);
+				assert.match(message, /skills\/different-name\/SKILL\.md:/);
 				assert.match(message, /frontmatter name/i);
 				return true;
 			},
@@ -438,7 +431,7 @@ test("checkCustomizations rejects disable-model-invocation set to a non-true val
 test("checkCustomizations reports skill-file errors in code-point lexical order", async () => {
 	const repoRoot = await createFixtureRepo();
 
-	const upperSkillDir = path.join(repoRoot, ".agents", "skills", "B-skill");
+	const upperSkillDir = path.join(repoRoot, "skills", "B-skill");
 	await mkdir(upperSkillDir, { recursive: true });
 	await writeFile(
 		path.join(upperSkillDir, "SKILL.md"),
@@ -455,7 +448,7 @@ test("checkCustomizations reports skill-file errors in code-point lexical order"
 		"utf8",
 	);
 
-	const lowerSkillDir = path.join(repoRoot, ".agents", "skills", "a-skill");
+	const lowerSkillDir = path.join(repoRoot, "skills", "a-skill");
 	await mkdir(lowerSkillDir, { recursive: true });
 	await writeFile(
 		path.join(lowerSkillDir, "SKILL.md"),
@@ -477,8 +470,8 @@ test("checkCustomizations reports skill-file errors in code-point lexical order"
 			async () => checkCustomizations(repoRoot),
 			(error: unknown) => {
 				const message = String(error);
-				const upperIndex = message.indexOf(".agents/skills/B-skill/SKILL.md:");
-				const lowerIndex = message.indexOf(".agents/skills/a-skill/SKILL.md:");
+				const upperIndex = message.indexOf("skills/B-skill/SKILL.md:");
+				const lowerIndex = message.indexOf("skills/a-skill/SKILL.md:");
 
 				assert.notEqual(upperIndex, -1);
 				assert.notEqual(lowerIndex, -1);
@@ -525,10 +518,7 @@ test("checkCustomizations rejects agents declaring an unknown required skill", a
 		await assert.rejects(
 			async () => checkCustomizations(repoRoot),
 			(error: unknown) => {
-				assert.match(
-					String(error),
-					/\.claude\/agents\/executable-planner\.agent\.md:/,
-				);
+				assert.match(String(error), /agents\/executable-planner\.agent\.md:/);
 				assert.match(String(error), /missing-skill/);
 				return true;
 			},
@@ -541,12 +531,7 @@ test("checkCustomizations rejects agents declaring an unknown required skill", a
 test("checkCustomizations validates each Copilot agent against only its declared skills", async () => {
 	const repoRoot = await createFixtureRepo();
 	const reviewingSourceDir = path.join(repoRoot, "sources", "reviewing");
-	const reviewingSkillDir = path.join(
-		repoRoot,
-		".agents",
-		"skills",
-		"reviewing",
-	);
+	const reviewingSkillDir = path.join(repoRoot, "skills", "reviewing");
 
 	await mkdir(reviewingSourceDir, { recursive: true });
 	await mkdir(reviewingSkillDir, { recursive: true });
@@ -562,7 +547,7 @@ test("checkCustomizations validates each Copilot agent against only its declared
 				name: "reviewing",
 				title: "Reviewing",
 				description: "Provides focused review feedback.",
-				output: ".agents/skills/reviewing/SKILL.md",
+				output: "skills/reviewing/SKILL.md",
 				selections: [
 					{ source: "core.md", owner: "core", headings: ["Review"] },
 				],
@@ -581,7 +566,7 @@ test("checkCustomizations validates each Copilot agent against only its declared
 		"utf8",
 	);
 	await writeFile(
-		path.join(repoRoot, ".claude", "agents", "reviewer.agent.md"),
+		path.join(repoRoot, "agents", "reviewer.agent.md"),
 		'---\nname: Reviewer\ndescription: Review work.\ntools: ["read", "search", "web", "vscode/askQuestions"]\n---\n\n**REQUIRED SKILL:** Use reviewing for review behavior.\n',
 		"utf8",
 	);
@@ -596,7 +581,7 @@ test("checkCustomizations validates each Copilot agent against only its declared
 test("checkCustomizations rejects a Copilot agent missing a baseline tool", async () => {
 	const repoRoot = await createFixtureRepo();
 	await writeFile(
-		path.join(repoRoot, ".claude", "agents", "executable-planner.agent.md"),
+		path.join(repoRoot, "agents", "executable-planner.agent.md"),
 		[
 			"---",
 			"name: Executable Planner",
@@ -616,10 +601,7 @@ test("checkCustomizations rejects a Copilot agent missing a baseline tool", asyn
 		await assert.rejects(
 			async () => checkCustomizations(repoRoot),
 			(error: unknown) => {
-				assert.match(
-					String(error),
-					/\.claude\/agents\/executable-planner\.agent\.md:/,
-				);
+				assert.match(String(error), /agents\/executable-planner\.agent\.md:/);
 				assert.match(
 					String(error),
 					/agent tools missing required baseline tool vscode\/askQuestions/,
@@ -648,10 +630,7 @@ test("checkCustomizations rejects duplicated canonical headings in thin agent", 
 		await assert.rejects(
 			async () => checkCustomizations(repoRoot),
 			(error: unknown) => {
-				assert.match(
-					String(error),
-					/\.claude\/agents\/executable-planner\.agent\.md:/,
-				);
+				assert.match(String(error), /agents\/executable-planner\.agent\.md:/);
 				assert.match(String(error), /duplicate canonical heading/i);
 				assert.match(String(error), /Scope/);
 				return true;
@@ -824,7 +803,7 @@ test("executable planner agent is a thin adapter with stable frontmatter fields"
 
 	const parsedAgent = parseFrontmatter(
 		agentContent,
-		".claude/agents/executable-planner.agent.md",
+		"agents/executable-planner.agent.md",
 	);
 
 	assert.deepEqual(parsedAgent.attributes, {
@@ -899,10 +878,7 @@ test("executable planner agent is a thin adapter with stable frontmatter fields"
 
 test("plan scout is a non-invocable read-only investigator", async () => {
 	const content = await readFile(planScoutPath, "utf8");
-	const parsed = parseFrontmatter(
-		content,
-		".claude/agents/plan-scout.agent.md",
-	);
+	const parsed = parseFrontmatter(content, "agents/plan-scout.agent.md");
 
 	assert.deepEqual(parsed.attributes, {
 		name: "Plan Scout",
@@ -926,10 +902,7 @@ test("plan scout is a non-invocable read-only investigator", async () => {
 
 test("plan executor declares structured-question capability in tools", async () => {
 	const content = await readFile(planExecutorPath, "utf8");
-	const parsed = parseFrontmatter(
-		content,
-		".claude/agents/plan-executor.agent.md",
-	);
+	const parsed = parseFrontmatter(content, "agents/plan-executor.agent.md");
 
 	assert.ok(Array.isArray(parsed.attributes.tools));
 	assert.ok(parsed.attributes.tools.includes("AskUserQuestion"));

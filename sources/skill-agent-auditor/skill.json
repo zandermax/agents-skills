@@ -2,7 +2,7 @@
 	"name": "skill-agent-auditor",
 	"title": "Skill-Agent Auditor",
 	"description": "Audits repository skills and agents for readiness and evaluation gaps.",
-	"output": ".agents/skills/skill-agent-auditor/SKILL.md",
+	"output": "skills/skill-agent-auditor/SKILL.md",
 	"selections": [
 		{
 			"source": "skill-agent-auditor.md",

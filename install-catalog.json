@@ -3,7 +3,7 @@
 		{
 			"name": "skills",
 			"artifactKind": "skill",
-			"source": ".agents/skills",
+			"source": "skills",
 			"linkMode": "entries",
 			"entry": {
 				"kind": "directory",
@@ -13,7 +13,7 @@
 		{
 			"name": "copilot",
 			"artifactKind": "agent",
-			"source": ".claude/agents",
+			"source": "agents",
 			"linkMode": "entries",
 			"entry": {
 				"kind": "file",
@@ -24,7 +24,7 @@
 		{
 			"name": "hooks",
 			"artifactKind": "hook",
-			"source": ".github/hooks",
+			"source": "agent-hooks",
 			"linkMode": "directory",
 			"entry": {
 				"kind": "file",

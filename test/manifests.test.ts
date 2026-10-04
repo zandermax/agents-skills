@@ -15,7 +15,7 @@ function createValidManifest(): Record<string, unknown> {
 		name: "executable-planning",
 		title: "Executable Planning",
 		description: "Creates deterministic planning checkpoints.",
-		output: ".agents/skills/executable-planning/SKILL.md",
+		output: "skills/executable-planning/SKILL.md",
 		selections: [
 			{
 				source: "core.md",
@@ -54,7 +54,7 @@ test("parseSkillManifest parses a valid closed manifest", () => {
 
 	assert.equal(parsed.name, "executable-planning");
 	assert.equal(parsed.title, "Executable Planning");
-	assert.equal(parsed.output, ".agents/skills/executable-planning/SKILL.md");
+	assert.equal(parsed.output, "skills/executable-planning/SKILL.md");
 	assert.equal(parsed.selections.length, 3);
 	assert.equal(parsed.selections[1]?.owner, "official");
 	assert.equal(parsed.selections[1]?.transforms, "transforms.json");
@@ -187,7 +187,7 @@ test("parseSkillManifest validates name, title, description prefix, and output p
 			parseSkillManifest(
 				{
 					...createValidManifest(),
-					output: ".agents/skills/other/SKILL.md",
+					output: "skills/other/SKILL.md",
 				},
 				fixtureManifestPath,
 				fixtureRepoRoot,

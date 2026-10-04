@@ -2,7 +2,7 @@
 
 ## Skill Authoring
 
-Use a hand-authored `.agents/skills/<name>/SKILL.md` for a self-contained
+Use a hand-authored `skills/<name>/SKILL.md` for a self-contained
 skill.
 
 Use a manifest-driven skill under `sources/<name>/` with `skill.json` when the

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const skillPath = new URL(
-	"../.agents/skills/skill-agent-auditor/SKILL.md",
+	"../skills/skill-agent-auditor/SKILL.md",
 	import.meta.url,
 );
 

@@ -170,11 +170,7 @@ test("artifact CLI refuses scoped migration of a whole discovery directory", asy
 	try {
 		const sharedSkills = path.join(fixture.homeDirectory, ".claude/skills");
 		await mkdir(path.dirname(sharedSkills), { recursive: true });
-		await symlink(
-			path.join(projectRoot, ".agents/skills"),
-			sharedSkills,
-			"dir",
-		);
+		await symlink(path.join(projectRoot, "skills"), sharedSkills, "dir");
 		const result = runCli(["--skill", sampleSkill.name], fixture.homeDirectory);
 		assert.equal(result.status, 1);
 		assert.match(
@@ -200,11 +196,7 @@ test("artifact CLI migrates owned legacy directories and uninstalls without dele
 		for (const directory of [".claude/skills", ".copilot/skills"]) {
 			const destination = path.join(fixture.homeDirectory, directory);
 			await mkdir(path.dirname(destination), { recursive: true });
-			await symlink(
-				path.join(projectRoot, ".agents/skills"),
-				destination,
-				"dir",
-			);
+			await symlink(path.join(projectRoot, "skills"), destination, "dir");
 		}
 		const oldAgents = path.join(fixture.homeDirectory, ".copilot/agents");
 		await symlink(path.join(projectRoot, ".github/agents"), oldAgents, "dir");
