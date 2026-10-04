@@ -42,7 +42,9 @@ test("agent-polish defines actionable guidance and safety boundaries", async () 
 	assert.match(skill, /Mode 2: Token & Cost Optimization/);
 	assert.match(skill, /Mode 3: Instruction Improvement/);
 	assert.match(skill, /AGENTS\.md/);
-	assert.match(skill, /Never modify `AGENTS\.md` automatically/);
+	assert.match(skill, /~\/\.omp\/agent\/AGENTS\.md/);
+	assert.match(skill, /Default \(Global Harness\)/);
+	assert.match(skill, /Never modify instruction files automatically/);
 	assert.match(skill, /Evidence First/);
 	assert.match(skill, /Read-Only Analysis/);
 });

@@ -5,7 +5,7 @@ description: Analyzes agent sessions for workflow tips, cost advice, and instruc
 
 # Agent Polish
 
-Analyzes recent `omp` and agent interaction history across local workspace sessions to produce actionable improvements for workflow efficiency, context cost reduction, and repository instruction refinement (`AGENTS.md`).
+Analyzes recent `omp` and agent interaction history across sessions to produce actionable improvements for workflow efficiency, context cost reduction, and harness or repository instruction refinement (`AGENTS.md`).
 
 ## Modes of Operation
 
@@ -13,7 +13,7 @@ Select the mode based on the explicit user request or infer from the query:
 
 1. **`tips`**: Workflow and prompting habits. Evaluates user phrasing, task structure, tool loops, friction points, and correction cycles.
 2. **`cost-tips`**: Token consumption and context efficiency. Analyzes turn counts, input/cache growth, compaction timing, file inspection breadth, and oversized prompt payloads.
-3. **`improve`**: Repository instruction audit. Identifies recurring agent mistakes, tool missteps, or build/test churn in recent sessions to propose minimal, surgical additions or clarifications to `AGENTS.md`.
+3. **`improve`**: Harness and instruction audit. Identifies recurring agent mistakes, tool missteps, or workflow churn across sessions to propose minimal, surgical additions or clarifications to `AGENTS.md`. Defaults to the global harness instructions (`~/.omp/agent/AGENTS.md`), but can target the local workspace `AGENTS.md` when explicitly requested.
 
 When no specific mode is specified, default to presenting a balanced summary across all three modes (1–2 top insights per area).
 
@@ -23,11 +23,15 @@ When no specific mode is specified, default to presenting a balanced summary acr
 
 Session data is read-only. Never modify or delete session files.
 
-### 1. Workspace Session Transcripts
+### 1. Harness and Workspace Session Transcripts
 
+- Global harness instructions: `~/.omp/agent/AGENTS.md` (universal agent paradigms and operating rules).
+- Local workspace instructions: `<workspace-root>/AGENTS.md`.
 - Environment variable `PI_SESSION_FILE`: Points directly to the active session transcript when running inside `omp`.
-- Workspace session store: `~/.omp/agent/sessions/<workspace-slug>/`
-  - Workspace slug is the normalized directory path (e.g., `-repos-fine-ants` or `-Users-zander-repos-...`).
+- Session store: `~/.omp/agent/sessions/`
+  - Contains subdirectories per workspace slug (e.g., `-repos-fine-ants` or `-Users-zander-repos-...`).
+  - In global mode (default), discover sessions across all workspace folders under `~/.omp/agent/sessions/` to surface cross-cutting agent habits, or inspect the most recently modified session folders.
+  - In project-scoped mode, focus on `~/.omp/agent/sessions/<workspace-slug>/`.
   - Contains `.jsonl` files named `<timestamp>_<session-id>.jsonl`.
   - Tool execution artifacts and full logs live under `<timestamp>_<session-id>/`.
 - Session SQLite Database: `~/.omp/agent/history.db`
@@ -37,7 +41,7 @@ Session data is read-only. Never modify or delete session files.
 
 ### 2. Inspecting Recent Sessions
 
-1. Identify the 3–5 most recent sessions for the current workspace by inspecting timestamps in `~/.omp/agent/sessions/<workspace-slug>/` or querying `~/.omp/agent/history.db`.
+1. Identify the 3–5 most recent sessions across `~/.omp/agent/sessions/` (or within the current workspace if project-scoped) by inspecting file modification timestamps or querying `~/.omp/agent/history.db`.
 2. Read JSONL event lines for target sessions:
    - `message` events where `role: "user"`: Analyze prompt clarity, task scope, pasted content, and follow-up corrections.
    - `message` events where `role: "assistant"`: Analyze tool call decisions, error responses, and output verbosity.
@@ -79,17 +83,22 @@ Focus on context bloat, token burn, and compaction efficiency.
 
 ### Mode 3: Instruction Improvement (`improve`)
 
-Focus on auditing project instructions (`AGENTS.md` or repo instructions) to eliminate agent stumbling blocks.
+Focus on auditing instructions to eliminate recurring agent stumbling blocks.
 
+- **Target Selection**:
+  - **Default (Global Harness)**: Target `~/.omp/agent/AGENTS.md` (universal paradigms across all coding environments and workspaces). Look for universal behavioral patterns, tool etiquette, boundaries, communication style, or universal safety checks.
+  - **Local/Project Scope**: Target `<workspace-root>/AGENTS.md` only when the user explicitly requests project-specific instruction improvements (e.g., "improve project instructions", "fix repo AGENTS.md"). Focus on project architecture, framework quirks, build/test scripts, or domain conventions.
 - **Check for**:
-  - Recurring agent errors: Did the agent run forbidden git commands (e.g., `git status`, `git commit`)? Did it run full test suites when unit tests were requested?
-  - Missing project conventions: Did the agent produce code with incorrect casing, wrong import styles, or deprecated APIs that the user had to correct?
-  - Verification gaps: Did the agent declare work complete without running the project-specific build or lint commands?
+  - Universal agent errors: Did the agent run forbidden git commands (e.g., `git status`, `git commit`)? Did it fail to discover dedicated tools or violate workspace boundary rules?
+  - Communication or process breakdowns: Did the agent narrate excessive filler, over-explain basics, or fail to follow verification steps before yielding?
+  - Project conventions (when project-scoped): Did the agent produce code with incorrect casing, wrong import styles, or deprecated APIs?
+  - Verification gaps: Did the agent declare work complete without checking actual runtime surface or running required tests?
 - **Output Requirements**:
-  - Read the active workspace `AGENTS.md`.
+  - Read the target instruction file (`~/.omp/agent/AGENTS.md` by default, or workspace `AGENTS.md`).
+  - Identify whether recommendations are harness-level (universal) or project-specific.
   - Propose 2–4 concise, minimal rules or corrections directly addressing the observed errors.
   - Present the exact proposed markdown diff or snippet.
-  - Adhere to the golden rule: Never modify `AGENTS.md` automatically; present the proposed changes for user confirmation.
+  - Adhere to the golden rule: Never modify instruction files automatically; present the proposed changes for user confirmation.
 
 ---
 
