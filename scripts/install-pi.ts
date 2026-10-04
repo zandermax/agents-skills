@@ -37,9 +37,9 @@ export function getPiLinkTargets(
 			destinationPath: path.resolve(piHome, "skills"),
 		},
 		{
-			name: "agent",
+			name: "agents",
 			sourcePath: path.resolve(repoRoot, ".claude/agents"),
-			destinationPath: path.resolve(piHome, "agent"),
+			destinationPath: path.resolve(piHome, "agents"),
 		},
 	];
 }
@@ -50,29 +50,71 @@ export function getLegacyPiLinkTargets(
 ): readonly PiLinkTarget[] {
 	return [
 		{
-			name: "agents",
+			name: "agent",
 			sourcePath: path.resolve(repoRoot, ".claude/agents"),
-			destinationPath: path.resolve(piHome, "agents"),
+			destinationPath: path.resolve(piHome, "agent"),
+		},
+		{
+			name: "skills-parent",
+			sourcePath: path.resolve(repoRoot, ".agents/skills"),
+			destinationPath: path.resolve(path.dirname(piHome), "skills"),
+		},
+		{
+			name: "agents-parent",
+			sourcePath: path.resolve(repoRoot, ".claude/agents"),
+			destinationPath: path.resolve(path.dirname(piHome), "agents"),
 		},
 	];
 }
 
-export function resolvePiHome(homeDir?: string): string {
-	const baseHome =
-		homeDir ??
+export function resolvePiHome(baseHome?: string): string {
+	const envAgentDir = process.env.PI_CODING_AGENT_DIR;
+	if (envAgentDir && envAgentDir.trim().length > 0) {
+		const trimmed = envAgentDir.trim();
+		if (trimmed === "~") {
+			return os.homedir();
+		}
+		if (trimmed.startsWith("~/")) {
+			return path.normalize(path.resolve(os.homedir(), trimmed.slice(2)));
+		}
+		return path.normalize(path.resolve(trimmed));
+	}
+	const home =
+		baseHome ??
 		process.env.AGENTS_SKILLS_HOME ??
 		process.env.PI_HOME ??
 		os.homedir();
-	return path.join(baseHome, ".pi");
+	return path.join(home, ".pi", "agent");
 }
 
 export async function installPi(
 	repoRoot: string,
 	piHome: string = resolvePiHome(),
 ): Promise<PiInstallResult> {
+	// If piHome itself is a legacy symlink pointing to repo agents, remove it so it can be a directory
+	const piHomeStat = await lstat(piHome).catch((err: unknown) => {
+		if ((err as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+		throw err;
+	});
+	if (piHomeStat?.isSymbolicLink()) {
+		const currentTarget = await readlink(piHome);
+		const absoluteTarget = path.resolve(path.dirname(piHome), currentTarget);
+		const resolvedTarget = path.normalize(
+			await realpath(absoluteTarget).catch(() => absoluteTarget),
+		);
+		const repoAgents = path.normalize(
+			await realpath(path.resolve(repoRoot, ".claude/agents")).catch(() =>
+				path.resolve(repoRoot, ".claude/agents"),
+			),
+		);
+		if (resolvedTarget === repoAgents) {
+			await rm(piHome, { force: true });
+		}
+	}
+
 	await mkdir(piHome, { recursive: true });
 
-	// Remove legacy ~/.pi/agents symlink if it points to our repository agents
+	// Remove legacy symlinks if they point to our repository
 	const legacyTargets = getLegacyPiLinkTargets(repoRoot, piHome);
 	for (const legacy of legacyTargets) {
 		const stat = await lstat(legacy.destinationPath).catch((err: unknown) => {

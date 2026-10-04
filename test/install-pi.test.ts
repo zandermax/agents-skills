@@ -40,7 +40,7 @@ async function createFixture(label: string): Promise<{
 	cleanup: () => Promise<void>;
 }> {
 	const tempDir = await mkdtemp(path.join(os.tmpdir(), `${label}-`));
-	const piHome = path.join(tempDir, ".pi");
+	const piHome = path.join(tempDir, ".pi", "agent");
 	return {
 		tempDir,
 		piHome,
@@ -48,26 +48,48 @@ async function createFixture(label: string): Promise<{
 	};
 }
 
-test("resolvePiHome resolves ~/.pi under specified or env home directory", () => {
-	assert.equal(resolvePiHome("/custom/home"), path.join("/custom/home", ".pi"));
+test("resolvePiHome resolves ~/.pi/agent by default or uses PI_CODING_AGENT_DIR", () => {
+	const originalEnv = process.env.PI_CODING_AGENT_DIR;
+	try {
+		delete process.env.PI_CODING_AGENT_DIR;
+		assert.equal(
+			resolvePiHome("/custom/home"),
+			path.join("/custom/home", ".pi", "agent"),
+		);
+
+		process.env.PI_CODING_AGENT_DIR = "/custom/env/pi-agent";
+		assert.equal(resolvePiHome("/custom/home"), "/custom/env/pi-agent");
+
+		process.env.PI_CODING_AGENT_DIR = "~/custom-agent-dir";
+		assert.equal(
+			resolvePiHome("/custom/home"),
+			path.join(os.homedir(), "custom-agent-dir"),
+		);
+	} finally {
+		if (originalEnv !== undefined) {
+			process.env.PI_CODING_AGENT_DIR = originalEnv;
+		} else {
+			delete process.env.PI_CODING_AGENT_DIR;
+		}
+	}
 });
 
-test("getPiLinkTargets returns expected skills and agent targets", () => {
-	const targets = getPiLinkTargets(repoRoot, "/custom/home/.pi");
+test("getPiLinkTargets returns expected skills and agents targets", () => {
+	const targets = getPiLinkTargets(repoRoot, "/custom/home/.pi/agent");
 	assert.equal(targets.length, 2);
 	assert.deepEqual(targets[0], {
 		name: "skills",
 		sourcePath: path.resolve(repoRoot, ".agents/skills"),
-		destinationPath: "/custom/home/.pi/skills",
+		destinationPath: "/custom/home/.pi/agent/skills",
 	});
 	assert.deepEqual(targets[1], {
-		name: "agent",
+		name: "agents",
 		sourcePath: path.resolve(repoRoot, ".claude/agents"),
-		destinationPath: "/custom/home/.pi/agent",
+		destinationPath: "/custom/home/.pi/agent/agents",
 	});
 });
 
-test("installPi creates ~/.pi directory and links skills and agent", async () => {
+test("installPi creates piHome directory and links skills and agents", async () => {
 	const fixture = await createFixture("pi-install");
 	try {
 		const result = await installPi(repoRoot, fixture.piHome);
@@ -83,11 +105,11 @@ test("installPi creates ~/.pi directory and links skills and agent", async () =>
 			path.resolve(repoRoot, ".agents/skills"),
 		);
 
-		const agentStat = await lstat(path.join(fixture.piHome, "agent"));
-		assert.equal(agentStat.isSymbolicLink(), true);
-		const agentTarget = await readlink(path.join(fixture.piHome, "agent"));
+		const agentsStat = await lstat(path.join(fixture.piHome, "agents"));
+		assert.equal(agentsStat.isSymbolicLink(), true);
+		const agentsTarget = await readlink(path.join(fixture.piHome, "agents"));
 		assert.equal(
-			path.resolve(fixture.piHome, agentTarget),
+			path.resolve(fixture.piHome, agentsTarget),
 			path.resolve(repoRoot, ".claude/agents"),
 		);
 
@@ -101,25 +123,26 @@ test("installPi creates ~/.pi directory and links skills and agent", async () =>
 	}
 });
 
-test("installPi cleans up legacy ~/.pi/agents symlink", async () => {
-	const fixture = await createFixture("pi-legacy");
+test("installPi cleans up legacy ~/.pi/agent symlink if piHome was previously a symlink", async () => {
+	const fixture = await createFixture("pi-legacy-dir");
 	try {
-		await mkdir(fixture.piHome, { recursive: true });
-		const legacyAgents = path.join(fixture.piHome, "agents");
+		await mkdir(path.dirname(fixture.piHome), { recursive: true });
+		// Legacy fixture where fixture.piHome was a symlink to .claude/agents
 		await symlink(
 			path.resolve(repoRoot, ".claude/agents"),
-			legacyAgents,
+			fixture.piHome,
 			"dir",
 		);
 
 		const result = await installPi(repoRoot, fixture.piHome);
 		assert.equal(result.created.length, 2);
 
-		// Legacy agents link is cleaned up
-		await assert.rejects(lstat(legacyAgents), /ENOENT/);
+		const piHomeStat = await lstat(fixture.piHome);
+		assert.equal(piHomeStat.isSymbolicLink(), false);
+		assert.equal(piHomeStat.isDirectory(), true);
 
-		const agentStat = await lstat(path.join(fixture.piHome, "agent"));
-		assert.equal(agentStat.isSymbolicLink(), true);
+		const agentsStat = await lstat(path.join(fixture.piHome, "agents"));
+		assert.equal(agentsStat.isSymbolicLink(), true);
 	} finally {
 		await fixture.cleanup();
 	}
@@ -138,7 +161,7 @@ test("installPi repairs broken symlink", async () => {
 
 		const result = await installPi(repoRoot, fixture.piHome);
 		assert.equal(result.repaired.length, 1);
-		assert.equal(result.created.length, 1); // agent created
+		assert.equal(result.created.length, 1); // agents created
 
 		const realSource = await realpath(path.join(fixture.piHome, "skills"));
 		assert.equal(
@@ -191,7 +214,7 @@ test("uninstallPi removes owned links only", async () => {
 		assert.equal(result.removed.length, 2);
 
 		await assert.rejects(lstat(path.join(fixture.piHome, "skills")), /ENOENT/);
-		await assert.rejects(lstat(path.join(fixture.piHome, "agent")), /ENOENT/);
+		await assert.rejects(lstat(path.join(fixture.piHome, "agents")), /ENOENT/);
 
 		// Subsequent uninstall does nothing
 		const rerun = await uninstallPi(repoRoot, fixture.piHome);
@@ -201,27 +224,23 @@ test("uninstallPi removes owned links only", async () => {
 	}
 });
 
-test("uninstallPi also removes legacy ~/.pi/agents if owned", async () => {
+test("uninstallPi also removes legacy ~/.pi/agent if owned", async () => {
 	const fixture = await createFixture("pi-uninstall-legacy");
 	try {
 		await mkdir(fixture.piHome, { recursive: true });
-		const legacyAgents = path.join(fixture.piHome, "agents");
-		await symlink(
-			path.resolve(repoRoot, ".claude/agents"),
-			legacyAgents,
-			"dir",
-		);
+		const legacyAgent = path.join(fixture.piHome, "agent");
+		await symlink(path.resolve(repoRoot, ".claude/agents"), legacyAgent, "dir");
 
 		const result = await uninstallPi(repoRoot, fixture.piHome);
 		assert.equal(result.removed.length, 1);
-		assert.equal(result.removed[0], legacyAgents);
-		await assert.rejects(lstat(legacyAgents), /ENOENT/);
+		assert.equal(result.removed[0], legacyAgent);
+		await assert.rejects(lstat(legacyAgent), /ENOENT/);
 	} finally {
 		await fixture.cleanup();
 	}
 });
 
-test("Pi CLI scripts run install and uninstall successfully", async () => {
+test("Pi CLI scripts run install and uninstall successfully using PI_CODING_AGENT_DIR", async () => {
 	const fixture = await createFixture("pi-cli");
 	try {
 		const installRun = spawnSync(
@@ -231,14 +250,14 @@ test("Pi CLI scripts run install and uninstall successfully", async () => {
 				cwd: repoRoot,
 				env: {
 					...process.env,
-					PI_HOME: fixture.tempDir,
+					PI_CODING_AGENT_DIR: fixture.piHome,
 				},
 				encoding: "utf8",
 			},
 		);
 		assert.equal(installRun.status, 0, installRun.stderr);
 		assert.match(installRun.stdout, /created .*skills/);
-		assert.match(installRun.stdout, /created .*agent/);
+		assert.match(installRun.stdout, /created .*agents/);
 		assert.match(installRun.stdout, /summary created=2 repaired=0 existing=0/);
 
 		const uninstallRun = spawnSync(
@@ -248,14 +267,14 @@ test("Pi CLI scripts run install and uninstall successfully", async () => {
 				cwd: repoRoot,
 				env: {
 					...process.env,
-					PI_HOME: fixture.tempDir,
+					PI_CODING_AGENT_DIR: fixture.piHome,
 				},
 				encoding: "utf8",
 			},
 		);
 		assert.equal(uninstallRun.status, 0, uninstallRun.stderr);
 		assert.match(uninstallRun.stdout, /removed .*skills/);
-		assert.match(uninstallRun.stdout, /removed .*agent/);
+		assert.match(uninstallRun.stdout, /removed .*agents/);
 		assert.match(uninstallRun.stdout, /summary removed=2/);
 	} finally {
 		await fixture.cleanup();
