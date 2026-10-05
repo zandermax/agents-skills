@@ -45,7 +45,7 @@ export interface DecideToolSafetyOptions {
 	readonly timeoutMs?: number;
 }
 
-const DEFAULT_TIMEOUT_MS = 1000;
+const DEFAULT_TIMEOUT_MS = 5000;
 
 export function buildSafetyRequest(
 	input: DecideToolSafetyInput,
