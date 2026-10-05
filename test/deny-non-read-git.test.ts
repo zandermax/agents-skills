@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
 	checkCommandForNonReadGit,
@@ -12,7 +13,16 @@ import {
 	splitShellStatements,
 	tokenizeStatement,
 } from "../agent-hooks/deny-non-read-git.mts";
+import { dispatchShadowEvaluation } from "../agent-hooks/pre-tool-safety.js";
 import { evaluateToolUse as evaluatePreToolSafety } from "../agent-hooks/pre-tool-safety.mts";
+
+function runHook(hookPath: string, payload: unknown) {
+	return spawnSync(process.execPath, ["--import", "tsx", hookPath], {
+		input: JSON.stringify(payload),
+		encoding: "utf8",
+		env: { ...process.env, DECISION_SHADOW: "0" },
+	});
+}
 
 describe("deny-non-read-git hook", () => {
 	describe("pre-tool-safety compatibility", () => {
@@ -23,6 +33,102 @@ describe("deny-non-read-git hook", () => {
 			assert.deepEqual(
 				evaluatePreToolSafety("run_in_terminal", input),
 				evaluateToolUse("run_in_terminal", input),
+			);
+		});
+
+		it("dispatches shadow scoring in a detached child and can skip it", () => {
+			const events: unknown[][] = [];
+			const child = {
+				stdin: {
+					write(value: unknown) {
+						events.push(["write", value]);
+					},
+					end() {
+						events.push(["end"]);
+					},
+				},
+				unref() {
+					events.push(["unref"]);
+				},
+			};
+			const previous = process.env.DECISION_SHADOW;
+			delete process.env.DECISION_SHADOW;
+			try {
+				assert.equal(
+					dispatchShadowEvaluation({ toolName: "read" }, ((
+						command: unknown,
+						args: unknown,
+						options: unknown,
+					) => {
+						const cmdArgs = args as string[];
+						const opts = options as { detached?: boolean; stdio?: unknown };
+						events.push([
+							"spawn",
+							command,
+							cmdArgs[0],
+							cmdArgs[1],
+							opts.detached,
+							opts.stdio,
+						]);
+						return child;
+					}) as unknown as typeof import("node:child_process").spawn),
+					true,
+				);
+				process.env.DECISION_SHADOW = "0";
+				assert.equal(
+					dispatchShadowEvaluation({ toolName: "read" }, (() => {
+						throw new Error("shadow dispatch was not skipped");
+					}) as unknown as typeof import("node:child_process").spawn),
+					false,
+				);
+			} finally {
+				if (previous === undefined) {
+					delete process.env.DECISION_SHADOW;
+				} else {
+					process.env.DECISION_SHADOW = previous;
+				}
+			}
+
+			const firstEvent = events[0];
+			assert.ok(firstEvent);
+			assert.equal(firstEvent[4], true);
+			assert.deepEqual(firstEvent[5], ["pipe", "ignore", "ignore"]);
+			const lastEvent = events.at(-1);
+			assert.ok(lastEvent);
+			assert.equal(lastEvent[0], "unref");
+			const secondEvent = events[1];
+			assert.ok(secondEvent);
+			assert.equal(JSON.parse(String(secondEvent[1])).toolName, "read");
+		});
+
+		it("prints the existing hook decision when shadow dispatch is disabled", () => {
+			const hookPath = fileURLToPath(
+				new URL("../agent-hooks/pre-tool-safety.mts", import.meta.url),
+			);
+			const allow = runHook(hookPath, {
+				tool_name: "run_in_terminal",
+				tool_input: { command: "git status" },
+			});
+			const ask = runHook(hookPath, {
+				tool_name: "run_in_terminal",
+				tool_input: { command: "git commit -m x" },
+			});
+
+			assert.equal(allow.status, 0);
+			assert.deepEqual(JSON.parse(allow.stdout), {
+				hookSpecificOutput: {
+					hookEventName: "PreToolUse",
+					permissionDecision: "allow",
+				},
+			});
+			assert.equal(ask.status, 0);
+			assert.equal(
+				JSON.parse(ask.stdout).hookSpecificOutput.permissionDecision,
+				"ask",
+			);
+			assert.match(
+				JSON.parse(ask.stdout).hookSpecificOutput.permissionDecisionReason,
+				/Non-read git operation/,
 			);
 		});
 

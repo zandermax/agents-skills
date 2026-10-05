@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
+import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { resolveWorkspaceRoots } from "./deny-non-read-git.js";
 import {
@@ -77,6 +78,34 @@ function outputResult(result) {
 	process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
 }
 
+const shadowCliPath = fileURLToPath(
+	new URL("../src/lib/decision-model/shadow-cli.ts", import.meta.url),
+);
+
+export function dispatchShadowEvaluation(payload, spawnImpl = spawn) {
+	if (process.env.DECISION_SHADOW === "0") {
+		return false;
+	}
+
+	try {
+		const child = spawnImpl(
+			process.execPath,
+			["--import", "tsx", shadowCliPath],
+			{
+				detached: true,
+				stdio: ["pipe", "ignore", "ignore"],
+				env: process.env,
+			},
+		);
+		child.stdin?.write(JSON.stringify(payload));
+		child.stdin?.end();
+		child.unref?.();
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 export function runCli() {
 	let data;
 	try {
@@ -86,15 +115,27 @@ export function runCli() {
 		return;
 	}
 
-	outputResult(
-		evaluateToolUse(data.tool_name, data.tool_input, {
-			cwd: typeof data.cwd === "string" ? data.cwd : undefined,
-			transcriptPath:
-				typeof data.transcript_path === "string"
-					? data.transcript_path
-					: undefined,
-		}),
-	);
+	const started = Date.now();
+	const result = evaluateToolUse(data.tool_name, data.tool_input, {
+		cwd: typeof data.cwd === "string" ? data.cwd : undefined,
+		transcriptPath:
+			typeof data.transcript_path === "string"
+				? data.transcript_path
+				: undefined,
+	});
+	const hookLatencyMs = Date.now() - started;
+	outputResult(result);
+	dispatchShadowEvaluation({
+		toolName: typeof data.tool_name === "string" ? data.tool_name : null,
+		toolInput: data.tool_input ?? null,
+		hookDecision: result.decision,
+		hookReason: result.reason ?? null,
+		hookLatencyMs,
+		cwd: typeof data.cwd === "string" ? data.cwd : process.cwd(),
+		transcriptPath:
+			typeof data.transcript_path === "string" ? data.transcript_path : null,
+		userResolution: "deferred",
+	});
 }
 
 const isMainModule =
