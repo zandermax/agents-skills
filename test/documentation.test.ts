@@ -186,6 +186,14 @@ test("shared agent instructions define manual-test response options", async () =
 		/Record either the confirmation or the reported issues as user-provided evidence before continuing/i,
 	);
 	assert.match(normalizedInstructions, /do not suggest an expected result/i);
+	assert.match(
+		normalizedInstructions,
+		/State the specific user actions to execute.*concrete commands, URLs, steps, or checks/i,
+	);
+	assert.match(
+		normalizedInstructions,
+		/include any necessary context, background, or framing directly in the question prompt/i,
+	);
 });
 
 test("repository keeps active and archived plans beside specifications under docs", async () => {
