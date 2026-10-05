@@ -15,6 +15,44 @@ npm run build
 npm run check
 ```
 
+Machine setup is idempotent. It installs dependencies, builds skills, links
+artifacts for every cataloged client, and writes shell defaults only when the
+variable is unset. Re-running it does not replace an existing value, a real
+file, or an unrelated symlink.
+
+```sh
+npm run setup
+```
+
+`npm run setup` is not the npm lifecycle `install` script. npm reserves that
+name and would run it on every `npm install`.
+
+## Environment
+
+These variables apply to the whole repository. Setup exports a default only
+when the variable is unset or empty. Already-set values are left alone.
+
+- `MEMORY_DIR`: private notes directory. Default `$HOME/.memory`. Setup
+  exports this when unset. `config-stuff` setup links that path to its
+  `agents-stuff/memory` directory when the destination is missing.
+- `DECISION_SHADOW`: set to `0` to disable the Ollaya shadow decision logger.
+  Default `1` (enabled). Setup exports this when unset.
+- `AGENTS_SKILLS_HOME`: optional install-home override. Unset means the
+  current user home. Setup does not export it. `EXECUTABLE_PLANNING_HOME` is
+  a deprecated fallback used only when `AGENTS_SKILLS_HOME` is unset.
+- `OMP_CODING_AGENT_DIR`: omp agent directory. Unset means `$HOME/.omp/agent`
+  for `npm run install:omp`. Setup does not export a default. If this or
+  `PI_CODING_AGENT_DIR` is set, setup links skills and agents there. Otherwise
+  it links an existing `CONFIG_REPO/.omp` or sibling `../config-stuff/.omp`
+  when that directory is already present.
+- `PI_CODING_AGENT_DIR`: pi agent directory, and the fallback for
+  `OMP_CODING_AGENT_DIR`. Unset means `$HOME/.pi/agent` for
+  `npm run install:pi`. Setup does not export a default. Do not set
+  `PI_CONFIG_DIR` to an absolute path; omp joins that value onto `$HOME`.
+- `OMP_HOME` and `PI_HOME`: optional home overrides for the omp and pi
+  installers when the coding-agent directory variables are unset. Setup does
+  not export them.
+
 ## List And Install
 
 Inspect cataloged artifacts without writing destinations:

@@ -16,6 +16,7 @@
 		"eval:waza": "tsx scripts/run-waza.ts",
 		"format": "biome check --write . && prettier --write README.md AGENTS.md 'skills/**/*.md' 'agents/**/*.md' 'docs/**/*.md' 'evals/**/*.md' 'sources/**/*.md'",
 		"install:artifacts": "tsx scripts/install-artifacts.ts",
+		"setup": "tsx scripts/install.ts",
 		"install:omp": "tsx scripts/install-omp.ts",
 		"install:pi": "tsx scripts/install-pi.ts",
 		"uninstall:artifacts": "tsx scripts/uninstall-artifacts.ts",
