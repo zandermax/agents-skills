@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
+# Shell wrapper hook for PreToolUse safety enforcement. Resolves symlinks to find
+# the canonical script directory and invokes pre-tool-safety.mts with tsx.
+# pre-tool-safety.mts validates tool invocations against workspace boundaries and
+# git/GitHub mutation safety policies before execution.
 set -e
 
 # Resolve target directory following symlinks if any

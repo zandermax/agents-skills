@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+/**
+ * Core safety policy engine for inspecting shell commands and file paths.
+ *
+ * Enforces two primary safety boundaries:
+ * 1. Git command policy: Restricts `git` invocations strictly to read-only subcommands (e.g. status,
+ *    diff, log) and flags any mutating operations, dangerous flags, or non-whitelisted git commands.
+ * 2. Workspace boundary policy: Tokenizes shell pipelines and commands, resolves file and directory paths,
+ *    and prevents unauthorized access or modification outside configured workspace roots (allowing approved
+ *    exceptions such as approved skills/memory directories).
+ */
 
 import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";

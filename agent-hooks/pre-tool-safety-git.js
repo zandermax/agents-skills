@@ -1,3 +1,12 @@
+/**
+ * Git and GitHub mutation policy checker for agent tool use.
+ *
+ * Identifies mutating MCP/tool operations (such as creating PRs, branches, or modifying files via GitHub MCP tools)
+ * and delegates shell command checks to checkCommandForNonReadGit in deny-non-read-git.js.
+ *
+ * deny-non-read-git.js parses command tokens and strictly enforces that git operations are limited
+ * to read-only subcommands (e.g. status, diff, log) unless explicitly confirmed by the user.
+ */
 import { checkCommandForNonReadGit } from "./deny-non-read-git.js";
 
 export { checkCommandForNonReadGit };

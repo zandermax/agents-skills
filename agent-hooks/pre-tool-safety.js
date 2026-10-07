@@ -1,4 +1,15 @@
 #!/usr/bin/env node
+/**
+ * Top-level coordinator for the agent PreToolUse safety hook.
+ *
+ * Reads tool call payloads from stdin and evaluates them across multiple safety domains:
+ * 1. GitHub mutation policies (via pre-tool-safety-git.js) preventing unauthorized PR/branch/repo edits.
+ * 2. File and argument path safety (via pre-tool-safety-workspace.js) enforcing workspace boundaries.
+ * 3. Command execution safety, ensuring shell commands do not escape workspace roots or run mutating git commands.
+ *
+ * Emits hook decisions ("allow" or "ask" with explanation for user confirmation) and optionally
+ * dispatches shadow evaluations.
+ */
 
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";

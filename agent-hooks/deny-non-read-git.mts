@@ -1,3 +1,15 @@
+/**
+ * Entrypoint and backward-compatibility module re-exporting git and workspace safety checks
+ * from deny-non-read-git.js, pre-tool-safety.js, and pre-tool-safety-workspace.js. When run
+ * directly, it delegates to runCli() in pre-tool-safety.js to evaluate tool invocations from stdin.
+ *
+ * Delegated modules:
+ * - deny-non-read-git.js: Implements command tokenization, git policy enforcement (restricting
+ *   git commands to read-only subcommands), and workspace boundary checking.
+ * - pre-tool-safety.js: Top-level hook coordinator evaluating tool payloads against GitHub mutation,
+ *   workspace path, and command safety policies, formatting decisions ("allow" vs "ask").
+ * - pre-tool-safety-workspace.js: Policy checker validating tool arguments against workspace paths.
+ */
 import {
 	canonicalPath,
 	checkCommandForNonReadGit,
