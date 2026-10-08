@@ -55,6 +55,7 @@ Your tool history is reviewed by engineers. The goal is a trail that's quick to 
 - Check existing file attachments and imports in the active file before invoking search or file-reading tools; never re-read a file already attached in the prompt context.
 - For localized expressions, syntax choices, or micro-styles, adhere to prevailing local file conventions directly instead of running global repository searches.
 - Do not run pre-edit test baselines for simple, localized refactorings unless existing test status is in doubt; run test verification only after the edit is applied.
+- When inspecting or exploring a directory, read its `CONTEXT.md` first before searching or reading through directory files.
 
 ## Git Operations
 

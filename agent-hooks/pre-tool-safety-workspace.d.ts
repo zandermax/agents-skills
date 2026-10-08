@@ -15,6 +15,7 @@ export function checkToolInputPaths(
 		readonly workspaceRoots?: readonly string[];
 	},
 ): string | null;
+export function isTemporaryPath(value: string): boolean;
 export function checkWorkspacePolicy(
 	command: string,
 	context?: {

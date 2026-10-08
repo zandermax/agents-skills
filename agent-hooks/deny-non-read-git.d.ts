@@ -11,6 +11,7 @@ export function isWithin(
 	candidate: string,
 	requireDescendant?: boolean,
 ): boolean;
+export function isTemporaryPath(value: string): boolean;
 export function isApprovedExternalReadPath(value: string): boolean;
 export interface WorkspaceBoundaryContext {
 	readonly cwd?: string;

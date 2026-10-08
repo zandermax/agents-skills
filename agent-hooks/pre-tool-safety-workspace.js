@@ -7,9 +7,13 @@
  * deny-non-read-git.js validates that all accessed paths reside within recognized workspace roots,
  * permitting known safe external read locations while flagging unauthorized external file reads or writes.
  */
-import { checkCommandPaths, checkToolInputPaths } from "./deny-non-read-git.js";
+import {
+	checkCommandPaths,
+	checkToolInputPaths,
+	isTemporaryPath,
+} from "./deny-non-read-git.js";
 
-export { checkCommandPaths, checkToolInputPaths };
+export { checkCommandPaths, checkToolInputPaths, isTemporaryPath };
 
 export function checkWorkspacePolicy(command, context = {}) {
 	return checkCommandPaths(command, context);

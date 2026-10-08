@@ -136,13 +136,32 @@ export function isWithin(root, candidate, requireDescendant = false) {
 	);
 }
 
-export function isApprovedExternalReadPath(value) {
+export function isTemporaryPath(value) {
+	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+
 	const expanded = expandPath(value);
-	const candidate = canonicalPath(expanded);
+	const resolved = resolvedPath(expanded);
+	if (resolved.status === "broken") {
+		return false;
+	}
+
 	const temporaryRoot = canonicalPath(resolve(sep, "tmp"));
-	if (isWithin(temporaryRoot, candidate)) {
+	const lexicalTmp = resolve(sep, "tmp");
+	return (
+		isWithin(temporaryRoot, resolved.path) ||
+		isWithin(lexicalTmp, resolved.path)
+	);
+}
+
+export function isApprovedExternalReadPath(value) {
+	if (isTemporaryPath(value)) {
 		return true;
 	}
+
+	const expanded = expandPath(value);
+	const candidate = canonicalPath(expanded);
 
 	if (
 		candidate.startsWith(`${sep}memories${sep}`) ||
@@ -869,6 +888,10 @@ export function resolveWorkspaceRoots(context = {}) {
 
 export function isExternalPath(value, context = {}) {
 	if (typeof value !== "string" || value.length === 0) {
+		return false;
+	}
+
+	if (isTemporaryPath(value)) {
 		return false;
 	}
 
