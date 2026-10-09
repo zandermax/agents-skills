@@ -2,18 +2,18 @@ export type Scalar = string | number | boolean | null;
 export type Frequency<Item extends Scalar = Scalar> = [Item, number];
 
 function assertItems(items: unknown): void {
-	if (!Array.isArray(items)) throw new TypeError('items must be an array');
+	if (!Array.isArray(items)) throw new TypeError("items must be an array");
 }
 
 function assertScalar(value: unknown): asserts value is Scalar {
 	if (
 		value !== null &&
-		typeof value !== 'string' &&
-		typeof value !== 'boolean' &&
-		!(typeof value === 'number' && Number.isFinite(value))
+		typeof value !== "string" &&
+		typeof value !== "boolean" &&
+		!(typeof value === "number" && Number.isFinite(value))
 	) {
 		throw new TypeError(
-			'Items must be strings, finite numbers, booleans, or null',
+			"Items must be strings, finite numbers, booleans, or null",
 		);
 	}
 }
@@ -25,7 +25,7 @@ function assertInteger(value: number, minimum: number, name: string): void {
 }
 
 function alphaKey(value: Scalar): string {
-	return `${value === null ? 'null' : typeof value}:${String(value)}`;
+	return `${value === null ? "null" : typeof value}:${String(value)}`;
 }
 
 function compareCodePoints(first: string, second: string): number {
@@ -52,27 +52,27 @@ function compareCodePoints(first: string, second: string): number {
 export function frequencies<Item extends Scalar>(
 	items: readonly Item[],
 	{
-		sort = 'count_desc',
+		sort = "count_desc",
 		limit,
-	}: { sort?: 'count_desc' | 'first_seen' | 'alpha'; limit?: number } = {},
+	}: { sort?: "count_desc" | "first_seen" | "alpha"; limit?: number } = {},
 ): Frequency<Item>[] {
 	assertItems(items);
-	if (!['count_desc', 'first_seen', 'alpha'].includes(sort)) {
-		throw new TypeError('Invalid frequency sort');
+	if (!["count_desc", "first_seen", "alpha"].includes(sort)) {
+		throw new TypeError("Invalid frequency sort");
 	}
-	if (limit !== undefined) assertInteger(limit, 0, 'limit');
+	if (limit !== undefined) assertInteger(limit, 0, "limit");
 	const counts = new Map<Item, number>();
 	for (const item of items) {
 		assertScalar(item);
 		counts.set(item, (counts.get(item) ?? 0) + 1);
 	}
-	const result = Array.from(counts, ([item, count]): Frequency<Item> => [
-		item,
-		count,
-	]);
-	if (sort === 'count_desc') {
+	const result = Array.from(
+		counts,
+		([item, count]): Frequency<Item> => [item, count],
+	);
+	if (sort === "count_desc") {
 		result.sort((first, second) => second[1] - first[1]);
-	} else if (sort === 'alpha') {
+	} else if (sort === "alpha") {
 		result.sort((first, second) =>
 			compareCodePoints(alphaKey(first[0]), alphaKey(second[0])),
 		);
@@ -90,7 +90,7 @@ export function mode<Item extends Scalar>(
 	items: readonly Item[],
 	{ top = 1 }: { top?: number } = {},
 ): Frequency<Item>[] {
-	assertInteger(top, 1, 'top');
+	assertInteger(top, 1, "top");
 	return frequencies(items, { limit: top });
 }
 
@@ -109,14 +109,14 @@ export function dedupe<Item extends Scalar>(
 	}: { caseSensitive?: boolean; keepFirst?: boolean } = {},
 ): Item[] {
 	assertItems(items);
-	if (typeof caseSensitive !== 'boolean' || typeof keepFirst !== 'boolean') {
-		throw new TypeError('caseSensitive and keepFirst must be booleans');
+	if (typeof caseSensitive !== "boolean" || typeof keepFirst !== "boolean") {
+		throw new TypeError("caseSensitive and keepFirst must be booleans");
 	}
 	const retained = new Map<Scalar, { item: Item; index: number }>();
 	items.forEach((item, index) => {
 		assertScalar(item);
 		const key =
-			!caseSensitive && typeof item === 'string' ? item.toLowerCase() : item;
+			!caseSensitive && typeof item === "string" ? item.toLowerCase() : item;
 		if (!keepFirst || !retained.has(key)) retained.set(key, { item, index });
 	});
 	return Array.from(retained.values())
@@ -135,20 +135,20 @@ export function groupCount(
 	records: readonly Record<string, unknown>[],
 	key: string,
 ): Frequency[] {
-	if (!Array.isArray(records)) throw new TypeError('records must be an array');
+	if (!Array.isArray(records)) throw new TypeError("records must be an array");
 	if (
-		typeof key !== 'string' ||
-		key.split('.').some((part) => part.length === 0)
+		typeof key !== "string" ||
+		key.split(".").some((part) => part.length === 0)
 	) {
-		throw new TypeError('key must be a nonempty dot path');
+		throw new TypeError("key must be a nonempty dot path");
 	}
-	const parts = key.split('.');
+	const parts = key.split(".");
 	const values: Scalar[] = records.map((record) => {
 		let value: unknown = record;
 		for (const part of parts) {
 			if (
 				value === null ||
-				typeof value !== 'object' ||
+				typeof value !== "object" ||
 				Array.isArray(value) ||
 				!Object.hasOwn(value, part)
 			) {
@@ -159,5 +159,5 @@ export function groupCount(
 		assertScalar(value);
 		return value;
 	});
-	return frequencies(values, { sort: 'first_seen' });
+	return frequencies(values, { sort: "first_seen" });
 }

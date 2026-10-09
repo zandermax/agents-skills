@@ -22,25 +22,25 @@ export function countOccurrences(
 	}: OccurrenceOptions = {},
 ): number {
 	if (
-		typeof text !== 'string' ||
-		typeof needle !== 'string' ||
+		typeof text !== "string" ||
+		typeof needle !== "string" ||
 		needle.length === 0
 	) {
 		throw new TypeError(
-			'text must be a string and needle must be a nonempty string',
+			"text must be a string and needle must be a nonempty string",
 		);
 	}
 	if (
 		[overlapping, caseSensitive, regex].some(
-			(value) => typeof value !== 'boolean',
+			(value) => typeof value !== "boolean",
 		)
 	) {
-		throw new TypeError('Occurrence options must be booleans');
+		throw new TypeError("Occurrence options must be booleans");
 	}
 	const pattern = regex
 		? needle
-		: needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const matcher = new RegExp(pattern, caseSensitive ? 'gu' : 'gui');
+		: needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const matcher = new RegExp(pattern, caseSensitive ? "gu" : "gui");
 	let count = 0;
 	for (
 		let match = matcher.exec(text);
@@ -48,7 +48,7 @@ export function countOccurrences(
 		match = matcher.exec(text)
 	) {
 		if (match[0].length === 0)
-			throw new TypeError('Zero-width regex matches are not supported');
+			throw new TypeError("Zero-width regex matches are not supported");
 		count += 1;
 		if (overlapping) {
 			const point = text.codePointAt(match.index) ?? 0;
@@ -69,11 +69,11 @@ export function graphemeCount(text: string): {
 	utf16Length: number;
 	codePoints: number;
 } {
-	if (typeof text !== 'string') throw new TypeError('text must be a string');
+	if (typeof text !== "string") throw new TypeError("text must be a string");
 	let graphemes = 0;
 	let codePoints = 0;
-	for (const _segment of new Intl.Segmenter('und', {
-		granularity: 'grapheme',
+	for (const _segment of new Intl.Segmenter("und", {
+		granularity: "grapheme",
 	}).segment(text)) {
 		graphemes += 1;
 	}

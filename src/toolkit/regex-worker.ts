@@ -1,5 +1,5 @@
-import { parentPort, workerData } from 'node:worker_threads';
-import { countOccurrences, type OccurrenceOptions } from '../lib/text.ts';
+import { parentPort, workerData } from "node:worker_threads";
+import { countOccurrences, type OccurrenceOptions } from "../lib/text.ts";
 
 const input = workerData as {
 	text: string;
@@ -12,7 +12,7 @@ try {
 	});
 } catch (error) {
 	parentPort?.postMessage({
-		error: (error instanceof Error ? error.message : 'Regex failed').slice(
+		error: (error instanceof Error ? error.message : "Regex failed").slice(
 			0,
 			512,
 		),
