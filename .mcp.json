@@ -1,0 +1,14 @@
+{
+	"mcpServers": {
+		"deterministic-toolkit": {
+			"type": "stdio",
+			"command": "/Users/zander/repos/agents-skills/.cache/toolkit-runtime/node_modules/@oven/bun-darwin-aarch64/bin/bun",
+			"args": [
+				"run",
+				"/Users/zander/repos/agents-skills/src/server.ts",
+				"--input-root",
+				"/Users/zander/repos/agents-skills"
+			]
+		}
+	}
+}

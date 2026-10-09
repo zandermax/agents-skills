@@ -5,3 +5,5 @@ results/
 
 
 .DS_Store
+.cache
+*.log

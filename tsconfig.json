@@ -17,5 +17,6 @@
 		"scripts/**/*.ts",
 		"test/**/*.ts",
 		"agent-hooks/**/*.mts"
-	]
+	],
+	"exclude": ["test/toolkit"]
 }
