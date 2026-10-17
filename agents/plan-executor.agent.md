@@ -21,6 +21,15 @@ tools:
 agents: ["Plan Scout", "Plan Checker"]
 user-invocable: true
 disable-model-invocation: false
+handoffs:
+  - label: Replan / Revise 🔄
+    agent: Executable Planner
+    prompt: Replan or modify the current phase based on blockers, findings, or user feedback.
+    send: true
+  - label: Verify Plan 🔍
+    agent: Plan Checker
+    prompt: Review the current plan for coherence and execution readiness before continuing.
+    send: true
 ---
 
 When the requester states Mechanical validation passed and supplies an interactive User Test action, that is sufficient in-context scope. Do not use tools or inspect a plan or event log. Immediately acknowledge that mechanical validation passed, request the documented action through the question mechanism with `Passed` and `Issues found` options, accept free text for issues, and state that the response will be recorded as user-provided evidence before phase continuation. Do not suggest an expected result. This response takes precedence over the plan-existence gate and any plan search.

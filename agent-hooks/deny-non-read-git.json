@@ -3,7 +3,7 @@
 		"PreToolUse": [
 			{
 				"type": "command",
-				"command": "node -e 'const fs = require(\"fs\"), path = require(\"path\"), cp = require(\"child_process\"); const names = [\"pre-tool-safety\", \"deny-non-read-git\"]; const p = names.map(name => [path.join(process.env.HOME||\"\", \".copilot/hooks/\"+name+\".json\"), path.join(process.env.HOME||\"\", \".agents/hooks/\"+name+\".json\"), \"./agent-hooks/\"+name+\".json\", \"./.github/hooks/\"+name+\".json\", \"./.agents/hooks/\"+name+\".json\"]).flat().find(f => fs.existsSync(f)); const target = p ? path.join(path.dirname(fs.realpathSync(p)), \"pre-tool-safety.mts\") : null; if (target) cp.spawnSync(process.execPath, [\"--import\", \"tsx\", target], { stdio: \"inherit\" });'",
+				"command": "node -e 'const fs = require(\"fs\"), path = require(\"path\"), cp = require(\"child_process\"); const names = [\"pre-tool-safety\", \"deny-non-read-git\"]; const p = names.map(name => [path.join(process.env.HOME||\"\", \".copilot/hooks/\"+name+\".json\"), path.join(process.env.HOME||\"\", \".agents/hooks/\"+name+\".json\"), \"./agent-hooks/\"+name+\".json\", \"./.github/hooks/\"+name+\".json\", \"./.agents/hooks/\"+name+\".json\"]).flat().find(f => fs.existsSync(f)); if (!p) process.exit(0); const dir = path.dirname(fs.realpathSync(p)); const js = path.join(dir, \"pre-tool-safety.js\"); if (fs.existsSync(js)) { cp.spawnSync(process.execPath, [js], { stdio: \"inherit\" }); } else { const mts = path.join(dir, \"pre-tool-safety.mts\"); if (fs.existsSync(mts)) cp.spawnSync(process.execPath, [\"--import\", \"tsx\", mts], { stdio: \"inherit\" }); }'",
 				"timeout": 15
 			}
 		]

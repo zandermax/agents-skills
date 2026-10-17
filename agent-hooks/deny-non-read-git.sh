@@ -18,4 +18,8 @@ done
 
 SCRIPT_DIR="$(cd -P "$(dirname "$TARGET")" && pwd)"
 
-exec node --import tsx "$SCRIPT_DIR/pre-tool-safety.mts"
+if [ -f "$SCRIPT_DIR/pre-tool-safety.js" ]; then
+  exec node "$SCRIPT_DIR/pre-tool-safety.js"
+else
+  exec node --import tsx "$SCRIPT_DIR/pre-tool-safety.mts"
+fi

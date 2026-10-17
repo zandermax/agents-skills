@@ -13,6 +13,7 @@
 
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { resolveWorkspaceRoots } from "./deny-non-read-git.js";
@@ -89,6 +90,14 @@ function outputResult(result) {
 	process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
 }
 
+const require = createRequire(import.meta.url);
+let tsxLoader = "tsx";
+try {
+	tsxLoader = require.resolve("tsx");
+} catch {
+	tsxLoader = "tsx";
+}
+
 const shadowCliPath = fileURLToPath(
 	new URL("../src/lib/decision-model/shadow-cli.ts", import.meta.url),
 );
@@ -101,7 +110,7 @@ export function dispatchShadowEvaluation(payload, spawnImpl = spawn) {
 	try {
 		const child = spawnImpl(
 			process.execPath,
-			["--import", "tsx", shadowCliPath],
+			["--import", tsxLoader, shadowCliPath],
 			{
 				detached: true,
 				stdio: ["pipe", "ignore", "ignore"],
