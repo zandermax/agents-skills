@@ -286,3 +286,17 @@ test("loadInstallCatalog validates the real repository catalog", async () => {
 		["copilot", "claude", "agents"],
 	);
 });
+
+test("Copilot agents use VS Code's user-level agent directory", async () => {
+	const catalog = await loadInstallCatalog(repoRoot);
+	const copilot = catalog.clients.find((client) => client.name === "copilot");
+
+	assert.deepEqual(
+		copilot?.destinations.map(({ collection, path }) => [collection, path]),
+		[
+			["skills", "~/.claude/skills"],
+			["copilot", "~/.copilot/agents"],
+			["hooks", "~/.copilot/hooks"],
+		],
+	);
+});

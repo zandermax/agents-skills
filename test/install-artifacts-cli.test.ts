@@ -5,6 +5,7 @@ import {
 	mkdir,
 	mkdtemp,
 	readFile,
+	readlink,
 	rm,
 	symlink,
 	writeFile,
@@ -117,6 +118,28 @@ test("artifact CLI installs all compatible catalog artifacts by default", async 
 			new RegExp(
 				`summary created=${defaultLinkCount} repaired=0 removed=0 existing=0`,
 			),
+		);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("artifact CLI installs Copilot agents in the VS Code user directory", async () => {
+	const fixture = await createFixture("install-artifacts-cli-copilot-agents");
+	try {
+		const result = runCli(["--client", "copilot"], fixture.homeDirectory);
+		assert.equal(result.status, 0, result.stderr);
+
+		const destination = path.join(
+			fixture.homeDirectory,
+			".copilot",
+			"agents",
+			sampleAgent.destinationName,
+		);
+		assert.equal((await lstat(destination)).isSymbolicLink(), true);
+		assert.equal(
+			path.resolve(path.dirname(destination), await readlink(destination)),
+			sampleAgent.sourcePath,
 		);
 	} finally {
 		await fixture.cleanup();

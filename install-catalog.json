@@ -42,7 +42,7 @@
 				},
 				{
 					"collection": "copilot",
-					"path": "~/.claude/agents"
+					"path": "~/.copilot/agents"
 				},
 				{
 					"collection": "hooks",

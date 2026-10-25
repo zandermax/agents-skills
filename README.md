@@ -67,16 +67,18 @@ Install every compatible artifact into all cataloged client destinations:
 npm run install:artifacts
 ```
 
-Copilot and Claude share `~/.claude/skills/` and `~/.claude/agents/`.
-These are real directories containing individual links, not links to entire
-repository directories. Agent definitions have one authored home in
-`agents/`, use Claude tool names supported by Copilot, and retain
-Copilot handoffs. The `copilot:` collection prefix remains for selector
-compatibility. Hooks retain their harness-specific destinations.
+Copilot and Claude share the skill registry at `~/.claude/skills/`. Copilot
+agents install to `~/.copilot/agents/`, while Claude agents install to
+`~/.claude/agents/`, matching each harness's user-level discovery location.
+Both destinations link to the single authored agent source in `agents/`.
+Skills and agent destinations are real directories containing individual
+links, not links to entire repository directories. The `copilot:` collection
+prefix remains for selector compatibility. Hooks retain their
+harness-specific destinations.
 
-The generic `~/.agents/skills/` convention is not a documented Claude Code
-discovery location, so this installer uses the shared Claude-style paths
-instead of maintaining redundant skill installations.
+The installer uses one shared skill registry instead of duplicating the same
+skills across `~/.copilot/skills/`, `~/.agents/skills/`, and
+`~/.claude/skills/`.
 
 Use selectors to narrow an installation:
 
@@ -141,7 +143,7 @@ Selecting several clients does not duplicate shared destinations.
 To install or migrate shared skills and agents without touching hooks:
 
 ```sh
-npm run install:artifacts -- --skills-dir "claude=$HOME/.claude/skills" --agents-dir "copilot=$HOME/.claude/agents"
+npm run install:artifacts -- --skills-dir "claude=$HOME/.claude/skills" --agents-dir "copilot=$HOME/.copilot/agents"
 ```
 
 ## Adding Skills

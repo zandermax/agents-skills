@@ -191,6 +191,70 @@ test("uninstallArtifacts removes an explicitly owned legacy link", async () => {
 	}
 });
 
+test("uninstallArtifacts matches owned links through symlinked source paths", async () => {
+	const fixture = await createFixture("install-artifacts-aliased-source");
+	const sourceAliasDirectory = path.join(fixture.root, "source-alias");
+	const destination = path.join(fixture.root, "legacy-alias");
+	try {
+		await symlink(
+			path.dirname(fixture.sources.skill),
+			sourceAliasDirectory,
+			"dir",
+		);
+		await symlink(fixture.sources.skill, destination, "dir");
+
+		const removed = await uninstallArtifacts([
+			{
+				kind: "directory",
+				sourcePath: path.join(
+					sourceAliasDirectory,
+					path.basename(fixture.sources.skill),
+				),
+				destinationPath: destination,
+			},
+		]);
+
+		assert.deepEqual(removed, [destination]);
+		await assert.rejects(lstat(destination), /ENOENT/);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
+test("uninstallArtifacts removes dangling links through symlinked source paths", async () => {
+	const fixture = await createFixture(
+		"install-artifacts-aliased-dangling-source",
+	);
+	const sourceAliasDirectory = path.join(fixture.root, "source-alias");
+	const missingSource = path.join(sourceAliasDirectory, "missing-skill");
+	const destination = path.join(fixture.root, "legacy-dangling-alias");
+	try {
+		await symlink(
+			path.dirname(fixture.sources.skill),
+			sourceAliasDirectory,
+			"dir",
+		);
+		await symlink(
+			path.join(path.dirname(fixture.sources.skill), "missing-skill"),
+			destination,
+			"dir",
+		);
+
+		const removed = await uninstallArtifacts([
+			{
+				kind: "directory",
+				sourcePath: missingSource,
+				destinationPath: destination,
+			},
+		]);
+
+		assert.deepEqual(removed, [destination]);
+		await assert.rejects(lstat(destination), /ENOENT/);
+	} finally {
+		await fixture.cleanup();
+	}
+});
+
 test("installArtifacts validates collisions before migrating owned directory links", async () => {
 	const fixture = await createFixture("install-artifacts-preflight");
 	try {

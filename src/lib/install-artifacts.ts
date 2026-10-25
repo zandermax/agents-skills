@@ -38,7 +38,11 @@ export async function uninstallArtifacts(
 			path.dirname(link.destinationPath),
 			await readlink(link.destinationPath),
 		);
-		if (normalizePath(target) !== normalizePath(link.sourcePath)) continue;
+		if (
+			normalizePath(await resolveParent(target)) !==
+			normalizePath(await resolveParent(link.sourcePath))
+		)
+			continue;
 		const sourceParent = await resolveParent(
 			link.kind === "directory"
 				? link.sourcePath
