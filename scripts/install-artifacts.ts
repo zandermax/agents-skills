@@ -14,10 +14,10 @@ import { loadInstallCatalog } from "../src/lib/catalog.js";
 import {
 	buildArtifactLinks,
 	installArtifacts,
-	type ResolvedLink,
 	uninstallArtifacts,
 } from "../src/lib/install-artifacts.js";
 import { promptClientSelection } from "../src/lib/interactive-menu.js";
+import { buildLegacyLinks } from "./install-artifacts-legacy.js";
 
 function printResult(
 	result: Awaited<ReturnType<typeof installArtifacts>>,
@@ -112,111 +112,14 @@ export async function runCli(
 						target.directory === path.join(homeDirectory, ".claude", directory),
 				),
 			));
-	const legacyRoots: ResolvedLink[] = [
-		...request.targets
-			.filter((target) => includeMemory && target.collection !== "hooks")
-			.flatMap((target) => {
-				const sources =
-					target.collection === "skills"
-						? [".agents/skills", "skills"]
-						: [".github/agents", ".claude/agents", "agents"];
-				return sources.map((source) => ({
-					kind: "directory" as const,
-					sourcePath: path.join(repoRoot, source),
-					destinationPath: target.directory,
-				}));
-			}),
-		...(cleanLegacyDiscovery
-			? [
-					{
-						kind: "directory" as const,
-						sourcePath: path.join(repoRoot, ".agents/skills"),
-						destinationPath: path.join(homeDirectory, ".copilot/skills"),
-					},
-					{
-						kind: "directory" as const,
-						sourcePath: path.join(repoRoot, "skills"),
-						destinationPath: path.join(homeDirectory, ".copilot/skills"),
-					},
-					{
-						kind: "directory" as const,
-						sourcePath: path.join(repoRoot, ".github/agents"),
-						destinationPath: path.join(homeDirectory, ".copilot/agents"),
-					},
-					{
-						kind: "directory" as const,
-						sourcePath: path.join(repoRoot, ".claude/agents"),
-						destinationPath: path.join(homeDirectory, ".copilot/agents"),
-					},
-					{
-						kind: "directory" as const,
-						sourcePath: path.join(repoRoot, "agents"),
-						destinationPath: path.join(homeDirectory, ".copilot/agents"),
-					},
-					{
-						kind: "directory" as const,
-						sourcePath: path.join(repoRoot, ".agents/skills"),
-						destinationPath: path.join(homeDirectory, ".agents/skills"),
-					},
-					{
-						kind: "directory" as const,
-						sourcePath: path.join(repoRoot, "skills"),
-						destinationPath: path.join(homeDirectory, ".agents/skills"),
-					},
-				]
-			: []),
-	];
-	const legacyArtifactLinks: ResolvedLink[] = [];
-	for (const target of request.targets) {
-		const targetArtifacts = request.artifacts.filter(
-			(artifact) => artifact.collection === target.collection,
+	const { roots: legacyRoots, artifacts: legacyArtifactLinks } =
+		buildLegacyLinks(
+			request,
+			repoRoot,
+			homeDirectory,
+			includeMemory,
+			cleanLegacyDiscovery,
 		);
-		if (target.linkMode === "directory") {
-			if (target.collection === "hooks") {
-				for (const source of [
-					".github/hooks",
-					".agents/hooks",
-					"agent-hooks",
-				]) {
-					legacyArtifactLinks.push({
-						kind: "directory",
-						sourcePath: path.join(repoRoot, source),
-						destinationPath: target.directory,
-					});
-				}
-			}
-		} else {
-			for (const artifact of targetArtifacts) {
-				const legacySources =
-					artifact.kind === "skill"
-						? [path.join(repoRoot, ".agents/skills", artifact.name)]
-						: artifact.kind === "agent"
-							? [
-									path.join(
-										repoRoot,
-										".claude/agents",
-										artifact.destinationName,
-									),
-									path.join(
-										repoRoot,
-										".github/agents",
-										artifact.destinationName,
-									),
-								]
-							: [];
-				for (const sourcePath of legacySources) {
-					legacyArtifactLinks.push({
-						kind: artifact.entryKind,
-						sourcePath,
-						destinationPath: path.join(
-							target.directory,
-							artifact.destinationName,
-						),
-					});
-				}
-			}
-		}
-	}
 	const result =
 		operation === "install"
 			? await installArtifacts(links, [repoRoot], legacyRoots)

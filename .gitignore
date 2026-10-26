@@ -7,3 +7,7 @@ results/
 .DS_Store
 .cache
 *.log
+
+# Test stuff
+node-compile-cache/
+tsx-*/

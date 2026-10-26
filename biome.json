@@ -6,7 +6,16 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"preset": "recommended"
+			"preset": "recommended",
+			"style": {
+				"noExcessiveLinesPerFile": {
+					"level": "error",
+					"options": {
+						"maxLines": 300,
+						"skipBlankLines": true
+					}
+				}
+			}
 		}
 	},
 	"assist": {
