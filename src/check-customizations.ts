@@ -7,9 +7,9 @@ import { validatePlanStatuses } from "./customizations/plan-status.js";
 import { validateRepositoryFiles } from "./customizations/repository.js";
 import { formatErrorList, relativizeMessage } from "./customizations/shared.js";
 import { validateSkills } from "./customizations/skills.js";
-import { discoverArtifacts } from "./lib/artifacts.js";
-import type { InstallCatalog } from "./lib/catalog.js";
-import { loadInstallCatalog } from "./lib/catalog.js";
+import { discoverArtifacts } from "./lib/artifacts/artifacts.js";
+import type { InstallCatalog } from "./lib/artifacts/catalog.js";
+import { loadInstallCatalog } from "./lib/artifacts/catalog.js";
 
 export async function checkCustomizations(repoRoot: string): Promise<void> {
 	const absoluteRepoRoot = path.resolve(repoRoot);

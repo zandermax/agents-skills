@@ -6,12 +6,12 @@ import {
 	groupCount,
 	mode,
 	type Scalar,
-} from "../lib/collections.ts";
+} from "../lib/shared/collections.ts";
 import {
 	countOccurrences,
 	graphemeCount,
 	type OccurrenceOptions,
-} from "../lib/text.ts";
+} from "../lib/shared/text.ts";
 import { DEFAULT_ROOT, loadInput, type ToolKind } from "./input.ts";
 
 export const MAX_OUTPUT_BYTES = 16 * 1024;

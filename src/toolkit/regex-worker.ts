@@ -1,5 +1,8 @@
 import { parentPort, workerData } from "node:worker_threads";
-import { countOccurrences, type OccurrenceOptions } from "../lib/text.ts";
+import {
+	countOccurrences,
+	type OccurrenceOptions,
+} from "../lib/shared/text.ts";
 
 const input = workerData as {
 	text: string;

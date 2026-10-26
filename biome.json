@@ -18,6 +18,189 @@
 			}
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["src/lib/artifacts/**/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"../skills/**",
+											"../agent-evals/**",
+											"../decision-model/**"
+										],
+										"message": "Artifact modules must not depend on skill, evaluation, or decision-model internals."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/lib/skills/**/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"../artifacts/**",
+											"../agent-evals/**",
+											"../decision-model/**"
+										],
+										"message": "Skill modules must not depend on artifact, evaluation, or decision-model internals."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/lib/agent-evals/**/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"../artifacts/**",
+											"../skills/**",
+											"../decision-model/**"
+										],
+										"message": "Evaluation modules must remain independent of artifact, skill, and decision-model internals."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/lib/shared/**/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"../artifacts/**",
+											"../skills/**",
+											"../agent-evals/**",
+											"../decision-model/**"
+										],
+										"message": "Shared library modules must not depend on domain modules."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/lib/decision-model/**/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"../artifacts/**",
+											"../skills/**",
+											"../agent-evals/**"
+										],
+										"message": "Decision-model modules must not depend on unrelated domain internals."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["agent-hooks/git-policy/**/*.js"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["../tool-safety/**"],
+										"message": "Git policy helpers must not depend on tool-safety orchestration."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["scripts/install/**/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["../evaluation/**"],
+										"message": "Installation scripts must not depend on evaluation scripts."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["scripts/evaluation/**/*.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["../install/**"],
+										"message": "Evaluation scripts must not depend on installation scripts."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		}
+	],
 	"assist": {
 		"enabled": true,
 		"actions": {

@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
-import type { Artifact } from "../lib/artifacts.js";
-import type { InstallCatalog } from "../lib/catalog.js";
-import { parseFrontmatter } from "../lib/frontmatter.js";
-import { listSections } from "../lib/markdown-sections.js";
+import type { Artifact } from "../lib/artifacts/artifacts.js";
+import type { InstallCatalog } from "../lib/artifacts/catalog.js";
+import { parseFrontmatter } from "../lib/skills/frontmatter.js";
+import { listSections } from "../lib/skills/markdown-sections.js";
 import { missingAgentBaselineTools, toRelativePath } from "./shared.js";
 
 export async function validateAgents(

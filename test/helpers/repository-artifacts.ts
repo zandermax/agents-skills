@@ -2,9 +2,9 @@ import { lstat, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { Artifact } from "../../src/lib/artifacts.js";
-import type { InstallCatalog } from "../../src/lib/catalog.js";
-import { loadInstallCatalog } from "../../src/lib/catalog.js";
+import type { Artifact } from "../../src/lib/artifacts/artifacts.js";
+import type { InstallCatalog } from "../../src/lib/artifacts/catalog.js";
+import { loadInstallCatalog } from "../../src/lib/artifacts/catalog.js";
 
 const helperFilePath = fileURLToPath(import.meta.url);
 

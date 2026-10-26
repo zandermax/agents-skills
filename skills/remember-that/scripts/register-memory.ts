@@ -2,13 +2,12 @@ import { lstat, readdir, readFile, realpath } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
-import { parseFrontmatter } from "../../../src/lib/frontmatter.ts";
 import {
 	installArtifacts,
 	type ResolvedLink,
 	uninstallArtifacts,
-} from "../../../src/lib/install-artifacts.ts";
+} from "../../../src/lib/artifacts/install-artifacts.ts";
+import { parseFrontmatter } from "../../../src/lib/skills/frontmatter.ts";
 
 const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 

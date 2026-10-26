@@ -63,7 +63,7 @@ A scenario passes only if both gates pass.
 Each topic wires its own npm script, e.g.:
 
 ```json
-"eval:memory": "tsx scripts/run-agent-evals.ts --dir $HOME/.memory/node-testing-notes/test"
+"eval:memory": "tsx scripts/evaluation/run-agent-evals.ts --dir $HOME/.memory/node-testing-notes/test"
 ```
 
 Run it directly: `npm run eval:memory`. Output per scenario:

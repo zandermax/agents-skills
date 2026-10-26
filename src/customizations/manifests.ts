@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { parseSkillManifest } from "../lib/manifests.js";
+import { parseSkillManifest } from "../lib/skills/manifests.js";
 import {
 	discoverManifestPaths,
 	relativizeMessage,

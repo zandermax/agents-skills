@@ -2,11 +2,14 @@ import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseFrontmatter } from "./lib/frontmatter.js";
-import { parseSkillManifest } from "./lib/manifests.js";
-import { requireSection } from "./lib/markdown-sections.js";
-import { type OwnedSection, renderSkill } from "./lib/render-skill.js";
-import { applyExactTransforms, loadTransforms } from "./lib/transforms.js";
+import { parseFrontmatter } from "./lib/skills/frontmatter.js";
+import { parseSkillManifest } from "./lib/skills/manifests.js";
+import { requireSection } from "./lib/skills/markdown-sections.js";
+import { type OwnedSection, renderSkill } from "./lib/skills/render-skill.js";
+import {
+	applyExactTransforms,
+	loadTransforms,
+} from "./lib/skills/transforms.js";
 
 export interface BuildOptions {
 	readonly repoRoot: string;

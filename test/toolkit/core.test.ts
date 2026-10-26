@@ -6,8 +6,8 @@ import {
 	groupCount,
 	mode,
 	type Scalar,
-} from "../../src/lib/collections.ts";
-import { countOccurrences, graphemeCount } from "../../src/lib/text.ts";
+} from "../../src/lib/shared/collections.ts";
+import { countOccurrences, graphemeCount } from "../../src/lib/shared/text.ts";
 
 test("mode ranks counts and breaks ties by first appearance", () => {
 	assert.deepEqual(mode(["b", "a", "a", "b", "c"]), [["b", 2]]);

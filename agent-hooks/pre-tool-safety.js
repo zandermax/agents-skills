@@ -20,11 +20,11 @@ import { resolveWorkspaceRoots } from "./deny-non-read-git.js";
 import {
 	checkGitHubMutationPolicy,
 	checkGitPolicy,
-} from "./pre-tool-safety-git.js";
+} from "./tool-safety/pre-tool-safety-git.js";
 import {
 	checkToolInputPaths,
 	checkWorkspacePolicy,
-} from "./pre-tool-safety-workspace.js";
+} from "./tool-safety/pre-tool-safety-workspace.js";
 
 export function evaluateToolUse(toolName, toolInput, hookContext = {}) {
 	if (!toolName || !toolInput) {

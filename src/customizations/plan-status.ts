@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { parseFrontmatter } from "../lib/frontmatter.js";
+import { parseFrontmatter } from "../lib/skills/frontmatter.js";
 import { discoverPlanPaths, toRelativePath } from "./shared.js";
 
 export async function validatePlanStatuses(

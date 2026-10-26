@@ -16,18 +16,18 @@ import { pathToFileURL } from "node:url";
 import {
 	checkCommandForNonReadGit,
 	checkGitCommandTokens,
-} from "./deny-non-read-git-git.js";
+} from "./git-policy/deny-non-read-git-git.js";
 import {
 	canonicalPath,
 	expandPath,
 	isApprovedExternalReadPath,
 	isTemporaryPath,
 	isWithin,
-} from "./deny-non-read-git-paths.js";
+} from "./git-policy/deny-non-read-git-paths.js";
 import {
 	splitShellStatements,
 	tokenizeStatement,
-} from "./deny-non-read-git-shell.js";
+} from "./git-policy/deny-non-read-git-shell.js";
 import {
 	checkCommandPaths,
 	checkToolInputPaths,
@@ -35,7 +35,7 @@ import {
 	isExternalPath,
 	READ_ONLY_PATH_TOOLS,
 	resolveWorkspaceRoots,
-} from "./deny-non-read-git-workspace.js";
+} from "./git-policy/deny-non-read-git-workspace.js";
 
 export {
 	canonicalPath,
