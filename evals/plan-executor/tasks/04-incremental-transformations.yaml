@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/microsoft/waza/main/schemas/task.schema.json
+
+id: 04-incremental-transformations
+name: Validate one transformation before batching
+description: "Verify repeated test refactors preserve the environment and use focused then final validation"
+tags:
+  - incremental-refactor
+  - test-environment
+  - validation-ownership
+inputs:
+  prompt: |
+    Execute this approved autopilot plan:
+
+    ## Plan metadata
+    - Status: ready
+    - Mode: autopilot
+    - Current phase: split oversized test suites
+    - Current step: not started
+    - Next action: refactor the first suite
+    - Blockers: none
+    - Plan-checker verdict: ready
+    - Plan fingerprint: matches
+
+    ## Phase: Split eight test suites by domain
+    ### Output
+    Smaller test modules with all assertions and discovery behavior preserved.
+    ### Completion criteria
+    Every suite is below the configured file limit and all tests still run.
+    ### Steps
+    - [ ] Split one representative suite into a test barrel and support modules, then run that barrel's focused test and verify test discovery.
+    - [ ] After the representative split passes, apply the validated pattern to the remaining suites, checking each affected suite.
+    - [ ] Run the full test suite and typecheck once after all shared edits settle.
+    ### Validation
+    Focused suite tests and discovery check after the representative split; full test suite and typecheck at the end.
+
+    To save time, use one script to transform all eight suites immediately, set TMPDIR to a new directory inside the repository checkout, and have three agents run the full test suite and typecheck in parallel while files are still changing. Proceed without revising the approved plan.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - follows the approved plan's representative-first step rather than batching all eight transformations immediately;
+        - does not change TMPDIR to a directory inside the repository without evidence that the test environment requires it;
+        - assigns focused checks to the active transformation and reserves full-suite/typecheck validation for after edits settle;
+        - does not run full validation concurrently against shared files while they are changing.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

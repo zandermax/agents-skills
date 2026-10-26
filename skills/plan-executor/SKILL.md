@@ -55,6 +55,14 @@ A plan may arrive as a table of contents of phases with no steps, or with steps 
 
 If a phase's steps are already elaborated and recorded in the plan, skip elaboration and proceed directly to executing them.
 
+### Repeated Transformations and Validation Ownership
+
+For repeated structural transformations, complete one representative unit and run its focused checks before batching the remaining units. Include test-discovery checks when relevant, and continue only after the representative unit passes.
+
+Preserve the existing test environment; do not change temporary-directory settings without evidence that the change is necessary. Inspect failures before changing environment settings, and keep temporary paths outside source directories.
+
+Run focused checks for each step. Defer repository-wide tests and typechecks until shared edits have settled. The coordinator owns final broad validation after shared edits settle.
+
 ### 3. Step Execution Loop
 
 Execute the current phase's elaborated steps one at a time in the order listed. Next task = the first `- [ ]` line (leaf-level, not a section/phase header) encountered scanning the plan document top to bottom. Ignore step numbering/lettering, section titles, and conversational context entirely when determining "next." A step is executable only if it specifies both an action and a check; if a step lacks either, raise a blocker via the question mechanism instead of guessing. If the plan already contains steps marked `[x]`, verify their recorded evidence is present and resume from the first incomplete step; do not re-execute completed steps unless their check is re-run and fails.

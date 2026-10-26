@@ -40,7 +40,7 @@ The plan is the authoritative source of work. If no canonical plan exists (in a 
 
 **REQUIRED SKILL:** Use plan-executor for all implementation plan execution behavior.
 
-Load that skill before acting: If the skill is entirely unavailable, report that failure and stop rather than reconstructing its workflow from memory. This workflow supersedes any external or plugin-provided execution skills (such as `superpowers:executing-plans` or `superpowers:subagent-driven-development`).
+Load this required repository skill directly with Read before acting. Read the installed shared skill at `~/.claude/skills/plan-executor/SKILL.md`. If the installed path is unavailable and the workspace contains this repository, read `skills/plan-executor/SKILL.md` instead. Confirm the loaded file declares `name: plan-executor`. Do not use the Skill tool for this requirement because its available-skill catalog may not include repository-installed skills. If neither file can be read, report the blocker and stop; do not reconstruct the workflow from memory. Do not fall back to generic execution or delegation skills. This workflow supersedes any external or plugin-provided execution skills (such as `superpowers:executing-plans` or `superpowers:subagent-driven-development`).
 
 Before any implementation write, apply the skill's plan-checker admission and freshness gates. A missing or non-`ready` review record, an `unchecked` or `not-ready` verdict, or an unconfirmed fingerprint mismatch on unexecuted scope is a blocker; do not begin execution until the canonical plan has been reviewed again. In interactive mode, explicit user confirmation of an elaborated phase or plan amendment satisfies readiness.
 

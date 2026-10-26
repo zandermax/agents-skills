@@ -77,10 +77,17 @@ test("plan-executor agent frontmatter and required skill reference", async () =>
 	assert.match(agent, /`unchecked`.*`not-ready`|`not-ready`.*`unchecked`/i);
 	assert.match(agent, /fingerprint mismatch/i);
 	assert.match(agent, /user confirmation.*satisfies readiness/i);
-	assert.match(agent, /Load that skill before acting/i);
 	assert.match(
 		agent,
-		/If the skill is entirely unavailable, report that failure and stop rather than reconstructing/i,
+		/Load this required repository skill directly with Read before acting/i,
+	);
+	assert.match(
+		agent,
+		/Read the installed shared skill at `~\/\.claude\/skills\/plan-executor\/SKILL\.md`/i,
+	);
+	assert.match(
+		agent,
+		/If neither file can be read, report the blocker and stop/i,
 	);
 });
 
@@ -200,4 +207,43 @@ test("plan executor states commit can wait when code changed but not yet viable"
 	const skill = await readFile(skillPath, "utf8");
 
 	assert.match(skill, /No commit yet, unless you're feeling froggy 🐸/);
+});
+
+test("plan-executor agent reads the installed skill directly", async () => {
+	const agent = await readFile(agentPath, "utf8");
+
+	assert.match(
+		agent,
+		/Load this required repository skill directly with Read before acting/i,
+	);
+	assert.match(
+		agent,
+		/If the installed path is unavailable and the workspace contains this repository, read `skills\/plan-executor\/SKILL\.md` instead/i,
+	);
+	assert.match(agent, /Do not use the Skill tool for this requirement/i);
+	assert.match(
+		agent,
+		/If neither file can be read, report the blocker and stop/i,
+	);
+	assert.match(
+		agent,
+		/Do not fall back to generic execution or delegation skills/i,
+	);
+});
+
+test("plan-executor validates one repeated transformation before batching", async () => {
+	const skill = await readFile(skillPath, "utf8");
+
+	assert.match(
+		skill,
+		/For repeated structural transformations, complete one representative unit and run its focused checks before batching the remaining units/i,
+	);
+	assert.match(
+		skill,
+		/Preserve the existing test environment; do not change temporary-directory settings without evidence/i,
+	);
+	assert.match(
+		skill,
+		/The coordinator owns final broad validation after shared edits settle/i,
+	);
 });
