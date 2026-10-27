@@ -62,7 +62,11 @@ export function validateHistory(
 		source,
 		historyPath,
 	);
-	validateBranchRecords(branchRecords, actualBranches, historyPath);
+	const advisories = validateBranchRecords(
+		branchRecords,
+		actualBranches,
+		historyPath,
+	);
 
 	const index = parseLogDocument(source, historyPath);
 	/** @type {CommitRecord[]} */
@@ -111,5 +115,6 @@ export function validateHistory(
 		threshold,
 		mainBranch,
 		branchRecords,
+		advisories,
 	};
 }

@@ -79,29 +79,19 @@ export function readReachableGitCommits(root) {
 /**
  * @param {string} root
  * @param {BranchRecord[]} oldBranchRecords
- * @param {string} mainBranch
- * @param {string} committedAt
- * @param {string} subject
+ * @param {string} _mainBranch
+ * @param {string} _committedAt
+ * @param {string} _subject
  * @returns {BranchRecord[]}
  */
 export function buildUpdatedBranchRecords(
 	root,
 	oldBranchRecords,
-	mainBranch,
-	committedAt,
-	subject,
+	_mainBranch,
+	_committedAt,
+	_subject,
 ) {
 	const actualBranches = readActualBranches(root);
-	let currentBranchName = "";
-	try {
-		const headRef = runGit(["symbolic-ref", "--short", "HEAD"], {
-			cwd: root,
-		}).trim();
-		currentBranchName = headRef;
-	} catch {
-		currentBranchName = mainBranch;
-	}
-
 	const branchMap = new Map(
 		oldBranchRecords.map((record) => [record.ref, record]),
 	);
@@ -111,27 +101,10 @@ export function buildUpdatedBranchRecords(
 		const existing = branchMap.get(ref);
 		const status = existing?.status ?? "no related plan";
 		const planningDoc = existing?.planningDoc ?? "(none)";
-		let branchName = tip.branchName;
-		let branchCommittedAt = tip.committedAt;
-		let branchSubject = tip.subject;
-
-		if (ref.startsWith("refs/remotes/")) {
-			const base = ref.replace(/^refs\/remotes\/[^/]+\//, "");
-			if (
-				base === currentBranchName &&
-				!branchName.endsWith(" [unpushed changes]")
-			) {
-				branchName = `${base} [unpushed changes]`;
-			}
-		} else if (ref === `refs/heads/${currentBranchName}`) {
-			branchCommittedAt = committedAt;
-			branchSubject = subject;
-		}
-
 		updatedBranchRecords.push({
-			branchName,
-			committedAt: branchCommittedAt,
-			subject: branchSubject,
+			branchName: tip.branchName,
+			committedAt: tip.committedAt,
+			subject: tip.subject,
 			status,
 			planningDoc,
 			ref,

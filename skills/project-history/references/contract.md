@@ -28,12 +28,12 @@ Copy the complete asset set below into `scripts/project-history/` in the target,
 
 Verify every asset and this contract before installing anything. Run with Node.js built-ins, Git, and the bundled parser only, without target-project package dependencies. Preserve the parser attribution and its notice in all copies. Find the repository root with Git, not the caller's working directory.
 
-- `node scripts/project-history/check-project-history.mjs`: validate working-tree history against actual local Git metadata. Print `git status --short --branch` and validation results. Exit 0 on success, 1 on invalid or missing history. The checker never changes files, refs, the index, configuration, or remote state.
+- `node scripts/project-history/check-project-history.mjs`: validate working-tree history's schema and durable commit coverage against actual local Git metadata; report dated branch-snapshot drift separately as advisories. Print `git status --short --branch` and validation results. Exit 0 on success, 1 on invalid or missing history. The checker never changes files, refs, the index, configuration, or remote state.
 - `node scripts/project-history/check-project-history.mjs --startup`: also warn when actual branch count is strictly greater than the configured threshold. A warning alone does not fail validation. Count actual refs even when the recorded snapshot is stale; emit the warning before the validation summary.
-- `node scripts/project-history/pre-push-project-history.mjs <remote-name> <remote-url>`: accept standard ref-update lines on stdin. For any non-deletion update, synchronize unrecorded commits into `PROJECT_HISTORY.yaml`, amend the history snapshot if needed, and validate. Deletion-only pushes and no updates exit 0. Removal candidates and other unpushed branches produce advisory cleanup commands, not blocking gates. Unrecoverable format, validation, or repository failures exit 1. Never contact a remote or perform a push.
+- `node scripts/project-history/pre-push-project-history.mjs <remote-name> <remote-url>`: accept standard ref-update lines on stdin. For any non-deletion update, validate durable history from committed HEAD, including committed domain documents, without a working-tree fallback. Never write files, stage, synchronize, change refs/configuration, or amend HEAD: Git has already selected the push object. Missing or invalid durable history and malformed input/repository failures exit 1 with `node scripts/project-history/record-history.mjs` as the explicit repair command before retrying. Stale branch snapshots alone pass. Deletion-only pushes and no updates exit 0. Current unpushed branches and still-present, still-merged removal candidates produce advisory notices, not cleanup gates. Never contact a remote or perform a push.
 - `node scripts/project-history/record-history.mjs [--subject <subject>] [--decision <decision>] [--domain <domain>] [--no-commit] [--amend]`: discover unrecorded reachable commits, serialize them and the prospective snapshot in YAML, stage history files, and create the commit with matching UTC committer timestamp. Repeat `--decision` for multiple decisions. `--domain` selects an indexed domain by name, defaulting to the first. `--no-commit` still writes and stages history, but does not commit. `--amend` records the existing HEAD without a new prospective entry, with the hook safeguards below. Exit 0 on success, 1 on failure.
 
-The committed HEAD document is the canonical cross-branch inventory, including branches other than HEAD being pushed; older branch tips need not contain today's inventory. Missing HEAD or documents, malformed input/documents, and Git/read failures must fail closed with actionable stderr, never a successful empty result. Diagnostics identify offending fields, refs, documents, or commit subjects.
+The committed HEAD document is the canonical durable history index for pre-push, including branches other than HEAD being pushed; older branch tips need not contain today's inventory. Its inventory is a dated snapshot, not an assertion that current refs have the same tips or even still exist. Missing HEAD or documents, malformed input/documents, and Git/read failures must fail closed with actionable stderr, never a successful empty result. Diagnostics identify offending fields, refs, documents, or commit subjects.
 
 ## Changelog document
 
@@ -71,7 +71,7 @@ At installation, do not populate older commits lacking immediate conversational 
 - Dates are valid UTC timestamps with second precision, exactly `YYYY-MM-DDTHH:mm:ssZ`. Reject impossible calendar dates and other formats.
 - `committed_at` is the Git **committer** timestamp converted to UTC, not the author date or script execution time.
 - `updated_at` equals the newest log timestamp across all domains. Inline and domain logs are newest first; equal timestamps are allowed. Retained history may be newer than surviving branch tips.
-- From the earliest recorded commit forward, cover every unique commit object reachable from the branch inventory exactly once, including merges. Shared ancestors count once. For each reachable `(committed_at, subject)` pair since recording began, require Git's count of unique objects: distinct commits with the same timestamp and subject need separate records. Reject missing entries and surplus copies of reachable entries.
+- From the earliest recorded commit forward, cover every unique commit object reachable from actual local and remote-tracking branches exactly once, including merges, independently of the dated inventory. Shared ancestors count once. For each reachable `(committed_at, subject)` pair since recording began, require Git's count of unique objects: distinct commits with the same timestamp and subject need separate records. Reject missing entries and surplus copies of reachable entries.
 - Retain history after branch deletion or rewriting. Validate retained dates and decision syntax even when Git metadata is no longer verifiable after garbage collection.
 - Never store the current commit's hash in its own document: that is self-referential. Dates, exact subjects, and multiplicity avoid the cycle, but cannot distinguish decisions on commits with identical dates and subjects. Use distinct subjects when those decisions differ.
 
@@ -79,7 +79,9 @@ At installation, do not populate older commits lacking immediate conversational 
 
 Only inventory remote-tracking refs. Exclude separate local branch records, tags, and symbolic refs such as `refs/remotes/origin/HEAD`. Record each remote tip's exact subject, UTC committer date, status, plan, and branch name, with `ref` last.
 
-Mark local unpushed changes as `<branch> [unpushed changes]` in `branch_name`. This suffix is advisory; validation compares the base name so local commits and pushes do not falsely invalidate inventory. Require exactly one record per ref, without missing, extra, or duplicate refs; inventory order is immaterial. Include branch names in mismatch diagnostics.
+Persist the plain branch name in `branch_name`, with no unpushed-state marker or replacement field/configuration. Accept the legacy ` [unpushed changes]` suffix while reading; explicit inventory updates normalize names without discarding decisions. Require unique, syntactically valid remote-tracking refs and names matching their ref suffix, valid UTC timestamps, nonempty subjects, supported statuses, and safe repository-relative plan paths. Inventory order is immaterial. An empty inventory is valid when no remote-tracking refs exist.
+
+Validate these snapshot fields independently of live refs, including records for deleted branches. Live additions, removals, or changed tip subjects/dates produce clear advisory diagnostics in the checker and pre-push output, never schema failures. They do not waive durable commit coverage, timestamp, decision, duplicate, or document/path validation.
 
 Branch `status` is one of:
 
@@ -90,7 +92,7 @@ Branch `status` is one of:
 
 `planning_doc` is the repository-relative plan Markdown path, or `"(none)"`.
 
-When pushing to main, other branches with unpushed changes produce advisory notices. Removal candidates in the committed inventory produce advisory deletion commands; the scripts do not delete branches.
+When pushing to main, compute unpushed-branch notices from current local branches, the push remote's tracking refs, and ancestry. Persisted markers never drive warnings. Removal candidates in the committed snapshot produce advisory deletion commands only when their refs still exist and are still merged into main; the scripts do not delete branches or treat old metadata as current proof.
 
 The warning threshold is a nonnegative integer, default 10. Warn only when actual count exceeds it, not when equal. Include actual count and threshold; a stale snapshot must not suppress this warning.
 
@@ -129,10 +131,12 @@ Use the existing hook manager or `core.hooksPath`, preserving checks:
 - `post-commit`: `[ ! -f scripts/project-history/record-history.mjs ] || node scripts/project-history/record-history.mjs --amend`
   Amend the commit to record its entry and YAML inventory. Skip recursive invocation, active rebases, merges, cherry-picks, reverts, bisects, and multi-parent merge commits.
 - `pre-push`: `[ ! -f scripts/project-history/pre-push-project-history.mjs ] || node scripts/project-history/pre-push-project-history.mjs "$@"`
-  Validate history and advise on candidate cleanup without invoking another hook recursively.
+  Strictly read-only validation of committed history and live cleanup advice. Fail invalid durable history with the explicit recorder command. Never repair, stage, synchronize, or amend during pre-push.
 
 Run a configured hook manager's install command. Without one, install executable `.git/hooks/post-commit` and `.git/hooks/pre-push` (or use `core.hooksPath`), forwarding arguments and stdin. Never install a pre-commit history validator.
 
 For Node.js targets with root `package.json`, add `"history:record": "node scripts/project-history/record-history.mjs"` to `scripts`, preserving unrelated commands. This enables `npm run history:record` without a new runtime dependency.
 
 Until installation and target-specific validation complete, do not activate startup commands or hooks. Source assets alone do not protect a target.
+
+Mutation boundaries: one-time authorized installation writes assets, guidance, history, and hook configuration. Explicit recording writes/stages and may commit; `--no-commit` still stages. Guarded post-commit amendment is unchanged. Checker and pre-push execution are read-only even on failure. Branch cleanup and snapshot drift alone are advisory, but pushes with missing or malformed durable history do not always succeed.

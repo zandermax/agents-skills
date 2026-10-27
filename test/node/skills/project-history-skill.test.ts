@@ -75,7 +75,7 @@ test("project-history includes required assets and contract", async () => {
 test("project-history installs a complete standalone YAML runtime", async () => {
 	const scripts = new URL("scripts/", skillPath);
 	const fixture = new URL(
-		`../../../.project-history-smoke-${randomUUID()}/`,
+		`../../../.waza-cache/project-history-smoke-${randomUUID()}/`,
 		import.meta.url,
 	);
 	const skill = await readSkill();
@@ -86,7 +86,7 @@ test("project-history installs a complete standalone YAML runtime", async () => 
 		await readFile(new URL("yaml.LICENSE", scripts), "utf8"),
 		/Copyright Eemeli Aro[\s\S]*Permission to use, copy/,
 	);
-	await mkdir(fixture);
+	await mkdir(fixture, { recursive: true });
 	try {
 		for (const file of files) {
 			const source = new URL(file, scripts);

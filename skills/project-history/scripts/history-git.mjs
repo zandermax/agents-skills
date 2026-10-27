@@ -41,6 +41,7 @@ import { spawnSync } from "node:child_process";
  * @property {number} threshold
  * @property {string} mainBranch
  * @property {BranchRecord[]} branchRecords
+ * @property {string[]} advisories
  */
 
 /**
@@ -153,60 +154,14 @@ export function readActualBranches(root) {
 	/** @type {Map<string, GitBranchTip>} */
 	const branches = new Map();
 
-	if (rawRemote.length > 0) {
-		for (const { ref, seconds, subject } of rawRemote) {
-			const baseName = ref.replace(/^refs\/remotes\/[^/]+\//, "");
-			const localRef = `refs/heads/${baseName}`;
-			let hasUnpushed = false;
-			try {
-				const unpushedList = runGit(["rev-list", `${ref}..${localRef}`], {
-					cwd: root,
-				}).trim();
-				if (unpushedList.length > 0) {
-					hasUnpushed = true;
-				}
-			} catch {
-				hasUnpushed = false;
-			}
-			const branchName = hasUnpushed
-				? `${baseName} [unpushed changes]`
-				: baseName;
-			branches.set(ref, {
-				ref,
-				branchName,
-				committedAt: isoFromUnixSeconds(seconds, `Branch ${ref}`),
-				subject,
-			});
-		}
-	} else {
-		const headOutput = runGit(
-			["for-each-ref", `--format=${refFormat}`, "refs/heads"],
-			{
-				cwd: root,
-			},
-		);
-		for (const line of headOutput.split("\n")) {
-			if (!line) continue;
-			const fields = line.split("\0");
-			if (fields.length !== 4) {
-				throw new Error(`Git returned malformed branch metadata: ${line}`);
-			}
-			const [ref, symbolicTarget, seconds, subject] = fields;
-			if (symbolicTarget) continue;
-			if (!ref.startsWith("refs/heads/")) continue;
-			if (!seconds) throw new Error(`Branch ${ref} does not point to a commit`);
-			const baseName = ref.replace(/^refs\/heads\//, "");
-			branches.set(ref, {
-				ref,
-				branchName: baseName,
-				committedAt: isoFromUnixSeconds(seconds, `Branch ${ref}`),
-				subject,
-			});
-		}
+	for (const { ref, seconds, subject } of rawRemote) {
+		branches.set(ref, {
+			ref,
+			branchName: ref.replace(/^refs\/remotes\/[^/]+\//, ""),
+			committedAt: isoFromUnixSeconds(seconds, `Branch ${ref}`),
+			subject,
+		});
 	}
-
-	if (branches.size === 0)
-		throw new Error("No local or remote-tracking branches were found");
 	return branches;
 }
 

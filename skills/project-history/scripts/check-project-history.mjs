@@ -39,7 +39,7 @@ function runChecker() {
 		const status = runGit(["status", "--short", "--branch"], { cwd: root });
 		process.stdout.write(status);
 		if (status && !status.endsWith("\n")) process.stdout.write("\n");
-		validateHistory(root, {
+		const { advisories } = validateHistory(root, {
 			onStartupWarning: startup
 				? (count, threshold) => {
 						process.stderr.write(
@@ -48,6 +48,11 @@ function runChecker() {
 					}
 				: null,
 		});
+		for (const advisory of advisories) {
+			process.stderr.write(
+				`Advisory: ${advisory}; refresh on the next explicit history recording.\n`,
+			);
+		}
 		process.stdout.write("Project history validation passed.\n");
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);

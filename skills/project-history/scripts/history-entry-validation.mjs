@@ -4,6 +4,7 @@
 /** @typedef {import("./history-git.mjs").CommitRecord} CommitRecord */
 /** @typedef {import("./history-git.mjs").GitBranchTip} GitBranchTip */
 import { parseTimestamp } from "./history-document-parse.mjs";
+import { runGit } from "./history-git.mjs";
 
 /**
  * @param {CommitRecord[]} records
@@ -14,6 +15,12 @@ export function validateRecordDatesAndOrder(records, filename) {
 	let previous = Infinity;
 	for (let index = 0; index < records.length; index += 1) {
 		const record = records[index];
+		if (typeof record.subject !== "string" || !record.subject.trim()) {
+			throw new Error(`${filename} entry subject must be a nonempty string`);
+		}
+		if (/[\r\n]/.test(record.subject)) {
+			throw new Error(`${filename} entry subject must be a single-line string`);
+		}
 		const timestamp = parseTimestamp(
 			record.committedAt,
 			`${filename} entry ${record.subject} committedAt`,
@@ -25,10 +32,7 @@ export function validateRecordDatesAndOrder(records, filename) {
 			decisionsList = record.decisions;
 		} else if (typeof record.decision === "string") {
 			decisionsList = [record.decision];
-		} else if (
-			record.decisions !== undefined ||
-			record.decision !== undefined
-		) {
+		} else {
 			throw new Error(
 				`${filename} entry ${record.subject} decisions must be an array of strings`,
 			);
@@ -75,7 +79,7 @@ function stripUnpushedMarker(name) {
  * @param {BranchRecord[]} records
  * @param {Map<string, GitBranchTip>} actualBranches
  * @param {string} filename
- * @returns {void}
+ * @returns {string[]} Snapshot drift advisories, not validation failures.
  */
 export function validateBranchRecords(records, actualBranches, filename) {
 	/** @type {Map<string, BranchRecord>} */
@@ -91,15 +95,27 @@ export function validateBranchRecords(records, actualBranches, filename) {
 				`${filename} branch ${record.ref} branchName must be a nonempty string`,
 			);
 		}
+		if (!/^refs\/remotes\/[^/]+\/.+/.test(record.ref)) {
+			throw new Error(
+				`${filename} branch ref must be a remote-tracking ref: ${record.ref}`,
+			);
+		}
+		runGit(["check-ref-format", record.ref]);
+		const baseName = record.ref.replace(/^refs\/remotes\/[^/]+\//, "");
+		if (stripUnpushedMarker(record.branchName) !== baseName) {
+			throw new Error(
+				`${filename} branch ${record.ref} branchName must match its ref`,
+			);
+		}
 		if (recorded.has(record.ref))
 			throw new Error(`${filename} has duplicate branch ref ${record.ref}`);
 		parseTimestamp(
 			record.committedAt,
 			`${filename} branch ${record.ref} committedAt`,
 		);
-		if (typeof record.subject !== "string") {
+		if (typeof record.subject !== "string" || !record.subject.trim()) {
 			throw new Error(
-				`${filename} branch ${record.ref} subject must be a string`,
+				`${filename} branch ${record.ref} subject must be a nonempty string`,
 			);
 		}
 		if (!VALID_BRANCH_STATUSES.has(record.status)) {
@@ -112,35 +128,45 @@ export function validateBranchRecords(records, actualBranches, filename) {
 				`${filename} branch ${record.ref} planningDoc must be a nonempty string`,
 			);
 		}
-		recorded.set(record.ref, record);
-	}
-	for (const [ref, actual] of actualBranches) {
-		const snapshot = recorded.get(ref);
-		if (!snapshot)
-			throw new Error(`${filename} branch inventory is missing ${ref}`);
 		if (
-			stripUnpushedMarker(snapshot.branchName) !==
-			stripUnpushedMarker(actual.branchName)
+			record.planningDoc !== "(none)" &&
+			(record.planningDoc.includes("\\") ||
+				!record.planningDoc.endsWith(".md") ||
+				record.planningDoc
+					.split("/")
+					.some((part) => !part || part === "." || part === "..") ||
+				[...record.planningDoc].some(
+					(character) =>
+						character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+				))
 		) {
 			throw new Error(
-				`${filename} ${ref} branchName does not match actual state ('${snapshot.branchName}' vs '${actual.branchName}')`,
+				`${filename} branch ${record.ref} planningDoc must be a safe repository-relative Markdown path`,
 			);
 		}
-		if (snapshot.subject !== actual.subject) {
-			throw new Error(
-				`${filename} ${ref} subject does not match its current tip`,
-			);
+		recorded.set(record.ref, record);
+	}
+	const advisories = [];
+	for (const [ref, actual] of actualBranches) {
+		const snapshot = recorded.get(ref);
+		if (!snapshot) {
+			advisories.push(`branch snapshot drift: added ${ref}`);
+			continue;
 		}
-		if (snapshot.committedAt !== actual.committedAt) {
-			throw new Error(
-				`${filename} ${ref} committedAt does not match its current tip`,
+		if (
+			snapshot.subject !== actual.subject ||
+			snapshot.committedAt !== actual.committedAt
+		) {
+			advisories.push(
+				`branch snapshot drift: changed ${ref} tip subject or committed_at`,
 			);
 		}
 	}
 	for (const ref of recorded.keys()) {
 		if (!actualBranches.has(ref))
-			throw new Error(`${filename} branch inventory contains extra ref ${ref}`);
+			advisories.push(`branch snapshot drift: removed ${ref}`);
 	}
+	return advisories;
 }
 
 /**

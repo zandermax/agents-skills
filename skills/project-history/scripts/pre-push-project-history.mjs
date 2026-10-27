@@ -6,8 +6,8 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
 	findRepositoryRoot,
+	readActualBranches,
 	runGit,
-	syncHistory,
 	validateHistory,
 } from "./check-project-history.mjs";
 
@@ -113,39 +113,14 @@ function runPrePush() {
 			return;
 		const root = findRepositoryRoot();
 
-		// Check if HEAD has unrecorded commits or stale history; if so, sync and amend
-		try {
-			validateHistory(root, { treeRef: "HEAD" });
-		} catch {
-			const { modified, filesToStage } = syncHistory(root);
-			if (modified) {
-				try {
-					runGit(["add", ...filesToStage], { cwd: root });
-					const headSec = runGit(["log", "-1", "--format=%ct", "HEAD"], {
-						cwd: root,
-					}).trim();
-					const headDate = new Date(Number(headSec) * 1000)
-						.toISOString()
-						.replace(/\.000Z$/, "Z");
-					runGit(["commit", "--amend", "--no-edit"], {
-						cwd: root,
-						env: {
-							...process.env,
-							PROJECT_HISTORY_AMENDING: "1",
-							GIT_COMMITTER_DATE: headDate,
-						},
-					});
-				} catch {}
-			}
+		const { mainBranch, branchRecords, advisories } = validateHistory(root, {
+			treeRef: "HEAD",
+		});
+		for (const advisory of advisories) {
+			process.stderr.write(
+				`Advisory: ${advisory}; refresh on the next explicit history recording.\n`,
+			);
 		}
-
-		let validation;
-		try {
-			validation = validateHistory(root, { treeRef: "HEAD" });
-		} catch {
-			validation = validateHistory(root);
-		}
-		const { mainBranch, branchRecords } = validation;
 
 		const isPushingToMain = updates.some(
 			(update) =>
@@ -157,94 +132,44 @@ function runPrePush() {
 
 		if (isPushingToMain) {
 			/** @type {string[]} */
-			const otherBranchesWithUnpushed = [""];
-			otherBranchesWithUnpushed.pop();
-
-			for (const record of branchRecords) {
-				const baseName = record.ref.replace(
-					/^refs\/(?:remotes\/[^/]+\/|heads\/)/,
-					"",
+			const otherBranchesWithUnpushed = [];
+			const actualBranches = readActualBranches(root);
+			const localOutput = runGit(
+				["for-each-ref", "--format=%(refname)", "refs/heads"],
+				{ cwd: root },
+			);
+			const localRefs = localOutput.trim().split("\n");
+			const mainRef = localRefs.includes(`refs/heads/${mainBranch}`)
+				? `refs/heads/${mainBranch}`
+				: `refs/remotes/${remoteName}/${mainBranch}`;
+			if (!localRefs.includes(mainRef) && !actualBranches.has(mainRef)) {
+				process.stderr.write(
+					`Advisory: main ref ${mainRef} is unavailable; skipping ancestry-based branch advice.\n`,
 				);
+				return;
+			}
+			for (const localRef of localRefs) {
+				if (!localRef.startsWith("refs/heads/")) continue;
+				const name = localRef.slice("refs/heads/".length);
+				if (name === mainBranch) continue;
+				const beingPushed = updates.some(
+					(update) => !update.deletion && update.localRef === localRef,
+				);
+				if (beingPushed) continue;
+				const unmerged = runGit(["rev-list", localRef, `^${mainRef}`], {
+					cwd: root,
+				}).trim();
+				if (!unmerged) continue;
+				const remoteRef = `refs/remotes/${remoteName}/${name}`;
 				if (
-					baseName !== mainBranch &&
-					record.status !== "removal candidate" &&
-					record.branchName.endsWith(" [unpushed changes]")
+					!actualBranches.has(remoteRef) ||
+					runGit(["rev-list", `${remoteRef}..${localRef}`], {
+						cwd: root,
+					}).trim()
 				) {
-					const beingPushed = updates.some(
-						(u) =>
-							!u.deletion &&
-							(u.localRef === `refs/heads/${baseName}` ||
-								u.remoteRef === `refs/heads/${baseName}` ||
-								u.remoteRef === baseName),
-					);
-					if (!beingPushed && !otherBranchesWithUnpushed.includes(baseName)) {
-						otherBranchesWithUnpushed.push(baseName);
-					}
+					otherBranchesWithUnpushed.push(name);
 				}
 			}
-
-			try {
-				const localOutput = runGit(
-					["for-each-ref", "--format=%(refname)", "refs/heads"],
-					{
-						cwd: root,
-					},
-				);
-				for (const localRef of localOutput.split("\n")) {
-					if (!localRef?.startsWith("refs/heads/")) continue;
-					const name = localRef.slice("refs/heads/".length);
-					if (name === mainBranch) continue;
-					const record = branchRecords.find(
-						(r) =>
-							r.ref === localRef ||
-							r.ref === `refs/remotes/origin/${name}` ||
-							r.ref.endsWith(`/${name}`),
-					);
-					if (record && record.status === "removal candidate") continue;
-
-					const isMerged =
-						spawnSync(
-							"git",
-							[
-								"merge-base",
-								"--is-ancestor",
-								localRef,
-								`refs/heads/${mainBranch}`,
-							],
-							{ cwd: root },
-						).status === 0;
-					if (isMerged) continue;
-
-					const beingPushed = updates.some(
-						(u) =>
-							!u.deletion &&
-							(u.localRef === localRef ||
-								u.remoteRef === localRef ||
-								u.remoteRef === name),
-					);
-					if (beingPushed) continue;
-					let hasUnpushed = false;
-					try {
-						const remoteMatch = runGit(
-							["for-each-ref", "--format=%(refname)", `refs/remotes/*/${name}`],
-							{ cwd: root },
-						).trim();
-						if (!remoteMatch) {
-							hasUnpushed = true;
-						} else {
-							const diff = runGit(["rev-list", `${remoteMatch}..${localRef}`], {
-								cwd: root,
-							}).trim();
-							if (diff.length > 0) hasUnpushed = true;
-						}
-					} catch {
-						hasUnpushed = true;
-					}
-					if (hasUnpushed && !otherBranchesWithUnpushed.includes(name)) {
-						otherBranchesWithUnpushed.push(name);
-					}
-				}
-			} catch {}
 
 			if (otherBranchesWithUnpushed.length > 0) {
 				process.stderr.write(
@@ -259,11 +184,17 @@ function runPrePush() {
 			}
 
 			const removalCandidates = branchRecords.filter(
-				(record) => record.status === "removal candidate",
+				(record) =>
+					record.status === "removal candidate" &&
+					record.ref.replace(/^refs\/remotes\/[^/]+\//, "") !== mainBranch &&
+					actualBranches.has(record.ref) &&
+					!runGit(["rev-list", record.ref, `^${mainRef}`], {
+						cwd: root,
+					}).trim(),
 			);
 			if (removalCandidates.length > 0) {
 				process.stderr.write(
-					`Note: the following branch(es) are removal candidates and can be deleted:\n`,
+					`Note: snapshot removal candidates still present and merged into main:\n`,
 				);
 				for (const candidate of removalCandidates) {
 					process.stderr.write(`  - ${candidate.ref}\n`);
@@ -272,16 +203,16 @@ function runPrePush() {
 					"\nRun the following command(s) to delete them:\n\n",
 				);
 				for (const candidate of removalCandidates) {
-					if (candidate.ref.startsWith("refs/heads/")) {
-						const name = candidate.ref.slice("refs/heads/".length);
-						process.stderr.write(`git branch -d ${name}\n`);
-					} else if (candidate.ref.startsWith("refs/remotes/")) {
+					if (candidate.ref.startsWith("refs/remotes/")) {
 						const withoutPrefix = candidate.ref.slice("refs/remotes/".length);
 						const slash = withoutPrefix.indexOf("/");
 						if (slash > 0) {
 							const remote = withoutPrefix.slice(0, slash);
 							const name = withoutPrefix.slice(slash + 1);
-							process.stderr.write(`git push ${remote} --delete ${name}\n`);
+							const quote = (value) => `'${value.replaceAll("'", "'\\''")}'`;
+							process.stderr.write(
+								`git push ${quote(remote)} --delete ${quote(name)}\n`,
+							);
 						}
 					}
 				}
