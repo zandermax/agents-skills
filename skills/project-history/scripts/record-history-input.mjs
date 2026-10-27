@@ -1,19 +1,14 @@
 // @ts-check
 
-import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { parseHistoryData } from "./history-document-data.mjs";
+import { readDocument } from "./history-document-io.mjs";
 /** @typedef {import("./check-project-history.mjs").BranchRecord} BranchRecord */
 /** @typedef {import("./check-project-history.mjs").CommitRecord} CommitRecord */
-import {
-	parseLogDocument,
-	parseRecords,
-	parseThreshold,
-	readMainBranch,
-	sectionBounds,
-} from "./check-project-history.mjs";
+import { parseLogDocument } from "./history-domain-log.mjs";
 import { readReachableGitCommits } from "./record-history-helpers.mjs";
 
-const historyPath = "PROJECT_HISTORY.md";
+const historyPath = "PROJECT_HISTORY.yaml";
 
 /**
  * @param {string} root
@@ -33,42 +28,31 @@ export function readRecordState(root) {
 	const sourcePath = resolve(root, historyPath);
 	let source;
 	try {
-		source = readFileSync(sourcePath, "utf8");
-	} catch {
+		source = readDocument(root, null, historyPath);
+	} catch (error) {
 		throw new Error(
-			`${historyPath} not found in ${root}. Please initialize ${historyPath} before recording history.`,
+			`Cannot read ${historyPath} in ${root}: ${error instanceof Error ? error.message : String(error)}. Initialize it before recording history.`,
 		);
 	}
 
-	const { status } = sectionBounds(source, historyPath);
-	const mainBranch = readMainBranch(status, historyPath);
-	const threshold = parseThreshold(status, historyPath);
+	const {
+		mainBranch,
+		threshold,
+		branchRecords: oldBranchRecords,
+	} = parseHistoryData(source, historyPath);
 	const hasUnrecordedNote =
 		/commits prior to [^\n]* do not have recorded/i.test(source);
-
-	/** @type {BranchRecord[]} */
-	const oldBranchRecords = parseRecords(status, historyPath, [
-		"branchName",
-		"committedAt",
-		"subject",
-		"status",
-		"planningDoc",
-		"ref",
-	]);
 
 	const logDoc = parseLogDocument(source, historyPath);
 	/** @type {CommitRecord[]} */
 	const existingEntries = [];
 	if (logDoc.domainPaths) {
 		for (const domainPath of logDoc.domainPaths) {
-			const fullDomainPath = resolve(root, domainPath);
-			if (existsSync(fullDomainPath)) {
-				const domainText = readFileSync(fullDomainPath, "utf8");
-				const domainDoc = parseLogDocument(domainText, domainPath);
-				if (domainDoc.entries) {
-					existingEntries.push(...domainDoc.entries);
-				}
-			}
+			const domainText = readDocument(root, null, domainPath);
+			const domainDoc = parseLogDocument(domainText, domainPath);
+			if (!domainDoc.entries)
+				throw new Error(`${domainPath} must contain inline log entries`);
+			existingEntries.push(...domainDoc.entries);
 		}
 	} else if (logDoc.entries) {
 		existingEntries.push(...logDoc.entries);

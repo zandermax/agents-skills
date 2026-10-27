@@ -7,6 +7,11 @@ import {
 	readActualBranches,
 	runGit,
 } from "./check-project-history.mjs";
+import {
+	formatDomainDocument,
+	formatHistoryDocument,
+} from "./history-document-format.mjs";
+import { readDocument } from "./history-document-io.mjs";
 
 /**
  * @typedef {import('./check-project-history.mjs').BranchRecord} BranchRecord
@@ -165,9 +170,9 @@ export function writeHistoryState(
 	historyPath,
 ) {
 	const filesToStage = [historyPath];
-	let logSection = "";
 
 	if (domainPaths && domainPaths.length > 0) {
+		parseLogDocument(`domains: ${JSON.stringify(domainPaths)}`, historyPath);
 		const targetDomainRel = requestedDomain
 			? (domainPaths.find((p) =>
 					p.toLowerCase().includes(requestedDomain.toLowerCase()),
@@ -175,71 +180,32 @@ export function writeHistoryState(
 			: domainPaths[0];
 		const targetDomainPath = resolve(root, targetDomainRel);
 		const targetDomainText = existsSync(targetDomainPath)
-			? readFileSync(targetDomainPath, "utf8")
-			: `# ${targetDomainRel}\n\n## Log\n\n\`\`\`json\n[]\n\`\`\`\n`;
+			? readDocument(root, null, targetDomainRel)
+			: "log: []\n";
 		const targetDomainDoc = parseLogDocument(targetDomainText, targetDomainRel);
-		const targetExisting = targetDomainDoc.entries ?? [];
+		if (!targetDomainDoc.entries)
+			throw new Error(`${targetDomainRel} must contain inline log entries`);
+		const targetExisting = targetDomainDoc.entries;
 		const mergedEntries = [...entriesToAdd, ...targetExisting].sort((a, b) =>
 			b.committedAt.localeCompare(a.committedAt),
 		);
-		const formattedDomainEntries = mergedEntries.map((entry) => ({
-			committedAt: entry.committedAt,
-			subject: entry.subject,
-			decisions: Array.isArray(entry.decisions)
-				? entry.decisions
-				: typeof entry.decision === "string"
-					? [entry.decision]
-					: [],
-		}));
-
-		const domainContent = [
-			`# ${targetDomainRel}`,
-			"",
-			"## Log",
-			"",
-			"```json",
-			JSON.stringify(formattedDomainEntries, null, 2),
-			"```",
-			"",
-		].join("\n");
-		writeFileSync(targetDomainPath, domainContent);
+		const domainContent = formatDomainDocument(mergedEntries);
+		if (domainContent !== targetDomainText)
+			writeFileSync(targetDomainPath, domainContent);
 		filesToStage.push(targetDomainRel);
-
-		const domainLines = domainPaths.map((p) => `- [${p}](${p})`).join("\n");
-		logSection = ["Domains:", domainLines, ""].join("\n");
-	} else {
-		logSection = [
-			...(hasUnrecordedNote
-				? [
-						"Note: Commits prior to this point do not have recorded historical context.",
-						"",
-					]
-				: []),
-			"```json",
-			JSON.stringify(allFormattedEntries, null, 2),
-			"```",
-			"",
-		].join("\n");
 	}
 
-	const content = [
-		"# Project history",
-		"",
-		"## Git status",
-		"",
-		`Updated at: ${updatedAt}`,
-		`Main branch: ${mainBranch}`,
-		`Branch warning threshold: ${threshold}`,
-		"",
-		"```json",
-		JSON.stringify(updatedBranchRecords, null, 2),
-		"```",
-		"",
-		"## Log",
-		"",
-		logSection,
-	].join("\n");
-
-	writeFileSync(sourcePath, content);
+	const content = formatHistoryDocument({
+		updatedAt,
+		mainBranch,
+		threshold,
+		branches: updatedBranchRecords,
+		entries: allFormattedEntries,
+		domainPaths,
+		hasUnrecordedNote,
+	});
+	if (!existsSync(sourcePath) || readFileSync(sourcePath, "utf8") !== content) {
+		writeFileSync(sourcePath, content);
+	}
 	return filesToStage;
 }

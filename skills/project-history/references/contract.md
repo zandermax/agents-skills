@@ -4,138 +4,135 @@ This is the behavioral contract for the script assets.
 
 ## Assets and commands
 
-| Skill source asset                     | Installed destination                                  |
-| -------------------------------------- | ------------------------------------------------------ |
-| `scripts/check-project-history.mjs`    | `scripts/project-history/check-project-history.mjs`    |
-| `scripts/pre-push-project-history.mjs` | `scripts/project-history/pre-push-project-history.mjs` |
-| `scripts/record-history.mjs`           | `scripts/project-history/record-history.mjs`           |
+Copy the complete asset set below into `scripts/project-history/` in the target, preserving each basename. The entry points import modular helpers transitively; copying only the entry points is incomplete.
 
-The scripts must run with Node.js and Git alone, without project dependencies. Find the repository root using Git, not the caller's working directory. Do not change files, refs, the index, Git configuration, or remote state (except `record-history.mjs` which stages and commits history updates).
+| Skill source asset                     | Role                                          |
+| -------------------------------------- | --------------------------------------------- |
+| `scripts/check-project-history.mjs`    | Checker CLI                                   |
+| `scripts/pre-push-project-history.mjs` | Pre-push CLI                                  |
+| `scripts/record-history.mjs`           | Recorder CLI                                  |
+| `scripts/history-document-data.mjs`    | Root YAML schema                              |
+| `scripts/history-document-parse.mjs`   | YAML fields, dates, and record mapping        |
+| `scripts/history-document-format.mjs`  | YAML serialization                            |
+| `scripts/history-document-io.mjs`      | Contained filesystem and committed-tree reads |
+| `scripts/history-domain-log.mjs`       | Log records and domain paths                  |
+| `scripts/history-entry-validation.mjs` | Decisions, dates, branches, and multiplicity  |
+| `scripts/history-git.mjs`              | Git metadata                                  |
+| `scripts/history-sync.mjs`             | History synchronization                       |
+| `scripts/history-validation.mjs`       | Aggregate validation                          |
+| `scripts/record-history-helpers.mjs`   | Arguments, branch metadata, and writes        |
+| `scripts/record-history-input.mjs`     | Existing and unrecorded history               |
+| `scripts/record-history-operation.mjs` | Recording and guarded amendment               |
+| `scripts/yaml.mjs`                     | Bundled standalone YAML parser and serializer |
+| `scripts/yaml.LICENSE`                 | ISC copyright and permission notice           |
 
-- `node scripts/project-history/check-project-history.mjs`: validate working-tree history documents against actual local Git metadata. Print the actual `git status --short --branch` output and validation results. Exit 0 on success, 1 on invalid or missing history.
-- `node scripts/project-history/check-project-history.mjs --startup`: the same check, also emitting a warning when the actual branch count is strictly greater than the configured threshold. A warning alone does not fail validation. Count actual refs even when the recorded snapshot is stale; emit the warning before the validation summary.
-- `node scripts/project-history/pre-push-project-history.mjs <remote-name> <remote-url>`: a Git pre-push entry point accepting standard ref-update lines on stdin. For a push containing at least one non-deletion update, automatically synchronizes any unrecorded commits into `PROJECT_HISTORY.md` and validates history before pushing. If any branch in the committed inventory is marked `removal candidate`, or if other branches have unpushed changes, it outputs helpful advisory notices and commands to delete candidate branches without blocking the push. Exit 0 for a successful push, deletion-only push, or no updates; exit 1 only on unrecoverable format or repository corruption. Never contact the remote or perform a push.
-- `node scripts/project-history/record-history.mjs [--subject <subject>] [--decision <decision>] [--domain <domain>] [--no-commit]`: automatically discover unrecorded reachable commits, format them into `PROJECT_HISTORY.md` along with the prospective snapshot commit and updated branch inventory, and create the commit with matching UTC committer timestamp. Exit 0 on success, 1 on failure.
+Verify every asset and this contract before installing anything. Run with Node.js built-ins, Git, and the bundled parser only, without target-project package dependencies. Preserve the parser attribution and its notice in all copies. Find the repository root with Git, not the caller's working directory.
 
-The committed HEAD document is the canonical cross-branch inventory, including branches other than HEAD being pushed. This does not require every older branch tip to contain today's inventory. Missing `HEAD` or documents, malformed input/documents, and Git/read failures must fail closed with actionable stderr, not a successful empty result. Diagnostics name the offending field, ref, document, or commit subject. Use exit 1 for validation errors.
+- `node scripts/project-history/check-project-history.mjs`: validate working-tree history against actual local Git metadata. Print `git status --short --branch` and validation results. Exit 0 on success, 1 on invalid or missing history. The checker never changes files, refs, the index, configuration, or remote state.
+- `node scripts/project-history/check-project-history.mjs --startup`: also warn when actual branch count is strictly greater than the configured threshold. A warning alone does not fail validation. Count actual refs even when the recorded snapshot is stale; emit the warning before the validation summary.
+- `node scripts/project-history/pre-push-project-history.mjs <remote-name> <remote-url>`: accept standard ref-update lines on stdin. For any non-deletion update, synchronize unrecorded commits into `PROJECT_HISTORY.yaml`, amend the history snapshot if needed, and validate. Deletion-only pushes and no updates exit 0. Removal candidates and other unpushed branches produce advisory cleanup commands, not blocking gates. Unrecoverable format, validation, or repository failures exit 1. Never contact a remote or perform a push.
+- `node scripts/project-history/record-history.mjs [--subject <subject>] [--decision <decision>] [--domain <domain>] [--no-commit] [--amend]`: discover unrecorded reachable commits, serialize them and the prospective snapshot in YAML, stage history files, and create the commit with matching UTC committer timestamp. Repeat `--decision` for multiple decisions. `--domain` selects an indexed domain by name, defaulting to the first. `--no-commit` still writes and stages history, but does not commit. `--amend` records the existing HEAD without a new prospective entry, with the hook safeguards below. Exit 0 on success, 1 on failure.
+
+The committed HEAD document is the canonical cross-branch inventory, including branches other than HEAD being pushed; older branch tips need not contain today's inventory. Missing HEAD or documents, malformed input/documents, and Git/read failures must fail closed with actionable stderr, never a successful empty result. Diagnostics identify offending fields, refs, documents, or commit subjects.
 
 ## Changelog document
 
-The root document is `PROJECT_HISTORY.md`. Its Git status section must precede its log section:
+The root document is `PROJECT_HISTORY.yaml`, a YAML mapping whose `status` precedes exactly one of `log` or `domains`. Serialized field names are snake_case.
 
-````markdown
+```yaml
 # Project history
 
-## Git status
+status:
+  updated_at: "2026-10-09T12:00:00Z"
+  main_branch: main
+  branch_warning_threshold: 10
+  branches:
+    - branch_name: main
+      committed_at: "2026-10-09T12:00:00Z"
+      subject: Record history contract
+      status: no related plan
+      planning_doc: (none)
+      ref: refs/remotes/origin/main
 
-Updated at: 2026-10-09T12:00:00Z
-Main branch: main
-Branch warning threshold: 10
-
-```json
-[
-  {
-    "branchName": "main",
-    "committedAt": "2026-10-09T12:00:00Z",
-    "subject": "Record history contract",
-    "status": "no related plan",
-    "planningDoc": "(none)",
-    "ref": "refs/remotes/origin/main"
-  }
-]
+# Note: Commits prior to this point do not have recorded historical context.
+log:
+  - committed_at: "2026-10-09T12:00:00Z"
+    subject: Record history contract
+    decisions:
+      - the project-history skill should use UTC committer timestamps so snapshots are reproducible.
 ```
 
-## Log
+Each branch includes `branch_name`, `committed_at`, `subject`, `status`, `planning_doc`, and `ref` last. Each log entry includes `committed_at`, the exact Git `subject`, and `decisions`, an array of zero or more strings (`decisions: []` when none). Decisions come from agent conversations, not Git messages, and must not contain the Git message. Record worthwhile decisions benefiting future work, explicitly naming their domain (skill, feature, architecture, tooling). Phrase each as a sentence completing "in this project for the work being done for this commit, it was decided that..." without that introductory text; for example, "the project-history skill should block adding more than a specific number of branches, using a pre-push git hook", not a conventional commit message.
 
-Note: Commits prior to this point do not have recorded historical context.
-
-```json
-[
-  {
-    "committedAt": "2026-10-09T12:00:00Z",
-    "subject": "Record history contract",
-    "decisions": [
-      "the project-history skill contract should use UTC committer timestamps so the history snapshot is reproducible."
-    ]
-  }
-]
-```
-````
-
-Format the JSON blocks to be readable, with one key-value pair per line (formatted JSON arrays or objects; both `json` and `jsonl` code blocks are supported). In each branch record, include `branchName`, and show `ref` last (`branchName`, `committedAt`, `subject`, `status`, `planningDoc`, `ref`). If the local branch has unpushed changes relative to the remote branch, mark it in `branchName` as `<branch> [unpushed changes]`. In each log entry, include `committedAt`, `subject`, and `decisions` (an array of zero or more strings). Decisions must come from agent conversations, not git messages, and must not contain the git message (which is redundant and superfluous). Record worthwhile decisions that benefit future work, explicitly mentioning the domain (e.g. skill, feature, architecture, tooling). Record decisions as brief bullet-point-style statements describing what was decided (phrased as completions of "in this project for the work being done for this commit, it was decided that...", without including that intro text; e.g. "the project-history skill should block adding more than a specific number of branches, using a pre-push git hook"), not conventional commit style. There may be multiple decisions, one decision, or none (`"decisions": []`). Preserve the exact Git subject.
-
-When project history is installed into an existing repository, commits prior to that point without immediate context are not populated into the log; instead, a note under `## Log` documents that commits prior to that point do not have recorded historical context.
+At installation, do not populate older commits lacking immediate conversational context. Keep the comment before `log` or `domains` to document that historical boundary. Preserve existing recorded decisions.
 
 ### Dates and identity
 
-- Dates are valid UTC timestamps with second precision, exactly `YYYY-MM-DDTHH:mm:ssZ`. Reject impossible calendar dates and other date formats.
-- `committedAt` is the Git **committer** timestamp converted to UTC, not the author date or the time the script ran.
-- `Updated at` equals the newest log timestamp across all domains. The inline log, or each domain log, is newest first; equal timestamps are allowed. Retained history may be newer than the surviving branch tips.
-- From the earliest recorded commit forward, cover each unique commit object reachable from the branch inventory exactly once, including merge commits. Shared ancestors are counted once. For each reachable `(committedAt, subject)` pair since recorded history began, require exactly Git's count of unique commit objects: distinct commits with the same timestamp and subject still require separate log lines. Reject missing entries and surplus copies of reachable entries. Retain other recorded history when branches are deleted or rewritten; do not require deleting historical decisions just because their Git objects are no longer reachable. Dates and decision syntax remain validated on retained entries, but their original Git metadata cannot always be verified after garbage collection.
-- Do not store the current commit's object hash in its own document: that would be self-referential. Matching dates, exact subjects, and multiplicity avoids this circularity. It cannot distinguish decisions assigned to two commits with identical dates and subjects; such commits should use distinct subjects when their decisions differ.
+- Dates are valid UTC timestamps with second precision, exactly `YYYY-MM-DDTHH:mm:ssZ`. Reject impossible calendar dates and other formats.
+- `committed_at` is the Git **committer** timestamp converted to UTC, not the author date or script execution time.
+- `updated_at` equals the newest log timestamp across all domains. Inline and domain logs are newest first; equal timestamps are allowed. Retained history may be newer than surviving branch tips.
+- From the earliest recorded commit forward, cover every unique commit object reachable from the branch inventory exactly once, including merges. Shared ancestors count once. For each reachable `(committed_at, subject)` pair since recording began, require Git's count of unique objects: distinct commits with the same timestamp and subject need separate records. Reject missing entries and surplus copies of reachable entries.
+- Retain history after branch deletion or rewriting. Validate retained dates and decision syntax even when Git metadata is no longer verifiable after garbage collection.
+- Never store the current commit's hash in its own document: that is self-referential. Dates, exact subjects, and multiplicity avoid the cycle, but cannot distinguish decisions on commits with identical dates and subjects. Use distinct subjects when those decisions differ.
 
 ### Branch snapshot
 
-Only consider the remote state: do not track separate remote and local branches. Exclude non-remote pushed local branches, tags, and symbolic refs such as `refs/remotes/origin/HEAD`. Include each remote-tracking ref with its tip's exact subject, UTC committer date, status, planningDoc, and branchName. Show `ref` last in each branch record (`branchName`, `committedAt`, `subject`, `status`, `planningDoc`, `ref`). If a local branch has unpushed changes relative to the remote branch, mark it in `branchName` as `<branch> [unpushed changes]`. The `[unpushed changes]` suffix is an advisory snapshot of local push status; validation checks the base branch name so local commits and pushes do not falsely invalidate the inventory. Require one record per ref, with no missing, extra, or duplicate refs. Inventory order is immaterial. Include branch names in mismatch diagnostics.
+Only inventory remote-tracking refs. Exclude separate local branch records, tags, and symbolic refs such as `refs/remotes/origin/HEAD`. Record each remote tip's exact subject, UTC committer date, status, plan, and branch name, with `ref` last.
 
-Branch `status` must be one of:
+Mark local unpushed changes as `<branch> [unpushed changes]` in `branch_name`. This suffix is advisory; validation compares the base name so local commits and pushes do not falsely invalidate inventory. Require exactly one record per ref, without missing, extra, or duplicate refs; inventory order is immaterial. Include branch names in mismatch diagnostics.
 
-- `"removal candidate"`: when the plan doc that relates to it is complete and archived, and the branch has been merged into the main branch
-- `"in active development"`: when there is an active plan doc that relates to it on its own branch
-- `"ready to merge"`: when it has a plan that is complete but has not been merged to the main branch
-- `"no related plan"`: when there is not a plan that relates to that branch
+Branch `status` is one of:
 
-`planningDoc` is the repository-relative path to the markdown file that relates to the branch, or `"(none)"` if none found.
+- `removal candidate`: related plan is complete and archived, and branch is merged into main.
+- `in active development`: an active plan relates to the branch on its own branch.
+- `ready to merge`: related plan is complete but branch is not merged into main.
+- `no related plan`: no plan relates to the branch.
 
-When pushing to the main branch:
+`planning_doc` is the repository-relative plan Markdown path, or `"(none)"`.
 
-- If other branches have unpushed changes, pre-push prints an advisory notice listing them.
-- If any branch in the committed inventory is marked `"removal candidate"`, pre-push prints the commands to delete the candidate branches as advice. Pushing is not blocked by removal candidates.
+When pushing to main, other branches with unpushed changes produce advisory notices. Removal candidates in the committed inventory produce advisory deletion commands; the scripts do not delete branches.
 
-The warning threshold is a nonnegative integer. Default installation value: 10. Warn only when the actual inventory count exceeds it, not when it equals it. The startup warning includes the actual count and threshold. A stale snapshot must not suppress this warning.
+The warning threshold is a nonnegative integer, default 10. Warn only when actual count exceeds it, not when equal. Include actual count and threshold; a stale snapshot must not suppress this warning.
 
-The status section is a committed branch inventory, not a promise that the working tree is clean. Persisting a clean/dirty `git status` result would invalidate itself as soon as the document is edited. Instead, the startup command prints current working-tree status separately.
-
-Changing refs, including a fetch or push updating remote-tracking branches, can make the inventory stale. Report this at startup and refresh it in the next recorded commit; never silently mutate a committed snapshot or pretend it is a live view.
+The committed branch inventory is not a clean/dirty working-tree promise: persisting `git status` would invalidate itself when edited. The startup checker prints live status separately. Ref changes (including fetch/push updates to tracking refs) can stale the inventory. Report this at startup and refresh in the next recorded commit; do not silently mutate a committed snapshot or pretend it is live.
 
 ## Domain split
 
-When the log becomes difficult to read (installation guideline: over 200 entries or 32 KiB), split entries into meaningful project domains. Keep `PROJECT_HISTORY.md` as the single status and context index. Replace its inline log with explicit links:
+Split when the log exceeds 200 entries or 32 KiB, keeping `PROJECT_HISTORY.yaml` as the single status and context index. Replace the inline `log` with a `domains` array:
 
-```markdown
-## Log
-
-Domains:
-
-- [Banking](docs/project-history/banking.md)
-- [Tooling](docs/project-history/tooling.md)
+```yaml
+domains:
+  - docs/project-history/banking.yaml
+  - docs/project-history/tooling.yaml
 ```
 
-Each domain document contains a `## Log` section with the same JSONL records and ordering rules. Read every linked domain before work. Each commit belongs to exactly one domain; cross-domain commits go in the best-fitting domain and describe the cross-domain decision. Never duplicate entries or discard old history.
+Each domain is a YAML mapping with an inline `log` array using the same record schema and ordering. Read every domain before work. Each commit belongs to one best-fitting domain; cross-domain decisions stay together. Never duplicate entries or discard old history.
 
-Resolve domain links relative to the repository root. Require unique paths under `docs/project-history/` ending in `.md`; reject traversal, absolute paths, missing documents, duplicate links, and symlinks escaping the repository. The index must contain either one inline log or domain links, never both. Validation aggregates all domains for completeness and the latest timestamp. Pre-push reads the index and domains from committed HEAD, not from the filesystem.
+Resolve paths relative to the repository root. Require unique paths under `docs/project-history/` ending in `.yaml` (or `.yml`); reject traversal, absolute paths, control characters, missing documents, duplicate links, and symlinks escaping the repository. Domain documents cannot link to further domains. The root must contain either inline `log` or `domains`, never both. Aggregate all domains for completeness and newest timestamp. Committed validation reads index and domains from HEAD, not the filesystem.
 
-## Recording a new commit without a hash cycle
+## Recording without a hash cycle
 
-Before creating a commit, select its exact one-line subject and UTC committer timestamp. Add its decision line and update the snapshot for the branch being committed to using that subject and timestamp; retain the other current refs. Set `Updated at` to the maximum timestamp across the complete log. Create the commit with that exact subject and `GIT_COMMITTER_DATE`, then validate. The prospective snapshot will temporarily disagree with Git before that commit; do not install a pre-commit validator that makes the commit impossible.
+Before creating a commit, choose its exact one-line subject and UTC committer timestamp. Add its decision record and update the snapshot using actual remote-tracking tips, retaining other refs and their status/plan metadata. Set `updated_at` to the maximum timestamp across the entire log. Create the commit with that subject and `GIT_COMMITTER_DATE`, then validate. The prospective snapshot temporarily disagrees with Git until its commit exists; never install a pre-commit validator that makes this impossible.
 
-To automate this workflow, run `node scripts/project-history/record-history.mjs`. It discovers all unrecorded reachable commits, updates the branch inventory and timestamps, stages `PROJECT_HISTORY.md`, and creates the prospective commit with matching committer dates and subjects automatically.
-
-If history was not present in the commit that originally introduced it, bootstrap it in a new commit using this same prospective-snapshot procedure. Record commits from the current conversation without fabricating or importing older historical decisions, noting in the document that earlier commits lack recorded historical context.
+`record-history.mjs` automates discovery, inventory updates, YAML serialization, staging the root and changed domain, and committing with matching dates and subjects. Bootstrap missing history in a new prospective-snapshot commit. Record current-conversation commits without fabricating older decisions, retaining the note that earlier commits lack context.
 
 ## AGENTS.md and hook installation
 
-At installation time, update every existing project `AGENTS.md` (case-insensitive name discovery, excluding Git metadata, dependencies, and generated output). Preserve unrelated content and any existing hooks. Add concise instructions:
+Update every existing project AGENTS.md, including nested and case-insensitive variants, excluding Git metadata, dependencies, and generated output. Preserve unrelated guidance and existing hooks. If none exists, create root guidance only:
 
-- At startup, read `PROJECT_HISTORY.md` and run `node scripts/project-history/check-project-history.mjs --startup`. Warn if the remote branch warning threshold is exceeded, and report if validation fails.
-- Before pushing or concluding tasks that introduce commits, run `node scripts/project-history/record-history.mjs` to record decisions and synchronize the history ledger. Decisions come from conversation (not git messages), must not contain the git message, and may be multiple, one, or none.
-- Record worthwhile decisions that benefit future work. Explicitly name the domain (e.g. skill, feature, architecture, tooling). Phrase each decision as a sentence following "in this project for the work being done for this commit, it was decided that..." (e.g. "the project-history skill should block adding more than a specific number of branches, using a pre-push git hook"), not conventional commit style.
+- At startup, read `PROJECT_HISTORY.yaml` and indexed domains and run `node scripts/project-history/check-project-history.mjs --startup`; warn on the threshold and report failed validation.
+- Before pushing or concluding tasks introducing commits, run `node scripts/project-history/record-history.mjs` to record conversational decisions and synchronize the ledger. Decisions may be multiple, one, or none; never include the Git message.
+- Record worthwhile domain-specific decisions using the sentence-completion phrasing above.
 
-Install the Git hooks through the project's existing hook mechanism (e.g. `simple-git-hooks`, `husky`, `.git/hooks`, or custom `core.hooksPath`), preserving existing checks (such as pre-commit):
+Use the existing hook manager or `core.hooksPath`, preserving checks:
 
 - `post-commit`: `[ ! -f scripts/project-history/record-history.mjs ] || node scripts/project-history/record-history.mjs --amend`
-  Automatically amends each commit to record its own entry and updated branch inventory into `PROJECT_HISTORY.md`.
+  Amend the commit to record its entry and YAML inventory. Skip recursive invocation, active rebases, merges, cherry-picks, reverts, bisects, and multi-parent merge commits.
 - `pre-push`: `[ ! -f scripts/project-history/pre-push-project-history.mjs ] || node scripts/project-history/pre-push-project-history.mjs "$@"`
-  Validates history before push and presents advisory cleanup commands for removal candidate branches.
+  Validate history and advise on candidate cleanup without invoking another hook recursively.
 
-When a hook manager is configured, update its configuration and run its install command (e.g. `npx simple-git-hooks` or `npx husky`). When no hook manager is configured, create `.git/hooks/post-commit` and `.git/hooks/pre-push` directly with executable permissions (`chmod +x`), ensuring they pass arguments and stdin to the respective scripts. Preserve custom `core.hooksPath` and existing hook behavior. Avoid recursion by invoking the validator script directly, not another hook. Until installation into a target project is completed and validated, do not activate startup commands or hooks there; the existence of source assets alone does not make a target protected.
+Run a configured hook manager's install command. Without one, install executable `.git/hooks/post-commit` and `.git/hooks/pre-push` (or use `core.hooksPath`), forwarding arguments and stdin. Never install a pre-commit history validator.
+
+For Node.js targets with root `package.json`, add `"history:record": "node scripts/project-history/record-history.mjs"` to `scripts`, preserving unrelated commands. This enables `npm run history:record` without a new runtime dependency.
+
+Until installation and target-specific validation complete, do not activate startup commands or hooks. Source assets alone do not protect a target.

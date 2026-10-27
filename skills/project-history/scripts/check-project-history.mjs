@@ -12,14 +12,8 @@ import { validateHistory } from "./history-validation.mjs";
 /** @typedef {import("./history-git.mjs").ValidationResult} ValidationResult */
 /** @typedef {import("./history-git.mjs").StartupWarningCallback} StartupWarningCallback */
 
-export {
-	locateJsonBlock,
-	parseRecords,
-	parseThreshold,
-	readMainBranch,
-	readTimestamp,
-	sectionBounds,
-} from "./history-document-parse.mjs";
+export { parseHistoryData } from "./history-document-data.mjs";
+export { formatHistoryDocument } from "./history-document-format.mjs";
 export { parseLogDocument } from "./history-domain-log.mjs";
 export {
 	findRepositoryRoot,

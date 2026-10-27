@@ -8,7 +8,7 @@ import { recordHistory } from "./record-history-operation.mjs";
 
 export { recordHistory };
 
-const historyPath = "PROJECT_HISTORY.md";
+const historyPath = "PROJECT_HISTORY.yaml";
 
 function runCLI() {
 	const args = parseArgs(process.argv.slice(2));

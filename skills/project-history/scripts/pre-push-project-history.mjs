@@ -117,10 +117,10 @@ function runPrePush() {
 		try {
 			validateHistory(root, { treeRef: "HEAD" });
 		} catch {
-			const { modified } = syncHistory(root);
+			const { modified, filesToStage } = syncHistory(root);
 			if (modified) {
 				try {
-					runGit(["add", "PROJECT_HISTORY.md"], { cwd: root });
+					runGit(["add", ...filesToStage], { cwd: root });
 					const headSec = runGit(["log", "-1", "--format=%ct", "HEAD"], {
 						cwd: root,
 					}).trim();

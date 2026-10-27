@@ -20,6 +20,12 @@
 	},
 	"overrides": [
 		{
+			"includes": ["skills/project-history/scripts/yaml.mjs"],
+			"formatter": { "enabled": false },
+			"linter": { "enabled": false },
+			"assist": { "enabled": false }
+		},
+		{
 			"includes": ["src/lib/artifacts/**/*.ts"],
 			"linter": {
 				"rules": {

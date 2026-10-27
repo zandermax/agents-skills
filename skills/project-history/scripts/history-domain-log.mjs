@@ -1,51 +1,31 @@
 // @ts-check
 
-/** @typedef {import("./history-git.mjs").CommitRecord} CommitRecord */
-import {
-	findSectionHeadings,
-	parseRecords,
-} from "./history-document-parse.mjs";
+import { parseRecords, parseYamlMapping } from "./history-document-parse.mjs";
 
-/**
- * @param {string} logSection
- * @param {string} filename
- * @returns {string[]}
- */
-function parseDomainLinks(logSection, filename) {
-	const markers = [...logSection.matchAll(/^Domains:[ \t]*$/gm)];
-	if (markers.length !== 1 || markers[0].index === undefined) {
-		throw new Error(`${filename} must contain one Domains list`);
+/** @typedef {import("./history-git.mjs").CommitRecord} CommitRecord */
+
+/** @param {unknown} paths @param {string} filename @returns {string[]} */
+function validateDomainPaths(paths, filename) {
+	if (!Array.isArray(paths) || paths.length === 0) {
+		throw new Error(`${filename} domains must be a nonempty array`);
 	}
-	const tail = logSection.slice(markers[0].index + markers[0][0].length);
-	const paths = [];
-	for (const line of tail.split(/\r?\n/)) {
-		if (!line.trim()) continue;
-		const match = /^\s*-\s+\[([^\]]+)\]\(([^)]+)\)\s*$/.exec(line);
-		if (!match)
-			throw new Error(
-				`${filename} has a malformed domain link: ${line.trim()}`,
-			);
-		paths.push(match[2]);
-	}
-	if (paths.length === 0)
-		throw new Error(`${filename} Domains list must not be empty`);
 	const seen = new Set();
 	for (const path of paths) {
 		if (
 			typeof path !== "string" ||
-			path.startsWith("/") ||
 			path.includes("\\") ||
-			path.split("").some((character) => {
-				const code = character.charCodeAt(0);
-				return code < 32 || code === 127;
-			}) ||
 			!path.startsWith("docs/project-history/") ||
-			!path.endsWith(".md")
+			!/\.(?:yaml|yml)$/.test(path) ||
+			[...path].some(
+				(character) =>
+					character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+			)
 		) {
 			throw new Error(`${filename} has an invalid domain path: ${path}`);
 		}
-		const components = path.split("/");
-		if (components.some((part) => !part || part === "." || part === "..")) {
+		if (
+			path.split("/").some((part) => !part || part === "." || part === "..")
+		) {
 			throw new Error(
 				`${filename} has a traversal or noncanonical domain path: ${path}`,
 			);
@@ -63,24 +43,24 @@ function parseDomainLinks(logSection, filename) {
  * @returns {{ entries: CommitRecord[] | null, domainPaths: string[] | null }}
  */
 export function parseLogDocument(text, filename) {
-	const logs = findSectionHeadings(text, "Log");
-	if (logs.length !== 1 || logs[0].index === undefined) {
-		throw new Error(`${filename} must contain one '## Log' section`);
-	}
-	const section = text.slice(logs[0].index + logs[0][0].length);
-	const hasDomains = /^Domains:[ \t]*$/m.test(section);
-	const hasJson = /^```(?:jsonl?)[ \t]*$/m.test(section);
-	if (hasDomains && hasJson) {
+	const data = parseYamlMapping(text, filename);
+	const hasDomains = Object.hasOwn(data, "domains");
+	const hasLog = Object.hasOwn(data, "log");
+	if (hasDomains && hasLog) {
 		throw new Error(
 			`${filename} cannot contain both inline log entries and domain links`,
 		);
 	}
-	if (hasDomains)
-		return { entries: null, domainPaths: parseDomainLinks(section, filename) };
+	if (hasDomains) {
+		return {
+			entries: null,
+			domainPaths: validateDomainPaths(data.domains, filename),
+		};
+	}
+	if (!hasLog)
+		throw new Error(`${filename} must contain one log or domains section`);
 	return {
-		entries: /** @type {CommitRecord[]} */ (
-			parseRecords(section, filename, ["committedAt", "subject"])
-		),
+		entries: parseRecords(data.log, filename, ["committedAt", "subject"]),
 		domainPaths: null,
 	};
 }

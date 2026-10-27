@@ -1,102 +1,51 @@
 // @ts-check
 
-/**
- * @param {string} text
- * @param {string} heading
- * @returns {RegExpMatchArray[]}
- */
-export function findSectionHeadings(text, heading) {
-	const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	return [...text.matchAll(new RegExp(`^## ${escaped}[ \\t]*$`, "gm"))];
+import { parse } from "./yaml.mjs";
+
+/** @param {string} text @param {string} filename */
+export function parseYamlMapping(text, filename) {
+	let data;
+	try {
+		data = parse(text);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		throw new Error(`${filename} is malformed YAML: ${message}`);
+	}
+	if (!data || typeof data !== "object" || Array.isArray(data)) {
+		throw new Error(`${filename} must be a YAML mapping`);
+	}
+	return data;
 }
 
-/**
- * @param {string} text
- * @param {string} filename
- * @returns {{ status: string, log: string }}
- */
-export function sectionBounds(text, filename) {
-	const status = findSectionHeadings(text, "Git status");
-	const logs = findSectionHeadings(text, "Log");
+/** @param {Record<string, unknown>} status @param {string} filename */
+export function parseThreshold(status, filename) {
+	const threshold = status.branch_warning_threshold;
 	if (
-		status.length !== 1 ||
-		logs.length !== 1 ||
-		status[0].index === undefined ||
-		logs[0].index === undefined ||
-		status[0].index >= logs[0].index
+		typeof threshold !== "number" ||
+		!Number.isSafeInteger(threshold) ||
+		threshold < 0
 	) {
 		throw new Error(
-			`${filename} must contain one '## Git status' section before one '## Log' section`,
-		);
-	}
-	const statusStart = status[0].index + status[0][0].length;
-	const logStart = logs[0].index + logs[0][0].length;
-	return {
-		status: text.slice(statusStart, logs[0].index),
-		log: text.slice(logStart),
-	};
-}
-
-/**
- * @param {string} statusSection
- * @param {string} filename
- * @returns {number}
- */
-export function parseThreshold(statusSection, filename) {
-	const matches = [
-		...statusSection.matchAll(/^Branch warning threshold:[ \t]*(.*?)[ \t]*$/gm),
-	];
-	if (matches.length !== 1) {
-		throw new Error(
-			`${filename} must contain one Branch warning threshold field`,
-		);
-	}
-	const raw = matches[0][1];
-	if (!/^\d+$/.test(raw)) {
-		throw new Error(
-			`${filename} Branch warning threshold must be a nonnegative integer`,
-		);
-	}
-	const threshold = Number(raw);
-	if (!Number.isSafeInteger(threshold)) {
-		throw new Error(
-			`${filename} Branch warning threshold must be a nonnegative integer`,
+			`${filename} branch_warning_threshold must be a nonnegative integer`,
 		);
 	}
 	return threshold;
 }
 
-/**
- * @param {string} statusSection
- * @param {string} filename
- * @returns {string}
- */
-export function readMainBranch(statusSection, filename) {
-	const matches = [
-		...statusSection.matchAll(/^Main branch:[ \t]*(.*?)[ \t]*$/gm),
-	];
-	if (matches.length !== 1) {
-		throw new Error(`${filename} must contain one Main branch field`);
-	}
-	const mainBranch = matches[0][1].trim();
-	if (!mainBranch) {
-		throw new Error(`${filename} Main branch field must be a nonempty string`);
+/** @param {Record<string, unknown>} status @param {string} filename */
+export function readMainBranch(status, filename) {
+	const mainBranch = status.main_branch;
+	if (typeof mainBranch !== "string" || !mainBranch.trim()) {
+		throw new Error(`${filename} main_branch must be a nonempty string`);
 	}
 	return mainBranch;
 }
 
-/**
- * @param {string} statusSection
- * @param {string} filename
- * @returns {string}
- */
-export function readTimestamp(statusSection, filename) {
-	const matches = [
-		...statusSection.matchAll(/^Updated at:[ \t]*(.*?)[ \t]*$/gm),
-	];
-	if (matches.length !== 1)
-		throw new Error(`${filename} must contain one Updated at field`);
-	return matches[0][1];
+/** @param {Record<string, unknown>} status @param {string} filename */
+export function readTimestamp(status, filename) {
+	const timestamp = status.updated_at;
+	parseTimestamp(timestamp, `${filename} updated_at`);
+	return /** @type {string} */ (timestamp);
 }
 
 /**
@@ -116,134 +65,44 @@ export function parseTimestamp(value, context) {
 	const milliseconds = Date.parse(value);
 	if (!Number.isFinite(milliseconds))
 		throw new Error(`${context} has an invalid date`);
-	try {
-		if (
-			new Date(milliseconds).toISOString().replace(/\.000Z$/, "Z") !== value
-		) {
-			throw new Error(`${context} has an impossible or noncanonical date`);
-		}
-	} catch {
+	if (new Date(milliseconds).toISOString().replace(/\.000Z$/, "Z") !== value) {
 		throw new Error(`${context} has an impossible or noncanonical date`);
 	}
 	return milliseconds;
 }
 
-/**
- * @param {string} section
- * @param {string} filename
- * @returns {string}
- */
-export function locateJsonBlock(section, filename) {
-	const lines = section.split(/\r?\n/);
-	const openings = [];
-	for (let index = 0; index < lines.length; index += 1) {
-		if (/^```(?:jsonl?)[ \t]*$/.test(lines[index])) openings.push(index);
-	}
-	if (openings.length !== 1) {
-		throw new Error(
-			`${filename} must contain exactly one fenced json or jsonl block`,
-		);
-	}
-	const start = openings[0];
-	let end = -1;
-	for (let index = start + 1; index < lines.length; index += 1) {
-		if (/^```[ \t]*$/.test(lines[index])) {
-			end = index;
-			break;
-		}
-	}
-	if (end < 0) throw new Error(`${filename} has an unterminated JSON block`);
-	return lines.slice(start + 1, end).join("\n");
-}
+const serializedFields = {
+	branchName: "branch_name",
+	committedAt: "committed_at",
+	planningDoc: "planning_doc",
+};
 
 /**
+ * Convert the serialized snake_case schema to the runtime's existing record model.
  * @template {Record<string, any>} T
- * @param {string} section
+ * @param {unknown} records
  * @param {string} filename
  * @param {string[]} requiredFields
  * @returns {T[]}
  */
-export function parseRecords(section, filename, requiredFields) {
-	const blockText = locateJsonBlock(section, filename);
-	const trimmed = blockText.trim();
-	if (!trimmed) return [];
-
-	/** @type {unknown[]} */
-	let records;
-
-	if (trimmed.startsWith("[")) {
-		try {
-			records = JSON.parse(trimmed);
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			throw new Error(`${filename} JSON block is malformed: ${message}`);
-		}
-		if (!Array.isArray(records)) {
-			throw new Error(
-				`${filename} JSON block must contain an array of objects`,
-			);
-		}
-	} else {
-		records = [];
-		let pos = 0;
-		while (pos < trimmed.length) {
-			while (pos < trimmed.length && /\s/.test(trimmed[pos])) pos++;
-			if (pos >= trimmed.length) break;
-			if (trimmed[pos] !== "{") {
-				throw new Error(`${filename} JSON record must be an object`);
-			}
-			let depth = 0;
-			let inString = false;
-			let isEscaped = false;
-			const start = pos;
-			while (pos < trimmed.length) {
-				const ch = trimmed[pos];
-				if (isEscaped) {
-					isEscaped = false;
-				} else if (ch === "\\") {
-					if (inString) isEscaped = true;
-				} else if (ch === '"') {
-					inString = !inString;
-				} else if (!inString) {
-					if (ch === "{") depth++;
-					else if (ch === "}") {
-						depth--;
-						if (depth === 0) {
-							pos++;
-							break;
-						}
-					}
-				}
-				pos++;
-			}
-			if (depth !== 0) {
-				throw new Error(`${filename} JSON block has an unterminated object`);
-			}
-			const objText = trimmed.slice(start, pos);
-			try {
-				records.push(JSON.parse(objText));
-			} catch (error) {
-				const message = error instanceof Error ? error.message : String(error);
-				throw new Error(`${filename} JSON record is malformed: ${message}`);
-			}
-		}
-	}
-
+export function parseRecords(records, filename, requiredFields) {
+	if (!Array.isArray(records))
+		throw new Error(`${filename} records must be an array`);
 	return records.map((record, index) => {
-		const recordNumber = index + 1;
 		if (!record || typeof record !== "object" || Array.isArray(record)) {
-			throw new Error(
-				`${filename} JSON record ${recordNumber} must be an object`,
-			);
+			throw new Error(`${filename} record ${index + 1} must be an object`);
 		}
-		const obj = /** @type {Record<string, unknown>} */ (record);
+		const result = {};
 		for (const field of requiredFields) {
-			if (typeof obj[field] !== "string") {
+			const key = serializedFields[field] ?? field;
+			if (typeof record[key] !== "string") {
 				throw new Error(
-					`${filename} JSON record ${recordNumber} field ${field} must be a string`,
+					`${filename} record ${index + 1} field ${key} must be a string`,
 				);
 			}
+			result[field] = record[key];
 		}
-		return /** @type {T} */ (obj);
+		if ("decisions" in record) result.decisions = record.decisions;
+		return /** @type {T} */ (result);
 	});
 }

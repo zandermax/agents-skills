@@ -1,14 +1,8 @@
 // @ts-check
 
+import { parseHistoryData } from "./history-document-data.mjs";
 import { readDocument } from "./history-document-io.mjs";
-import {
-	parseRecords,
-	parseThreshold,
-	parseTimestamp,
-	readMainBranch,
-	readTimestamp,
-	sectionBounds,
-} from "./history-document-parse.mjs";
+import { parseThreshold, parseYamlMapping } from "./history-document-parse.mjs";
 import { parseLogDocument } from "./history-domain-log.mjs";
 import {
 	validateBranchRecords,
@@ -25,25 +19,18 @@ import {
 	readReachableCommits,
 } from "./history-git.mjs";
 
-const historyPath = "PROJECT_HISTORY.md";
+const historyPath = "PROJECT_HISTORY.yaml";
 
 /**
  * @param {string} text
  * @returns {number | null}
  */
 function peekStartupThreshold(text) {
-	const heading = /^## Git status[ \t]*$/m.exec(text);
-	if (!heading) return null;
-	const start = heading.index + heading[0].length;
-	const next = /^## [^\n]*$/gm;
-	next.lastIndex = start;
-	const nextHeading = next.exec(text);
-	const status = text.slice(
-		start,
-		nextHeading ? nextHeading.index : text.length,
-	);
 	try {
-		return parseThreshold(status, historyPath);
+		return parseThreshold(
+			parseYamlMapping(text, historyPath).status,
+			historyPath,
+		);
 	} catch {
 		return null;
 	}
@@ -71,20 +58,10 @@ export function validateHistory(
 		onStartupWarning?.(actualBranches.size, thresholdForWarning);
 	}
 
-	const { status } = sectionBounds(source, historyPath);
-	const updatedAt = readTimestamp(status, historyPath);
-	parseTimestamp(updatedAt, `${historyPath} Updated at`);
-	const mainBranch = readMainBranch(status, historyPath);
-	const threshold = parseThreshold(status, historyPath);
-	/** @type {BranchRecord[]} */
-	const branchRecords = parseRecords(status, historyPath, [
-		"branchName",
-		"committedAt",
-		"subject",
-		"status",
-		"planningDoc",
-		"ref",
-	]);
+	const { updatedAt, mainBranch, threshold, branchRecords } = parseHistoryData(
+		source,
+		historyPath,
+	);
 	validateBranchRecords(branchRecords, actualBranches, historyPath);
 
 	const index = parseLogDocument(source, historyPath);
@@ -118,7 +95,7 @@ export function validateHistory(
 	);
 	if (updatedAt !== newest) {
 		throw new Error(
-			`${historyPath} Updated at must equal the newest log timestamp (${newest})`,
+			`${historyPath} updated_at must equal the newest log timestamp (${newest})`,
 		);
 	}
 	const allowUnrecordedPriorCommits =

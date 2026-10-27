@@ -7,51 +7,71 @@ description: Sets up Git decision changelogs, branch inventories, and pre-push g
 
 The script assets provided with this skill are source assets. No target project is protected until the one-time installation is completed. Do not claim that checks or hooks are active before target-specific installation and validation.
 
-Read `references/contract.md` before installing the skill. It defines the document syntax, timestamp semantics, branch coverage, domain splitting, CLI behavior, and hook integration.
+Read `references/contract.md` before installing the skill. It defines the YAML syntax, timestamp semantics, branch coverage, domain splitting, CLI behavior, and hook integration.
 
 ## Script assets
 
-| Relative to this skill                 | Purpose                                                                                            | Copy into the target project                           |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `scripts/check-project-history.mjs`    | Read-only Git status, history and branch validation, plus startup branch-count warning             | `scripts/project-history/check-project-history.mjs`    |
-| `scripts/pre-push-project-history.mjs` | Validate committed history before allowing a push; reuse the checker without invoking another hook | `scripts/project-history/pre-push-project-history.mjs` |
-| `scripts/record-history.mjs`           | Automatically record unrecorded commits, update branch inventory, and commit prospective snapshot  | `scripts/project-history/record-history.mjs`           |
+Copy **every file below** from this skill's `scripts/` directory into the target's `scripts/project-history/`, preserving basenames and relative imports. The three entry points alone are not an installation.
 
-Script assets must be self-contained: Node.js built-ins and Git only; no external package dependencies or imports.
+| Source asset                           | Purpose                                                     |
+| -------------------------------------- | ----------------------------------------------------------- |
+| `scripts/check-project-history.mjs`    | Read-only validation and startup branch-count warning       |
+| `scripts/pre-push-project-history.mjs` | Pre-push validation, synchronization, and advisory cleanup  |
+| `scripts/record-history.mjs`           | Recording CLI entry point                                   |
+| `scripts/history-document-data.mjs`    | Parse and validate the YAML history schema                  |
+| `scripts/history-document-parse.mjs`   | YAML fields, record mapping, and canonical dates            |
+| `scripts/history-document-format.mjs`  | Canonical snake_case YAML serialization                     |
+| `scripts/history-document-io.mjs`      | Repository-contained working and committed document reads   |
+| `scripts/history-domain-log.mjs`       | Inline logs and safe domain paths                           |
+| `scripts/history-entry-validation.mjs` | Dates, decisions, branch inventory, and commit multiplicity |
+| `scripts/history-git.mjs`              | Repository discovery and Git metadata                       |
+| `scripts/history-sync.mjs`             | Synchronize unrecorded commits and branch inventory         |
+| `scripts/history-validation.mjs`       | Aggregate index and domain validation                       |
+| `scripts/record-history-helpers.mjs`   | CLI arguments, branch metadata, and YAML writes             |
+| `scripts/record-history-input.mjs`     | Read existing history and identify unrecorded commits       |
+| `scripts/record-history-operation.mjs` | Prospective recording and guarded post-commit amendment     |
+| `scripts/yaml.mjs`                     | Bundled standalone YAML parser and serializer               |
+| `scripts/yaml.LICENSE`                 | Bundled parser's ISC copyright and permission notice        |
+
+Runtime assets require Node.js built-ins, the bundled `yaml.mjs`, and Git only; no target-project package dependencies. Keep the parser attribution and `yaml.LICENSE` with every installed copy.
 
 ## One-time installation into a target project
 
-1. Read the target project's existing guidance, history, and hook configuration. Discover its root, all local and remote-tracking branches, and reachable commits from the existing local repository state (it is acceptable that remote-tracking branches may be stale without fetching). Do not fetch, commit, push, or change unrelated configuration. If the checks are already installed, inspect their existing contract and stop rather than creating a competing changelog.
-2. Verify all three script assets exist in the skill's `scripts/` directory (located under the skill directory, e.g. `<skill-dir>/scripts/`, `~/.claude/skills/project-history/scripts/`, or `~/.agents/skills/project-history/scripts/`). If any script asset or references/contract.md is missing, stop, report which file is absent, and do not install anything partially. Copy those scripts into `scripts/project-history/` in the target project.
-3. Create `PROJECT_HISTORY.md` using the contract. Put `## Git status` before `## Log`. In `## Git status`, specify `Updated at`, `Main branch`, and `Branch warning threshold`. Use UTC Git committer datetimes on the snapshot and every decision entry. Only consider the remote state: do not include non-remote pushed local branches and do not specify separate remote and local branches. In each branch record, include `branchName`, `committedAt`, `subject`, `status`, `planningDoc`, and show `ref` last. If the local branch has unpushed changes relative to the remote branch, mark it in `branchName` as `<branch> [unpushed changes]`. In each log entry, include `committedAt`, `subject`, and `decisions` (an array of strings). Decisions must come from agent conversations, not git messages, and must not contain the git message (which is redundant and superfluous). A commit may have multiple decisions, one, or none (`decisions: []`). Record worthwhile decisions that benefit future work, explicitly mentioning the domain (e.g. skill, feature, architecture, tooling). Record decisions as brief bullet-point-style statements describing what was decided (phrased as completions of "in this project for the work being done for this commit, it was decided that...", without including that intro text; e.g. "the project-history skill should block adding more than a specific number of branches, using a pre-push git hook"), not conventional commit style. Format the JSON as a readable array with one key-value pair per line. Each branch's `status` must be one of:
-   - `removal candidate`: when the plan doc that relates to it is complete and archived, and the branch has been merged into the main branch
-   - `in active development`: when there is an active plan doc that relates to it on its own branch
-   - `ready to merge`: when it has a plan that is complete but has not been merged to the main branch
-   - `no related plan`: when there is not a plan that relates to that branch
-     `planningDoc` is the relative path to the markdown file that relates to the branch, or `"(none)"` if none found. Use a configurable branch-warning threshold of 10 unless the project already specifies another value.
-4. When installing project history, do not populate commits that have not been part of the current conversation. Any previously-existing commits without immediate context should not be recorded. Instead, include a note in the history document under `## Log` (e.g. `Note: Commits prior to this point do not have recorded historical context.`) documenting that commits prior to that point do not have recorded historical context. Record only commits from the current conversation (such as the initial setup commit), recording worthwhile decisions reached in conversation (or `decisions: []` if none) following the domain-specific phrasing guidelines. Preserve existing decision history if project history was already established.
-5. Split the log when it exceeds 200 entries or 32 KiB (either condition triggers the split). Separate it into project-domain documents under `docs/project-history/`, similar to domain memories. Choose domains from top-level project areas and record them in the root index, linking every domain and retaining one entry per commit without duplication. All recorded historical context remains reachable from that index.
-6. Add the following guidance to **every existing project AGENTS.md**, including nested and case-insensitive variants. Discover them during installation, excluding dependencies, generated output, and `.git`; preserve unrelated instructions. If no AGENTS.md exists, create one at the repository root containing only the guidance below. If the repository has no commits or is a shallow clone, report this to the user and stop before installing. Replace the sample threshold only if the project chooses another value.
-7. Install the Git hooks into the project, preserving all existing checks:
+1. Read the target project's existing guidance, history, and hook configuration. Discover its root, all local and remote-tracking branches, and reachable commits from existing local repository state; remote-tracking branches may be stale without fetching. Do not fetch, commit, push, or change unrelated configuration during discovery. If checks are already installed, inspect their contract and stop rather than creating a competing changelog. If the repository has no commits or is shallow, report this and stop before installing.
+2. Verify `references/contract.md` and **all files in the asset table** exist under the skill directory (for example, `<skill-dir>/scripts/`, `~/.claude/skills/project-history/scripts/`, or `~/.agents/skills/project-history/scripts/`). If anything is missing, report the exact file and stop without installing partially. Copy the complete asset set to `scripts/project-history/`, including every transitive helper and the parser's notice.
+3. Create `PROJECT_HISTORY.yaml` using the contract. Its top-level `status` mapping precedes `log` (or `domains`). Include `updated_at`, `main_branch`, `branch_warning_threshold`, and `branches`. Use UTC Git committer datetimes. Only inventory remote-tracking refs; exclude separate local branch records, tags, and symbolic refs. Each branch contains `branch_name`, `committed_at`, `subject`, `status`, `planning_doc`, and `ref` last. Mark local unpushed changes as `<branch> [unpushed changes]` in `branch_name`. Default the configurable warning threshold to 10 unless the project specifies otherwise. Each branch's `status` must be:
+   - `removal candidate`: its plan is complete and archived, and the branch is merged into main.
+   - `in active development`: an active plan relates to the branch on its own branch.
+   - `ready to merge`: its plan is complete but the branch is not merged into main.
+   - `no related plan`: no plan relates to the branch.
+
+   Set `planning_doc` to the repository-relative plan Markdown path or `"(none)"`.
+
+4. Each log record contains `committed_at`, the exact Git `subject`, and a `decisions` array with multiple, one, or no decisions (`decisions: []`). Decisions come from agent conversations, never Git messages, and must not contain the Git message. Record worthwhile decisions that benefit future work and explicitly name their domain (skill, feature, architecture, tooling). Phrase each as a sentence completing "in this project for the work being done for this commit, it was decided that..." without the introductory text; for example, "the project-history skill should block adding more than a specific number of branches, using a pre-push git hook", not a conventional commit message.
+5. Do not populate previously existing commits that were not part of the current conversation. Put `# Note: Commits prior to this point do not have recorded historical context.` before `log` (or `domains`) to document that boundary. Record only commits from the current conversation, such as initial setup, without manufacturing old decisions. Preserve existing decision history.
+6. Split the log when it exceeds 200 entries or 32 KiB (either triggers splitting). Use `docs/project-history/<domain>.yaml` and a root `domains` list, choosing domains from top-level project areas. Keep one entry per commit without duplication and all history reachable from the root index. Read all indexed domains before work.
+7. Add the guidance below to **every existing project AGENTS.md**, discovering case-insensitive and nested variants while excluding dependencies, generated output, and `.git`. Preserve unrelated instructions. If none exists, create only the root guidance.
+8. Install the Git hooks through the existing mechanism, preserving every existing check:
    - `post-commit`: `[ ! -f scripts/project-history/record-history.mjs ] || node scripts/project-history/record-history.mjs --amend`
-     Automatically amends each commit to record its own entry and updated branch inventory into `PROJECT_HISTORY.md` without requiring manual history recording. The script automatically and safely skips amending during active rebases, merges (`MERGE_HEAD`), cherry-picks (`CHERRY_PICK_HEAD`), reverts, bisects, or on multi-parent merge commits.
+     Amends each commit to record its entry and branch inventory in `PROJECT_HISTORY.yaml`. Safely skips during active rebases, merges (`MERGE_HEAD`), cherry-picks (`CHERRY_PICK_HEAD`), reverts, bisects, and multi-parent merge commits; avoids recursive amendment.
    - `pre-push`: `[ ! -f scripts/project-history/pre-push-project-history.mjs ] || node scripts/project-history/pre-push-project-history.mjs "$@"`
-     Validates history before push. If unrecorded commits exist, it automatically synchronizes them into `PROJECT_HISTORY.md` so pushing always succeeds seamlessly. If removal candidate branches or other unpushed branches exist, it presents cleanup commands as advice without blocking the push.
-   - When a hook manager is configured (such as `simple-git-hooks` or `husky`), add both commands and run the hook manager's install command (e.g. `npx simple-git-hooks`) to install the hooks into Git.
-   - When no hook manager is configured, install `.git/hooks/post-commit` and `.git/hooks/pre-push` directly (or under `core.hooksPath` if configured) with executable permissions (`chmod +x`), ensuring they pass arguments and stdin to the respective scripts.
-   - Do not install a pre-commit history validator: the prospective snapshot does not match Git until its commit exists.
-8. Run `node scripts/project-history/record-history.mjs` (passing `--decision <text>` for any worthwhile decisions reached in conversation, or omitting if none) to record history and create the prospective snapshot commit automatically. Then run the checker and exercise the installed pre-push entry point locally with actual ref-update input, without pushing. Do not claim installation validation before this passes.
+     Synchronizes unrecorded history and validates before push. Removal candidates and other unpushed branches produce advisory commands, not branch-cleanup approval gates. Unrecoverable validation failures still fail closed.
+   - For hook managers such as `simple-git-hooks` or `husky`, update both commands and run the manager's install command.
+   - Otherwise install executable `.git/hooks/post-commit` and `.git/hooks/pre-push`, or use the configured `core.hooksPath`, passing arguments and stdin to the scripts.
+   - Do not install a pre-commit history validator: the prospective snapshot cannot match Git until its commit exists.
+9. If the target has a root `package.json`, add `"history:record": "node scripts/project-history/record-history.mjs"` to `scripts`, preserving unrelated commands, so recording is available through `npm run history:record`.
+10. Run `node scripts/project-history/record-history.mjs` with `--decision <text>` for worthwhile decisions from conversation, or omit decisions if none. This creates the prospective snapshot commit. Then run the checker and exercise the installed pre-push entry point locally with actual ref-update input, without pushing. Do not claim installation validated unless both pass.
 
 ## Guidance to add to each AGENTS.md
 
 ```markdown
 ## Project history and startup validity
 
-- At startup, read `PROJECT_HISTORY.md` and run `node scripts/project-history/check-project-history.mjs --startup`. Warn if the remote branch warning threshold is exceeded, and report if validation fails.
-- Before pushing or concluding tasks that introduce commits, run `node scripts/project-history/record-history.mjs` to record decisions and synchronize the history ledger. Decisions come from conversation (not git messages), must not contain the git message, and may be multiple, one, or none.
-- Record worthwhile decisions that benefit future work. Explicitly name the domain (e.g. skill, feature, architecture, tooling). Record decisions as brief bullet-point-style statements describing what was decided (phrased as completions of "in this project for the work being done for this commit, it was decided that...", without including that intro text; e.g. "the project-history skill should block adding more than a specific number of branches, using a pre-push git hook"), not conventional commit style.
+- At startup, read `PROJECT_HISTORY.yaml` and all indexed domains, and run `node scripts/project-history/check-project-history.mjs --startup`. Warn if the remote branch warning threshold is exceeded, and report if validation fails.
+- Before pushing or concluding tasks that introduce commits, run `node scripts/project-history/record-history.mjs` to record decisions and synchronize the history ledger. Decisions come from conversation (not Git messages), must not contain the Git message, and may be multiple, one, or none.
+- Record worthwhile decisions that benefit future work. Explicitly name the domain (e.g. skill, feature, architecture, tooling). Phrase each decision as a sentence completing "in this project for the work being done for this commit, it was decided that..." without that intro text, not a conventional commit message.
 ```
 
 ## Scope boundaries
 
-This skill sets up project history once; it does not auto-commit, auto-push, rewrite Git history, manufacture decisions, delete branches, or continuously reinstall itself. Routine history maintenance is governed by the installed AGENTS.md instructions. Branch warnings are advisory, not approval gates. Invalid committed history blocks pushes until it is repaired in a commit.
+This skill installs project history once. Outside the authorized installation and installed hooks, it does not autonomously commit, push, rewrite history, manufacture decisions, delete branches, or continuously reinstall itself. Routine maintenance follows the installed AGENTS.md. Branch warnings are advisory; invalid history fails validation. Source assets alone never activate target startup checks or hooks.

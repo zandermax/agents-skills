@@ -15,7 +15,7 @@ import {
 } from "./record-history-helpers.mjs";
 import { readRecordState } from "./record-history-input.mjs";
 
-const historyPath = "PROJECT_HISTORY.md";
+const historyPath = "PROJECT_HISTORY.yaml";
 
 /**
  * @param {string} root
