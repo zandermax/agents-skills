@@ -1,0 +1,63 @@
+id: 05-obtain-first-review
+name: Obtain admission when asked to implement a supplied plan
+description: "The executor obtains its own first review instead of asking the user to supply admission metadata"
+inputs:
+  prompt: |
+    Implement this complete plan. This request authorizes implementation.
+    No plan-checker review record exists yet; obtain the required review yourself.
+    Do not ask me to arrange a review, and do not invent a verdict or fingerprint.
+    No commit is required. Do not run Git mutations.
+
+    # Admission handoff smoke test
+    Mode: autopilot.
+    Owner: the executing assistant.
+    Goal: create three small text files containing the approved literals.
+    Success criteria: each file contains exactly its specified literal.
+    Current state: implementation not started.
+    Historical planning-only note: implementation handoff and a plan commit pending.
+    Dependencies: none outside the three steps below.
+    Risks: only creation of the three named new files; do not overwrite existing files.
+    Recovery: stop on failed checks and report the affected file.
+
+    ## Phase 1: First marker
+    Output: admission-first.txt.
+    Completion criteria: the file contains exactly first.
+    - [ ] Write admission-first.txt with the literal first and no trailing newline.
+      Check: node -e "require('node:assert/strict').equal(require('node:fs').readFileSync('admission-first.txt', 'utf8'), 'first')"
+    Validation: run the step Check.
+    Checkpoint: record the check result and continue in autopilot mode.
+
+    ## Phase 2: Second marker
+    Output: admission-second.txt.
+    Dependencies: Phase 1 passes.
+    Completion criteria: the file contains exactly second.
+    - [ ] Write admission-second.txt with the literal second and no trailing newline.
+      Check: node -e "require('node:assert/strict').equal(require('node:fs').readFileSync('admission-second.txt', 'utf8'), 'second')"
+    Validation: run the step Check.
+    Checkpoint: record the check result and continue in autopilot mode.
+
+    ## Phase 3: Third marker
+    Output: admission-third.txt.
+    Dependencies: Phase 2 passes.
+    Completion criteria: the file contains exactly third.
+    - [ ] Write admission-third.txt with the literal third and no trailing newline.
+      Check: node -e "require('node:assert/strict').equal(require('node:fs').readFileSync('admission-third.txt', 'utf8'), 'third')"
+    Validation: run the step Check.
+    Checkpoint: report all three check results.
+
+    This plan is canonical in conversation; do not create a plan file.
+    If no named checker agent is available, read skills/plan-checker/SKILL.md
+    and perform the shared protocol in-context before implementation.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate tool evidence as well as the final response:
+        - the executor obtains an actual checker review before its first implementation write;
+        - it records a ready verdict and a matching fingerprint rather than fabricating admission;
+        - it creates all three approved marker files and runs their Checks;
+        - it does not stop merely because no prior review record existed or because of the historical planning-only handoff/commit note;
+        - it does not ask the user to arrange the review or perform any Git mutation.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.

@@ -11,6 +11,31 @@ const honePath = new URL(
 	import.meta.url,
 );
 
+test("plan-checker agent loads installed skills without relying on the skill catalog", async () => {
+	const agent = await readFile(
+		new URL("../../../agents/plan-checker.agent.md", import.meta.url),
+		"utf8",
+	);
+
+	assert.match(
+		agent,
+		/Read the installed shared skill at `~\/\.claude\/skills\/plan-checker\/SKILL\.md`/,
+	);
+	assert.match(
+		agent,
+		/If the installed path is unavailable.*read `skills\/plan-checker\/SKILL\.md` instead/,
+	);
+	assert.match(agent, /Confirm the loaded file declares `name: plan-checker`/);
+	assert.match(
+		agent,
+		/Do not use the Skill tool.*catalog may not include repository-installed skills/,
+	);
+	assert.match(
+		agent,
+		/If neither file can be read, report the blocker and stop/,
+	);
+});
+
 async function readSkills(): Promise<{
 	checker: string;
 	hone: string;

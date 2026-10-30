@@ -1,0 +1,32 @@
+id: 07-first-review-record
+name: Issue the first review record without a circular prerequisite
+description: "A missing prior review record is an output to produce, not a blocking plan defect"
+inputs:
+  prompt: |
+    Review this complete ordinary plan in autopilot mode. Do not execute it or edit files.
+    This is its first checker review: no review record or fingerprint exists.
+
+    # Produce a greeting
+    Goal: produce the literal line hello in conversation without changing files.
+    Success criteria: one line is exactly hello and no files are changed.
+    Owner: the responding assistant.
+    Steps:
+    1. Output hello. Check: the line is exactly hello.
+    Dependencies: none.
+    Risks: none; no commands, repositories, or external systems are involved.
+    Recovery: correct the conversational line if necessary.
+
+    Historical planning-only note: handoff and a suggested plan commit were pending.
+    Current user instruction: review now; no commit is required before execution.
+graders:
+  - name: behavior-judge
+    type: prompt
+    config:
+      continue_session: true
+      prompt: |
+        Evaluate whether the response:
+        - reviews the plan and returns ready with a newly computed fingerprint and review record;
+        - does not require a prior ready verdict or fingerprint before reviewing;
+        - does not treat the superseded planning-only handoff or commit note as a blocker;
+        - does not execute the greeting, change files, or claim a commit occurred.
+        If every criterion is met, call set_waza_grade_pass. Otherwise, call set_waza_grade_fail with the unmet criteria.
